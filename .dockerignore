@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gitattributes
+**/bin/
+**/obj/
+**/publish/
+**/node_modules/
+**/dist/
+**/.angular/
+*.log
+*.tmp
+TestResults/
+coverage/
