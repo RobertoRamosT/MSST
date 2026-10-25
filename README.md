@@ -1,80 +1,74 @@
-# OneSST Enterprise — Repositorio Unificado Monorepo
+# OneSST Enterprise — Repositorio Exclusivo de Código Fuente
 
-Sistema Integral de Seguridad y Salud en el Trabajo de Alta Concurrencia y Máxima Disponibilidad.
-
----
-
-## 1. Arquitectura del Monorepo
-
-Este repositorio unifica el ciclo de vida, versionado y despliegue del sistema **OneSST**, estructurado con estricta separación de responsabilidades:
+Este repositorio contiene **exclusivamente el código fuente** de la solución corporativa de Seguridad y Salud en el Trabajo, estructurado de forma independiente en dos proyectos limpios:
 
 ```
 D:\Temp\Maximo\MSST\
 ├── .git/                                # Repositorio Git Monorepo (Rama: main)
 ├── .gitattributes                       # Normalización de saltos de línea LF/CRLF y binarios
 ├── .gitignore                           # Exclusión optimizada para .NET 10 y Angular v22+
-├── build-monorepo.bat / .ps1            # Script de compilación unificada en un solo clic
-├── run-monorepo.bat / .ps1              # Script de ejecución local del servidor autónomo
-├── README.md                            # Guía y documentación del Monorepo
+├── README.md                            # Guía del código fuente
 │
-├── Backend/                             # Capa de Servicios y Acceso a Datos
-│   ├── Data/                            # Repositorio AOT para SQL Server (sin EF Core)
-│   ├── Endpoints/                       # Mapeo de los 43 módulos y 1,344 endpoints REST
-│   ├── Models/                          # DTOs y modelos de datos tipados
-│   ├── Serialization/                   # JsonSerializerContext (Cero reflexión en runtime)
-│   ├── Msst.Backend.csproj              # Configuración .NET 10 Native AOT
-│   └── Program.cs                       # Servidor Kestrel embebido con SPA Fallback
+├── Backend/                             # Código Fuente de Servicios y Acceso a Datos (.NET 10 Native AOT)
+│   ├── Data/                            # Repositorio AOT para SQL Server (sin EF Core ni reflexión)
+│   ├── Endpoints/                       # Mapeo de los 43 módulos y 1,344 endpoints REST (/sst/*)
+│   ├── Models/                          # Modelos de datos y DTOs fuertemente tipados
+│   ├── Properties/                      # Perfiles de inicio y launchSettings.json
+│   ├── Serialization/                   # JsonSerializerContext para compilación AOT estricta
+│   ├── Msst.Backend.csproj              # Proyecto .NET 10 con PublishAot=true
+│   ├── Msst.Backend.http                # Pruebas HTTP directas de endpoints
+│   ├── Program.cs                       # Servidor Kestrel nativo con SPA Fallback y liveness probe
+│   └── appsettings.json                 # Configuración de conexiones y logging
 │
-└── Frontend/                            # Capa de Interfaz de Usuario y Experiencia
+└── Frontend/                            # Código Fuente de Interfaz de Usuario (Angular v22+)
     ├── src/
-    │   ├── app/                         # Componentes Standalone, Zoneless y Signals
-    │   │   ├── core/                    # Servicios de API, Autenticación y Auditoría
-    │   │   ├── features/                # Vistas modernas (Portal Contratistas, Workflows)
-    │   │   └── shared/                  # Componentes reutilizables de UI
-    │   └── assets/                      # Estilos, iconografía y recursos visuales
-    ├── public/sstweb/pages/             # 42 Ventanas HTML de gestión operativa 1:1
+    │   ├── app/                         # Arquitectura Standalone, Zoneless y Signals
+    │   │   ├── core/                    # Servicios de API, sesión, catálogo y modelos DTO
+    │   │   ├── features/                # Módulos operativos, portal de contratistas y workflows
+    │   │   ├── layout/                  # Barra superior, navegación y sidebar auto-hidden
+    │   │   └── shared/                  # Componentes reutilizables
+    │   ├── assets/                      # Recursos visuales y estilos SCSS/CSS
+    │   ├── index.html                   # Documento raíz con metadatos UTF-8
+    │   └── main.ts                      # Bootstrap de Angular sin Zone.js
+    ├── public/sstweb/pages/             # 42 Ventanas HTML de gestión operativa
     ├── angular.json                     # Configuración del compilador Angular CLI
-    └── package.json                     # Dependencias y scripts de construcción
+    ├── package.json                     # Dependencias y scripts de construcción
+    └── tsconfig.json                    # Configuración TypeScript estricta
 ```
 
 ---
 
-## 2. Comandos de Construcción y Ejecución
+## 1. Comandos Estándar de Construcción del Código Fuente
 
-### Compilación Completa (Frontend + Backend AOT)
-Desde la raíz del repositorio, ejecuta el script automatizado:
+### Frontend (Angular v22+)
 ```powershell
-.\build-monorepo.ps1
+Set-Location "D:\Temp\Maximo\MSST\Frontend"
+npm run build
 ```
-O mediante el archivo batch para doble clic:
-```cmd
-build-monorepo.bat
-```
-*Este proceso compila la SPA de Angular v22+ en `Frontend/dist` y genera el binario nativo x64 `Msst.Backend.exe` en `Backend/publish`.*
 
-### Ejecución Local
-Para arrancar el sistema completo (.NET 10 Native AOT + Angular SPA):
+### Backend (.NET 10 Native AOT)
 ```powershell
-.\run-monorepo.ps1
+Set-Location "D:\Temp\Maximo\MSST\Backend"
+dotnet publish -c Release -r win-x64 -o publish
 ```
-- **Backend API:** `http://localhost:5000/sst`
-- **Frontend SPA:** `http://localhost:5000` o `http://localhost:4200`
 
 ---
 
-## 3. Convenciones de Commits en el Monorepo
+## 2. Repositorio de Información, Documentación, Base de Datos y Despliegue
 
-Para mantener un historial limpio, trazable y estructurado, se sigue la convención de [Conventional Commits](https://www.conventionalcommits.org/):
+Todo el material que no corresponde a código fuente se encuentra estrictamente centralizado en:
+👉 **[`D:\Temp\Maximo\MSST_Info`](file:///D:/Temp/Maximo/MSST_Info/README.md)**
 
-| Ámbito | Prefijo | Ejemplo |
-| :--- | :--- | :--- |
-| **Backend** | `feat(backend):` / `fix(backend):` | `feat(backend): Implementar endpoint de transiciones con sellado criptográfico` |
-| **Frontend** | `feat(frontend):` / `fix(frontend):` | `feat(frontend): Conectar modal de workflows reactivos a señales de estado` |
-| **Monorepo / Infra** | `chore(repo):` / `ci(build):` | `chore(repo): Actualizar scripts de compilación unificada y gitattributes` |
-| **Documentación** | `docs(readme):` | `docs(readme): Actualizar guía de despliegue y variables de entorno` |
-
----
-
-## 4. Repositorio de Información y Diseño
-Toda la documentación técnica, diagramas C4, esquemas de bases de datos, scripts SQL Server y análisis de cumplimiento normativo se encuentran archivados en:
-- **[`D:\Temp\Maximo\MSST_Info`](file:///D:/Temp/Maximo/MSST_Info/README.md)**
+Estructura de `MSST_Info`:
+- **`01_Documento_Proyecto_y_Alcance/`**: Documento maestro del proyecto y alcance funcional.
+- **`02_Presupuesto_y_Sustento_Costos/`**: Presupuesto y sustento técnico-financiero.
+- **`03_Arquitectura_y_Diagramas/`**: Diagramas C4, ERD, funcional y de secuencia.
+- **`04_SQL_Server_Scripts/`**: Scripts de base de datos DDL, DML y procedimientos almacenados.
+- **`05_Pautas_Criterios_y_Reglas_Tecnicas/`**: Estándares de desarrollo y directivas editoriales.
+- **`06_Herramientas_Aceleracion/`**: Scripts de análisis y QA de código legado.
+- **`06_QA_Auditoria/`**: Reportes de auditoría de calidad y cumplimiento normativo.
+- **`07_Despliegue_Hosting_y_Servicios/`**:
+  - Scripts de instalación y desinstalación de Servicio de Windows (`install-windows-service.*`, `uninstall-windows-service.*`).
+  - Contenedor multi-cloud (`Dockerfile` y `.dockerignore`).
+  - Scripts de automatización de compilación y ejecución (`build-monorepo.*`, `run-monorepo.*`).
+  - Scripts de sincronización Git (`push-to-github.*`).
