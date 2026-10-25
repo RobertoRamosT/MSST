@@ -12,6 +12,14 @@ import {
   buscarItemMenu
 } from '../../core/catalog/gosst-menu.catalog';
 import { MsstSidebarComponent } from '../../layout/sidebar/msst-sidebar.component';
+import {
+  AnaliticaVista,
+  CampoFicha360,
+  EtapaWorkflowProceso,
+  EventoBitacoraWorkflow,
+  Ficha360Extendida,
+  DatosCredencialQr
+} from '../../core/models/msst.models';
 
 // Módulos 01 a 03
 import { Modulo01SeguridadPerfilesComponent } from '../sprint1/modulo01-seguridad-perfiles.component';
@@ -40,17 +48,6 @@ interface InsightModulo {
   recomendacion: string;
 }
 
-/** Analítica calculada en vivo a partir de las filas reales visibles en la vista activa. */
-interface AnaliticaVista {
-  registros: number;
-  tablas: number;
-  conEstado: number;
-  conformes: number;
-  enProceso: number;
-  observados: number;
-  porcConformes: number;
-}
-
 const PREF_PULSO = 'onesst.ui.pulso';
 const PREF_GRAFICOS = 'onesst.ui.graficos';
 const PREF_COMPACTO = 'onesst.ui.compacto';
@@ -59,49 +56,6 @@ const PREF_COMPACTO = 'onesst.ui.compacto';
 const ESTADOS_CRITICOS = /(^|[^A-ZÁÉÍÓÚ])(NO APTO|OBSERVAD[OA]S?|VENCID[OA]S?|POR VENCER|RECHAZAD[OA]S?|CR[IÍ]TIC[OA]S?|RESTRINGID[OA]S?|BLOQUEAD[OA]S?|INHABILITAD[OA]S?|NO CONFORME|SUSPENDID[OA]S?|GRAVE|INTOLERABLE)([^A-ZÁÉÍÓÚ]|$)/i;
 const ESTADOS_EN_PROCESO = /(^|[^A-ZÁÉÍÓÚ])(PENDIENTES?|EN PROCESO|EN REVISI[OÓ]N|PROGRAMAD[OA]S?|BORRADOR|ABIERT[OA]S?|EN CURSO|EN EJECUCI[OÓ]N|POR FIRMAR|SEGUIMIENTO|PLANIFICAD[OA]S?)([^A-ZÁÉÍÓÚ]|$)/i;
 const ESTADOS_CONFORMES = /(^|[^A-ZÁÉÍÓÚ])(APTO|VIGENTES?|APROBAD[OA]S?|CONFORMES?|HABILITAD[OA]S?|ACTIV[OA]S?|CERRAD[OA]S?|COMPLETAD[OA]S?|FIRMAD[OA]S?|EJECUTAD[OA]S?|CUMPLE|AUTORIZAD[OA]S?|ENTREGAD[OA]S?|LEVANTAD[OA]S?|INSTALAD[OA]S?|VALIDAD[OA]S?|REALIZAD[OA]S?)([^A-ZÁÉÍÓÚ]|$)/i;
-
-interface CampoFicha360 {
-  etiqueta: string;
-  valor: string;
-}
-
-interface EtapaWorkflowProceso {
-  paso: number;
-  titulo: string;
-  subtitulo: string;
-  icono: string;
-}
-
-interface EventoBitacoraWorkflow {
-  fecha: string;
-  etapa: string;
-  accion: string;
-  responsable: string;
-  estadoResultante: string;
-}
-
-interface Ficha360Extendida {
-  titulo: string;
-  modulo: string;
-  codigoAuditoria: string;
-  etapaActual: number;
-  estadoActual: string;
-  observado: boolean;
-  qrPaths: string;
-  campos: CampoFicha360[];
-}
-
-interface DatosCredencialQr {
-  codigo: string;
-  titular: string;
-  subtitulo: string;
-  empresa: string;
-  modulo: string;
-  estado: string;
-  vigencia: string;
-  urlVerificacion: string;
-  qrPaths: string;
-}
 
 const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
 

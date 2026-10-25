@@ -4,50 +4,23 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
+import {
+  EtapaWorkflowCaso,
+  ExpedienteWorkflowItem,
+  EventoTrazabilidad,
+  TipoWorkflowCaso,
+  EstadoExpedienteWorkflow,
+  EstadoEtapaWorkflow
+} from '../../core/models/msst.models';
 
-export interface EtapaWorkflowCaso {
-  paso: number;
-  titulo: string;
-  subtitulo: string;
-  responsableRol: string;
-  normaLegal: string;
-  requisitosObligatorios: string[];
-  estado: 'COMPLETO' | 'EN_CURSO' | 'PENDIENTE' | 'OBSERVADO';
-}
-
-export interface ExpedienteWorkflowItem {
-  id: number;
-  codigoExpediente: string;
-  tipoCaso?: string;
-  titulo: string;
-  sujetoEntidad: string;
-  etapaActual: number;
-  totalEtapas: number;
-  estadoGeneral: 'EN_SOLICITUD' | 'EN_EVALUACION' | 'APROBADO_CONFORME' | 'OBSERVADO_BLOQUEADO' | 'CERRADO_AUDITADO';
-  responsableActual: string;
-  fechaInicio: string;
-  fechaUltimoMovimiento: string;
-  cumplimientoPorc: number;
-  qrHash: string;
-  observaciones: string;
-}
-
-export interface EventoTrazabilidad {
-  fechaHora: string;
-  etapa: string;
-  accion: string;
-  responsable: string;
-  estadoResultante: string;
-  hashCriptografico?: string;
-}
-
-export type TipoWorkflowCaso =
-  | 'HOMOLOGACION_CONTRATISTA'
-  | 'PETAR_ALTO_RIESGO'
-  | 'ACREDITACION_PERSONAL'
-  | 'INVESTIGACION_ACCIDENTES'
-  | 'INSPECCIONES_SSOMA'
-  | 'VIGILANCIA_MEDICA';
+export type {
+  EtapaWorkflowCaso,
+  ExpedienteWorkflowItem,
+  EventoTrazabilidad,
+  TipoWorkflowCaso,
+  EstadoExpedienteWorkflow,
+  EstadoEtapaWorkflow
+};
 
 @Component({
   selector: 'msst-workflow-interactivo',
