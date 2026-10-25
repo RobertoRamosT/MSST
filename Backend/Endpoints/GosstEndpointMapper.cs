@@ -399,14 +399,28 @@ public static class GosstEndpointMapper
                 }
             }
             catch { }
-            await repo.RegistrarTransicionWorkflowAsync(req, ct);
-            return Results.Json(new UniversalGosstResponse
+            try
             {
-                CodeResponse = "05",
-                StatusCode = "01",
-                Operacion = "WORKFLOW_TRANSICION",
-                MensajeRespuesta = $"Transición a Etapa {req.Etapa} ({req.Estado}) registrada y persistida en SQL Server."
-            }, MsstJsonContext.Default.UniversalGosstResponse);
+                await repo.RegistrarTransicionWorkflowAsync(req, ct);
+                return Results.Json(new UniversalGosstResponse
+                {
+                    CodeResponse = "05",
+                    StatusCode = "01",
+                    Operacion = "WORKFLOW_TRANSICION",
+                    MensajeRespuesta = $"Transición a Etapa {req.Etapa} ({req.Estado}) registrada y persistida en SQL Server."
+                }, MsstJsonContext.Default.UniversalGosstResponse);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException sqlex)
+            {
+                ctx.Response.StatusCode = 422;
+                return Results.Json(new UniversalGosstResponse
+                {
+                    CodeResponse = "25",
+                    StatusCode = "00",
+                    Operacion = "WORKFLOW_TRANSICION",
+                    MensajeRespuesta = sqlex.Message
+                }, MsstJsonContext.Default.UniversalGosstResponse, statusCode: 422);
+            }
         });
 
         sst.MapPost("/workflow/trazabilidad", async (HttpContext ctx, SqlServerAotRepository repo, CancellationToken ct) =>

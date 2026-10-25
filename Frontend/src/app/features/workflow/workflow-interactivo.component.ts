@@ -695,7 +695,9 @@ export type {
             <div class="form-group" style="margin-bottom: 14px;">
               <label style="font-weight: 700; color: #1e293b; font-size: 12.5px;">Acción Técnica / Regulatoria a Ejecutar:</label>
               <select class="form-control" [(ngModel)]="tipoAccionModal" (ngModelChange)="mensajeErrorModal.set('')" style="border-radius: 6px; font-weight: 600;">
-                <option value="AVANZAR">Aprobar requisitos y avanzar a la Siguiente Etapa</option>
+                <option value="AVANZAR">
+                  {{ (expedienteEnAccion()?.etapaActual || 1) >= (expedienteEnAccion()?.totalEtapas || 4) ? 'Aprobar Etapa Final y Culminar Expediente (100% Conforme)' : 'Aprobar requisitos y avanzar a la Siguiente Etapa' }}
+                </option>
                 <option *ngIf="expedienteEnAccion()?.estadoGeneral === 'OBSERVADO_BLOQUEADO'" value="LEVANTAR_OBSERVACION">Subsanar no conformidad y reactivar trámite (Reanudar evaluación)</option>
                 <option value="OBSERVAR">Observar requisito y bloquear preventivamente (No Conforme)</option>
                 <option value="SUBIR_EVIDENCIA">Adjuntar documento o evidencia digital de sustento</option>
@@ -719,7 +721,7 @@ export type {
                 <label style="margin: 0; font-weight: 800; color: #1e293b; font-size: 12px; text-transform: uppercase;">
                   <i class="fa fa-list-check text-primary"></i> Verificación de Requisitos Obligatorios de la Etapa:
                 </label>
-                <span class="label" [ngClass]="resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo ? 'label-success' : 'label-warning'" style="font-size: 10.5px;">
+                <span class="label" [ngClass]="resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo ? 'label-success' : 'label-danger'" style="font-size: 10.5px;">
                   {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).marcados }} / {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).total }} Cumplidos ({{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).porc }}%)
                 </span>
               </div>
@@ -735,9 +737,9 @@ export type {
                 </label>
               </div>
 
-              <!-- Alerta si faltan requisitos -->
-              <div *ngIf="!resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo" class="alert alert-warning" style="margin: 10px 0 0; padding: 10px 12px; font-size: 11.5px; border-radius: 6px; border-left: 4px solid #d97706;">
-                <i class="fa fa-exclamation-triangle"></i> <strong>Requisitos pendientes:</strong> Faltan {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).total - resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).marcados }} prerrequisito(s) por verificar. Para avanzar formalmente de modo condicional, es obligatorio registrar el Dictamen Técnico de Excepción Regulatoria (mínimo 15 caracteres) en el campo inferior.
+              <!-- Alerta de Bloqueo Estricto si faltan requisitos (WF_REQUIREMENTS_PENDING) -->
+              <div *ngIf="!resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo" class="alert alert-danger" style="margin: 10px 0 0; padding: 10px 12px; font-size: 11.5px; border-radius: 6px; border-left: 4px solid #b91c1c; background: #fef2f2; color: #991b1b;">
+                <i class="fa fa-ban"></i> <strong>Avance Bloqueado (WF_REQUIREMENTS_PENDING):</strong> Faltan {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).total - resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).marcados }} requisito(s) obligatorios por verificar. Debe revisar y marcar la totalidad de los requisitos en el checklist superior para autorizar el avance reglamentario.
               </div>
             </div>
 
@@ -796,8 +798,13 @@ export type {
             <button class="btn btn-sm btn-default" (click)="modalAccionAbierto.set(false)" style="font-weight: 600;">
               Cancelar
             </button>
-            <button class="btn btn-sm btn-primary" (click)="confirmarAccionModal()" style="font-weight: 700;">
-              <i class="fa fa-check"></i> Confirmar y Persistir en SQL Server
+            <button
+              class="btn btn-sm btn-primary"
+              (click)="confirmarAccionModal()"
+              [disabled]="tipoAccionModal() === 'AVANZAR' && !resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo"
+              style="font-weight: 700;"
+            >
+              <i class="fa fa-check"></i> {{ tipoAccionModal() === 'AVANZAR' && (expedienteEnAccion()?.etapaActual || 1) >= (expedienteEnAccion()?.totalEtapas || 4) ? 'Aprobar Etapa Final y Culminar Trámite' : 'Confirmar y Persistir en SQL Server' }}
             </button>
           </div>
         </div>
@@ -1124,7 +1131,7 @@ export class WorkflowInteractivoComponent implements OnInit {
 
   resumenChecklistEtapa(etapa: EtapaWorkflowCaso | undefined, codigoExp?: string): { total: number; marcados: number; porc: number; completo: boolean } {
     if (!etapa || !etapa.requisitosObligatorios || etapa.requisitosObligatorios.length === 0) {
-      return { total: 0, marcados: 0, porc: 100, completo: true };
+      return { total: 0, marcados: 0, porc: 0, completo: false };
     }
     const exp = this.expedienteSeleccionado();
     const cod = codigoExp || exp?.codigoExpediente || 'DEFAULT';
@@ -1136,7 +1143,7 @@ export class WorkflowInteractivoComponent implements OnInit {
       }
     }
     const porc = Math.round((marcados / total) * 100);
-    return { total, marcados, porc, completo: marcados === total };
+    return { total, marcados, porc, completo: total > 0 && marcados === total };
   }
 
   bitacoraExpedienteActual(): EventoTrazabilidad[] {
@@ -1237,14 +1244,14 @@ export class WorkflowInteractivoComponent implements OnInit {
     const etapa = this.etapaDeExpediente(exp);
     this.mensajeErrorModal.set('');
 
-    // 1. Validaciones por Tipo de Acción
+    // 1. Validaciones estrictas por Tipo de Acción
     if (tipo === 'AVANZAR') {
       const checkSummary = this.resumenChecklistEtapa(etapa, exp.codigoExpediente);
       if (!checkSummary.completo) {
-        if (!this.observacionModal || this.observacionModal.trim().length < 15) {
-          this.mensajeErrorModal.set(`Existen ${checkSummary.total - checkSummary.marcados} requisito(s) pendientes de verificación. Para autorizar el pase formal condicional, es obligatorio registrar un Dictamen Técnico de Excepción Regulatoria (mínimo 15 caracteres) en el campo inferior.`);
-          return;
-        }
+        this.mensajeErrorModal.set(
+          `WF_REQUIREMENTS_PENDING: No se puede avanzar. Existen ${checkSummary.total - checkSummary.marcados} requisito(s) obligatorios pendientes de verificación. Complete y marque la totalidad de los requisitos en el checklist antes de proceder.`
+        );
+        return;
       }
     } else if (tipo === 'LEVANTAR_OBSERVACION') {
       if (!this.observacionModal || this.observacionModal.trim().length < 10) {
@@ -1256,6 +1263,11 @@ export class WorkflowInteractivoComponent implements OnInit {
         this.mensajeErrorModal.set('Es obligatorio ingresar la causal técnica y el requerimiento de subsanación de la observación (mínimo 10 caracteres).');
         return;
       }
+    } else if (tipo === 'SUBIR_EVIDENCIA') {
+      if (!this.archivoSeleccionadoNombre()) {
+        this.mensajeErrorModal.set('WF_EVIDENCE_FILE_REQUIRED: Es obligatorio seleccionar un archivo de evidencia digital (PDF, JPG, PNG) para adjuntar al expediente.');
+        return;
+      }
     }
 
     let nuevoEstado = exp.estadoGeneral;
@@ -1265,10 +1277,16 @@ export class WorkflowInteractivoComponent implements OnInit {
     const rolAprobador = etapa?.responsableRol || exp.rolAprobadorActual || 'AUDITOR_SSOMA_PRINCIPAL';
 
     if (tipo === 'AVANZAR') {
-      etapaDestino = Math.min(exp.totalEtapas, exp.etapaActual + 1);
-      nuevoEstado = etapaDestino === exp.totalEtapas ? 'APROBADO_CONFORME' : 'EN_EVALUACION';
-      const excNote = !this.resumenChecklistEtapa(etapa, exp.codigoExpediente).completo ? ' [Con Dictamen de Excepción]' : '';
-      accionDesc = `Aprobación y conformidad técnica de Etapa ${exp.etapaActual} por ${rolAprobador}${excNote}. Avance formal a Etapa ${etapaDestino}`;
+      if (exp.etapaActual < exp.totalEtapas) {
+        etapaDestino = exp.etapaActual + 1;
+        nuevoEstado = 'EN_EVALUACION';
+        accionDesc = `Aprobación y conformidad técnica de Etapa ${exp.etapaActual} por ${rolAprobador}. Avance formal a Etapa ${etapaDestino}`;
+      } else {
+        // En la última etapa con todos los requisitos verificados, se culmina y aprueba el expediente
+        etapaDestino = exp.totalEtapas;
+        nuevoEstado = 'APROBADO_CONFORME';
+        accionDesc = `Aprobación final y cierre de conformidad técnica de Etapa ${exp.etapaActual} por ${rolAprobador}. Expediente culminado con 100% de cumplimiento.`;
+      }
     } else if (tipo === 'LEVANTAR_OBSERVACION') {
       nuevoEstado = 'EN_EVALUACION';
       etapaDestino = exp.etapaActual;
@@ -1278,10 +1296,10 @@ export class WorkflowInteractivoComponent implements OnInit {
       const reqDetalle = this.requisitoObservadoSeleccionado ? ` (No conformidad en: ${this.requisitoObservadoSeleccionado})` : '';
       accionDesc = `Observación técnica y detención preventiva por ${rolAprobador}${reqDetalle}: ${this.observacionModal}`;
     } else if (tipo === 'SUBIR_EVIDENCIA') {
-      accionDesc = `Evidencia digital cargada por ${this.session.usuarioNombre()}: ${this.archivoSeleccionadoNombre() || 'Documento adjunto'}`;
+      accionDesc = `Evidencia digital cargada por ${this.session.usuarioNombre()}: ${this.archivoSeleccionadoNombre()}`;
     } else if (tipo === 'FIRMAR_DIGITAL') {
-      hashFirma = 'SHA256-SIG-' + Math.random().toString(16).substring(2, 8).toUpperCase();
-      accionDesc = `Firma digital y sellado criptográfico estampado por ${this.session.usuarioNombre()} en calidad de ${rolAprobador} (${hashFirma})`;
+      hashFirma = undefined; // El backend y SQL Server generarán el hash criptográfico SHA-256 auténtico
+      accionDesc = `Firma digital y sellado criptográfico estampado por ${this.session.usuarioNombre()} en calidad de ${rolAprobador}`;
     }
 
     // Recopilar requisitos validados para este expediente y persistirlos en SQL Server
@@ -1305,14 +1323,20 @@ export class WorkflowInteractivoComponent implements OnInit {
       requisitosValidados: JSON.stringify(clavesValidadas),
       rolAprobador
     }).subscribe({
-      next: () => {
+      next: (resp: any) => {
+        if (resp && resp.CodeResponse === '25') {
+          this.mensajeErrorModal.set(resp.MensajeRespuesta || 'Error de validación en el servidor.');
+          this.cargarExpedientesDesdeBackend();
+          return;
+        }
         this.modalAccionAbierto.set(false);
         this.cargarExpedientesDesdeBackend();
         this.cargarTrazabilidad(exp.codigoExpediente);
       },
       error: (err) => {
         console.error('Error al registrar transición:', err);
-        this.modalAccionAbierto.set(false);
+        const mensajeError = err?.error?.MensajeRespuesta || err?.error?.Message || err?.message || 'Error al procesar la transición en el servidor.';
+        this.mensajeErrorModal.set(mensajeError);
         this.cargarExpedientesDesdeBackend();
       }
     });
