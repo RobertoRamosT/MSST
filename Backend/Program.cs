@@ -79,7 +79,34 @@ if (!string.IsNullOrEmpty(frontendDistPath) && Directory.Exists(frontendDistPath
 {
     var fileProvider = new PhysicalFileProvider(frontendDistPath);
     app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = fileProvider });
-    app.UseStaticFiles(new StaticFileOptions { FileProvider = fileProvider });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = fileProvider,
+        OnPrepareResponse = ctx =>
+        {
+            var fileName = ctx.File.Name.ToLowerInvariant();
+            if (fileName.EndsWith(".html") || fileName.EndsWith(".htm"))
+            {
+                ctx.Context.Response.ContentType = "text/html; charset=utf-8";
+            }
+            else if (fileName.EndsWith(".js") || fileName.EndsWith(".mjs"))
+            {
+                ctx.Context.Response.ContentType = "application/javascript; charset=utf-8";
+            }
+            else if (fileName.EndsWith(".json"))
+            {
+                ctx.Context.Response.ContentType = "application/json; charset=utf-8";
+            }
+            else if (fileName.EndsWith(".css"))
+            {
+                ctx.Context.Response.ContentType = "text/css; charset=utf-8";
+            }
+            else if (fileName.EndsWith(".svg"))
+            {
+                ctx.Context.Response.ContentType = "image/svg+xml; charset=utf-8";
+            }
+        }
+    });
 
     app.MapFallback(async context =>
     {

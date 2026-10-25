@@ -1496,7 +1496,7 @@ function resultadoGuardarCalendario(data) {
             cargarScheduler();
             break;
         default:
-            alert("OcurriÃ³ un error al guardar evento!");
+            alert("Ocurrió un error al guardar evento!");
     }
 }
 
@@ -1518,7 +1518,7 @@ function resultadoDeleteScheduler(data) {
             cargarScheduler();
             break;
         default:
-            alert("OcurriÃ³ un error al guardar evento!");
+            alert("Ocurrió un error al guardar evento!");
     }
 }
 
