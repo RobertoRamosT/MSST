@@ -717,8 +717,14 @@ public sealed class WorkflowExpedienteDto
 
 public sealed class WorkflowGuardarExpedienteRequest
 {
+    [JsonPropertyName("codigoExpediente")]
+    public string? CodigoExpediente { get; set; }
+
     [JsonPropertyName("codigoCaso")]
     public string CodigoCaso { get; set; } = "HOMOLOGACION_CONTRATISTA";
+
+    [JsonPropertyName("tipoCaso")]
+    public string? TipoCaso { get; set; }
 
     [JsonPropertyName("idEmpresa")]
     public int IdEmpresa { get; set; } = 773;

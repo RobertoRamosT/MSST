@@ -254,13 +254,30 @@ export type {
 
             <!-- CHECKLIST INTERACTIVO DE PRERREQUISITOS OBLIGATORIOS -->
             <div style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                 <span style="font-size: 11.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.02em;">
                   <i class="fa fa-check-square-o text-primary"></i> Checklist y Validaciones Obligatorias de la Etapa:
                 </span>
-                <span class="label" [ngClass]="resumenChecklistEtapa(etapaSeleccionada()).completo ? 'label-success' : 'label-warning'" style="font-size: 11px;">
-                  {{ resumenChecklistEtapa(etapaSeleccionada()).marcados }} de {{ resumenChecklistEtapa(etapaSeleccionada()).total }} Requisitos Verificados ({{ resumenChecklistEtapa(etapaSeleccionada()).porc }}%)
-                </span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="label" [ngClass]="resumenChecklistEtapa(etapaSeleccionada()).completo ? 'label-success' : 'label-warning'" style="font-size: 11px;">
+                    {{ resumenChecklistEtapa(etapaSeleccionada()).marcados }} de {{ resumenChecklistEtapa(etapaSeleccionada()).total }} Requisitos Verificados ({{ resumenChecklistEtapa(etapaSeleccionada()).porc }}%)
+                  </span>
+                  <button
+                    *ngIf="expedienteSeleccionado()"
+                    class="btn btn-xs btn-success"
+                    (click)="guardarChecklistActual()"
+                    [disabled]="guardandoChecklist()"
+                    style="font-weight: 700; padding: 3px 8px; border-radius: 4px;"
+                    title="Guarda la verificación de requisitos actual en SQL Server sin cambiar de etapa"
+                  >
+                    <i class="fa" [ngClass]="guardandoChecklist() ? 'fa-spinner fa-spin' : 'fa-save'"></i> Guardar Verificación
+                  </button>
+                </div>
+              </div>
+
+              <!-- ALERTA SI VISUALIZA OTRA ETAPA DISTINTA A LA DEL EXPEDIENTE -->
+              <div *ngIf="expedienteSeleccionado() && etapaSeleccionada()?.paso !== expedienteSeleccionado()?.etapaActual" class="alert alert-info" style="margin: 8px 0 12px; padding: 8px 12px; font-size: 11.5px; border-radius: 6px;">
+                <i class="fa fa-info-circle"></i> Visualizando requisitos del <strong>Paso {{ etapaSeleccionada()?.paso }} ({{ etapaSeleccionada()?.titulo }})</strong>. El expediente activo <strong>#{{ expedienteSeleccionado()?.codigoExpediente }}</strong> se encuentra actualmente en el <strong>Paso {{ expedienteSeleccionado()?.etapaActual }} ({{ etapaDeExpediente(expedienteSeleccionado())?.titulo }})</strong>.
               </div>
 
               <div class="row" style="margin-top: 8px;">
@@ -417,6 +434,17 @@ export type {
 
                 <!-- COLUMNA ACCIONES SEGURA Y CONTEXTUAL (ELIMINA EL AVANCE CIEGO E IRRESPONSABLE) -->
                 <td style="text-align: right; white-space: nowrap; vertical-align: middle;" (click)="$event.stopPropagation()">
+                  <!-- Botón de Subsanar si está Observado -->
+                  <button
+                    *ngIf="exp.estadoGeneral === 'OBSERVADO_BLOQUEADO'"
+                    class="btn btn-xs btn-success"
+                    (click)="abrirModalAccionExpediente(exp, 'LEVANTAR_OBSERVACION')"
+                    title="Subsanar no conformidad técnica y reanudar trámite"
+                    style="font-weight: 700; margin-right: 3px;"
+                  >
+                    <i class="fa fa-wrench"></i> Subsanar
+                  </button>
+
                   <!-- Botón Principal: Gestionar Etapa y Requisitos -->
                   <button
                     class="btn btn-xs btn-primary"
@@ -583,10 +611,21 @@ export type {
               <label style="font-weight: 700; color: #1e293b; font-size: 12.5px;">Acción Técnica / Regulatoria a Ejecutar:</label>
               <select class="form-control" [(ngModel)]="tipoAccionModal" (ngModelChange)="mensajeErrorModal.set('')" style="border-radius: 6px; font-weight: 600;">
                 <option value="AVANZAR">Aprobar requisitos y avanzar a la Siguiente Etapa</option>
+                <option *ngIf="expedienteEnAccion()?.estadoGeneral === 'OBSERVADO_BLOQUEADO'" value="LEVANTAR_OBSERVACION">Subsanar no conformidad y reactivar trámite (Reanudar evaluación)</option>
                 <option value="OBSERVAR">Observar requisito y bloquear preventivamente (No Conforme)</option>
                 <option value="SUBIR_EVIDENCIA">Adjuntar documento o evidencia digital de sustento</option>
                 <option value="FIRMAR_DIGITAL">Estampar firma digital con sellado criptográfico SHA-256</option>
               </select>
+            </div>
+
+            <!-- FORMULARIO DE SUBSANACIÓN Y LEVANTAMIENTO DE OBSERVACIÓN -->
+            <div *ngIf="tipoAccionModal() === 'LEVANTAR_OBSERVACION'" style="margin-bottom: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px;">
+              <label style="margin: 0 0 6px; font-weight: 800; color: #166534; font-size: 12px; text-transform: uppercase;">
+                <i class="fa fa-wrench"></i> Subsanación Técnica y Levantamiento de Observación:
+              </label>
+              <div style="font-size: 11.5px; color: #15803d;">
+                El expediente reanudará su estado activo en <strong>EN_EVALUACION</strong> en el <strong>Paso {{ expedienteEnAccion()?.etapaActual }}</strong>. Ingrese a continuación el sustento documental o de campo de la corrección realizada.
+              </div>
             </div>
 
             <!-- CHECKLIST DE VALIDACIÓN PREVIA (SI LA ACCIÓN ES AVANZAR) -->
@@ -730,8 +769,9 @@ export class WorkflowInteractivoComponent implements OnInit {
 
   readonly modalAccionAbierto = signal<boolean>(false);
   readonly modalNuevoExpedienteAbierto = signal<boolean>(false);
-  readonly tipoAccionModal = signal<'AVANZAR' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'>('AVANZAR');
+  readonly tipoAccionModal = signal<'AVANZAR' | 'LEVANTAR_OBSERVACION' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'>('AVANZAR');
   readonly mensajeErrorModal = signal<string>('');
+  readonly guardandoChecklist = signal<boolean>(false);
   idExpedienteAccion = 1;
   observacionModal = '';
   requisitoObservadoSeleccionado = '';
@@ -997,12 +1037,12 @@ export class WorkflowInteractivoComponent implements OnInit {
     return !!this.checklistVerificado()[key];
   }
 
-  resumenChecklistEtapa(etapa: EtapaWorkflowCaso | undefined): { total: number; marcados: number; porc: number; completo: boolean } {
+  resumenChecklistEtapa(etapa: EtapaWorkflowCaso | undefined, codigoExp?: string): { total: number; marcados: number; porc: number; completo: boolean } {
     if (!etapa || !etapa.requisitosObligatorios || etapa.requisitosObligatorios.length === 0) {
       return { total: 0, marcados: 0, porc: 100, completo: true };
     }
     const exp = this.expedienteSeleccionado();
-    const cod = exp?.codigoExpediente || 'DEFAULT';
+    const cod = codigoExp || exp?.codigoExpediente || 'DEFAULT';
     let marcados = 0;
     const total = etapa.requisitosObligatorios.length;
     for (let i = 0; i < total; i++) {
@@ -1042,12 +1082,12 @@ export class WorkflowInteractivoComponent implements OnInit {
   /**
    * Abre el modal de transición seguro para un expediente específico de la tabla.
    */
-  abrirModalAccionExpediente(exp: ExpedienteWorkflowItem, tipo: 'AVANZAR' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'): void {
+  abrirModalAccionExpediente(exp: ExpedienteWorkflowItem, tipo: 'AVANZAR' | 'LEVANTAR_OBSERVACION' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'): void {
     this.seleccionarExpediente(exp);
     this.abrirModalAccion(tipo);
   }
 
-  abrirModalAccion(tipo: 'AVANZAR' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'): void {
+  abrirModalAccion(tipo: 'AVANZAR' | 'LEVANTAR_OBSERVACION' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'): void {
     this.tipoAccionModal.set(tipo);
     this.observacionModal = '';
     this.requisitoObservadoSeleccionado = '';
@@ -1067,6 +1107,43 @@ export class WorkflowInteractivoComponent implements OnInit {
     }
   }
 
+  guardarChecklistActual(): void {
+    const exp = this.expedienteSeleccionado();
+    if (!exp) return;
+
+    this.guardandoChecklist.set(true);
+    const codExp = exp.codigoExpediente;
+    const clavesValidadas: string[] = [];
+    for (const [k, v] of Object.entries(this.checklistVerificado())) {
+      if (v && k.startsWith(codExp)) {
+        clavesValidadas.push(k);
+      }
+    }
+
+    const etapa = this.etapaDeExpediente(exp);
+    const rolAprobador = etapa?.responsableRol || exp.rolAprobadorActual || 'AUDITOR_SSOMA_PRINCIPAL';
+
+    this.api.callAjaxPost('/workflow/transicion', {
+      codigo: exp.codigoExpediente,
+      tipo: exp.tipoCaso || this.casoActivo(),
+      etapa: exp.etapaActual,
+      estado: exp.estadoGeneral,
+      accion: `Actualización de verificación de requisitos por ${this.session.usuarioNombre()} (${clavesValidadas.length} marcados)`,
+      usuario: this.session.usuarioNombre(),
+      requisitosValidados: JSON.stringify(clavesValidadas),
+      rolAprobador
+    }).subscribe({
+      next: () => {
+        this.guardandoChecklist.set(false);
+        this.cargarExpedientesDesdeBackend();
+        this.cargarTrazabilidad(exp.codigoExpediente);
+      },
+      error: () => {
+        this.guardandoChecklist.set(false);
+      }
+    });
+  }
+
   confirmarAccionModal(): void {
     const exp = this.expedientes().find(e => e.id === Number(this.idExpedienteAccion));
     if (!exp) return;
@@ -1077,12 +1154,17 @@ export class WorkflowInteractivoComponent implements OnInit {
 
     // 1. Validaciones por Tipo de Acción
     if (tipo === 'AVANZAR') {
-      const checkSummary = this.resumenChecklistEtapa(etapa);
+      const checkSummary = this.resumenChecklistEtapa(etapa, exp.codigoExpediente);
       if (!checkSummary.completo) {
         if (!this.observacionModal || this.observacionModal.trim().length < 15) {
           this.mensajeErrorModal.set(`Existen ${checkSummary.total - checkSummary.marcados} requisito(s) pendientes de verificación. Para autorizar el pase formal condicional, es obligatorio registrar un Dictamen Técnico de Excepción Regulatoria (mínimo 15 caracteres) en el campo inferior.`);
           return;
         }
+      }
+    } else if (tipo === 'LEVANTAR_OBSERVACION') {
+      if (!this.observacionModal || this.observacionModal.trim().length < 10) {
+        this.mensajeErrorModal.set('Es obligatorio registrar el informe o sustento de subsanación técnica de la no conformidad (mínimo 10 caracteres).');
+        return;
       }
     } else if (tipo === 'OBSERVAR') {
       if (!this.observacionModal || this.observacionModal.trim().length < 10) {
@@ -1100,8 +1182,12 @@ export class WorkflowInteractivoComponent implements OnInit {
     if (tipo === 'AVANZAR') {
       etapaDestino = Math.min(exp.totalEtapas, exp.etapaActual + 1);
       nuevoEstado = etapaDestino === exp.totalEtapas ? 'APROBADO_CONFORME' : 'EN_EVALUACION';
-      const excNote = !this.resumenChecklistEtapa(etapa).completo ? ' [Con Dictamen de Excepción]' : '';
+      const excNote = !this.resumenChecklistEtapa(etapa, exp.codigoExpediente).completo ? ' [Con Dictamen de Excepción]' : '';
       accionDesc = `Aprobación y conformidad técnica de Etapa ${exp.etapaActual} por ${rolAprobador}${excNote}. Avance formal a Etapa ${etapaDestino}`;
+    } else if (tipo === 'LEVANTAR_OBSERVACION') {
+      nuevoEstado = 'EN_EVALUACION';
+      etapaDestino = exp.etapaActual;
+      accionDesc = `Subsanación técnica verificada y aprobada por ${rolAprobador}. Observación levantada y reanudación de evaluación en Etapa ${exp.etapaActual}: ${this.observacionModal}`;
     } else if (tipo === 'OBSERVAR') {
       nuevoEstado = 'OBSERVADO_BLOQUEADO';
       const reqDetalle = this.requisitoObservadoSeleccionado ? ` (No conformidad en: ${this.requisitoObservadoSeleccionado})` : '';

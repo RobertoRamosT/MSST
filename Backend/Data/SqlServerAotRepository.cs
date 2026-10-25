@@ -1320,8 +1320,9 @@ public sealed class SqlServerAotRepository
         {
             CommandType = CommandType.StoredProcedure
         };
-        cmd.Parameters.AddWithValue("@CodigoExpediente", DBNull.Value);
-        cmd.Parameters.AddWithValue("@CodigoCaso", req.CodigoCaso);
+        var tipoFinal = !string.IsNullOrEmpty(req.TipoCaso) ? req.TipoCaso : req.CodigoCaso;
+        cmd.Parameters.AddWithValue("@CodigoExpediente", (object?)req.CodigoExpediente ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@CodigoCaso", tipoFinal);
         cmd.Parameters.AddWithValue("@IdEmpresa", req.IdEmpresa);
         cmd.Parameters.AddWithValue("@Titulo", req.Titulo);
         cmd.Parameters.AddWithValue("@SujetoEntidad", req.SujetoEntidad);
@@ -1344,7 +1345,7 @@ public sealed class SqlServerAotRepository
         {
             Id = nuevoId,
             CodigoExpediente = nuevoCodigo,
-            TipoCaso = req.CodigoCaso,
+            TipoCaso = tipoFinal,
             Titulo = req.Titulo,
             SujetoEntidad = req.SujetoEntidad,
             EtapaActual = 1,
