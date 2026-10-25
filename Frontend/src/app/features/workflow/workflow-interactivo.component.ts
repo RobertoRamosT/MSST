@@ -26,6 +26,40 @@ export type {
   selector: 'msst-workflow-interactivo',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styles: [`
+    .kpi-metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 991px) {
+      .kpi-metric-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 520px) {
+      .kpi-metric-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+    .kpi-card-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      min-width: 0;
+    }
+    .kpi-card-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    }
+  `],
   template: `
     <div class="workflow-container" style="padding: 15px; font-family: Inter, Segoe UI, Arial, sans-serif; background: #f8fafc; min-height: 100vh;">
 
@@ -62,13 +96,13 @@ export type {
       </div>
 
       <!-- SELECTOR INTERACTIVO DE CASO / PROCESO (6 CASOS REGULATORIOS) -->
-      <div style="background: #fff; padding: 12px 16px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 16px; display: flex; gap: 8px; overflow-x: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+      <div style="background: #fff; padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px; display: flex; gap: 8px; overflow-x: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
         <button
           *ngFor="let c of catalogoCasos()"
           class="btn btn-sm"
           [ngClass]="casoActivo() === c.id ? 'btn-primary' : 'btn-default'"
           (click)="seleccionarCaso(c.id)"
-          style="display: flex; align-items: center; gap: 8px; white-space: nowrap; font-weight: 600; border-radius: 8px; padding: 8px 15px; transition: all 0.15s ease;"
+          style="display: flex; align-items: center; gap: 8px; white-space: nowrap; font-weight: 600; border-radius: 8px; padding: 7px 14px; transition: all 0.15s ease;"
         >
           <i class="fa" [ngClass]="c.icono"></i>
           <span>{{ c.nombre }}</span>
@@ -78,34 +112,85 @@ export type {
         </button>
       </div>
 
-      <!-- KPI RIBBON DEL CASO SELECCIONADO -->
-      <div class="row" style="margin-bottom: 16px;">
-        <div class="col-md-3 col-sm-6" style="margin-bottom: 10px;">
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #004B87; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.03);">
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Expedientes en Trámite</div>
-            <div style="font-size: 24px; font-weight: 800; color: #004B87; margin-top: 4px;">{{ resumenKpis().enProceso }}</div>
-            <div style="font-size: 11px; color: #94a3b8;">Evaluación de requisitos activa</div>
+      <!-- KPI RIBBON ULTRA-COMPACTO Y HORIZONTAL (ORGANIZACIÓN COMPACTA EN FILA ÚNICA) -->
+      <div class="kpi-metric-strip">
+        <!-- 1. Expedientes en Trámite -->
+        <div class="kpi-card-item" style="border-left: 4px solid #004B87;">
+          <div style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: #eff6ff; color: #004B87; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+              <i class="fa fa-folder-open-o"></i>
+            </div>
+            <div style="min-width: 0; line-height: 1.2;">
+              <div style="font-size: 11px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Expedientes en Trámite
+              </div>
+              <div style="font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Evaluación de requisitos activa
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #004B87; margin-left: 8px; flex-shrink: 0; line-height: 1;">
+            {{ resumenKpis().enProceso }}
           </div>
         </div>
-        <div class="col-md-3 col-sm-6" style="margin-bottom: 10px;">
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #16a34a; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.03);">
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Aprobados y Conformes</div>
-            <div style="font-size: 24px; font-weight: 800; color: #16a34a; margin-top: 4px;">{{ resumenKpis().aprobados }}</div>
-            <div style="font-size: 11px; color: #94a3b8;">Cumplimiento al 100% auditado</div>
+
+        <!-- 2. Aprobados y Conformes -->
+        <div class="kpi-card-item" style="border-left: 4px solid #16a34a;">
+          <div style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+              <i class="fa fa-check-circle-o"></i>
+            </div>
+            <div style="min-width: 0; line-height: 1.2;">
+              <div style="font-size: 11px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Aprobados y Conformes
+              </div>
+              <div style="font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Cumplimiento al 100% auditado
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #16a34a; margin-left: 8px; flex-shrink: 0; line-height: 1;">
+            {{ resumenKpis().aprobados }}
           </div>
         </div>
-        <div class="col-md-3 col-sm-6" style="margin-bottom: 10px;">
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #dc2626; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.03);">
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Observados / Bloqueados</div>
-            <div style="font-size: 24px; font-weight: 800; color: #dc2626; margin-top: 4px;">{{ resumenKpis().observados }}</div>
-            <div style="font-size: 11px; color: #94a3b8;">Requiere subsanación técnica</div>
+
+        <!-- 3. Observados / Bloqueados -->
+        <div class="kpi-card-item" style="border-left: 4px solid #dc2626;">
+          <div style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+              <i class="fa fa-exclamation-triangle"></i>
+            </div>
+            <div style="min-width: 0; line-height: 1.2;">
+              <div style="font-size: 11px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Observados / Bloqueados
+              </div>
+              <div style="font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Requiere subsanación técnica
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #dc2626; margin-left: 8px; flex-shrink: 0; line-height: 1;">
+            {{ resumenKpis().observados }}
           </div>
         </div>
-        <div class="col-md-3 col-sm-6" style="margin-bottom: 10px;">
-          <div style="background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.03);">
-            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Eficacia Operativa Global</div>
-            <div style="font-size: 24px; font-weight: 800; color: #d97706; margin-top: 4px;">{{ resumenKpis().eficaciaPorc }}%</div>
-            <div style="font-size: 11px; color: #94a3b8;">Tasa de cierre sin incidentes</div>
+
+        <!-- 4. Eficacia Operativa Global -->
+        <div class="kpi-card-item" style="border-left: 4px solid #d97706;">
+          <div style="display: flex; align-items: center; gap: 9px; min-width: 0;">
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: #fffbeb; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+              <i class="fa fa-tachometer"></i>
+            </div>
+            <div style="min-width: 0; line-height: 1.2;">
+              <div style="font-size: 11px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Eficacia Operativa Global
+              </div>
+              <div style="font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Tasa de cierre sin incidentes
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-left: 8px; flex-shrink: 0; line-height: 1;">
+            {{ resumenKpis().eficaciaPorc }}%
           </div>
         </div>
       </div>
