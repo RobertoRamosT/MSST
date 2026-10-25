@@ -1252,6 +1252,8 @@ public sealed class SqlServerAotRepository
                             Subtitulo = elem.GetProperty("Subtitulo").GetString() ?? string.Empty,
                             ResponsableRol = elem.GetProperty("ResponsableRol").GetString() ?? string.Empty,
                             NormaLegal = elem.GetProperty("NormaLegal").GetString() ?? string.Empty,
+                            CriterioAprobacion = elem.TryGetProperty("CriterioAprobacion", out var critProp) ? (critProp.GetString() ?? string.Empty) : string.Empty,
+                            PlazoHoras = elem.TryGetProperty("PlazoHoras", out var plazProp) ? plazProp.GetInt32() : 24,
                             RequisitosObligatorios = reqs
                         });
                     }
@@ -1293,11 +1295,13 @@ public sealed class SqlServerAotRepository
                 TotalEtapas = Convert.ToInt32(rdr["totalEtapas"]),
                 EstadoGeneral = rdr["estadoGeneral"].ToString() ?? "EN_SOLICITUD",
                 ResponsableActual = rdr["responsableActual"].ToString() ?? string.Empty,
+                RolAprobadorActual = rdr["rolAprobadorActual"].ToString() ?? string.Empty,
                 FechaInicio = rdr["fechaInicio"].ToString() ?? string.Empty,
                 FechaUltimoMovimiento = rdr["fechaUltimoMovimiento"].ToString() ?? string.Empty,
                 CumplimientoPorc = Convert.ToInt32(rdr["cumplimientoPorc"]),
                 QrHash = rdr["qrHash"].ToString() ?? string.Empty,
-                Observaciones = rdr["observaciones"].ToString() ?? string.Empty
+                Observaciones = rdr["observaciones"].ToString() ?? string.Empty,
+                RequisitosValidados = rdr["requisitosValidados"].ToString() ?? "[]"
             };
             resp.List.Add(item);
             resp.Expedientes.Add(item);
@@ -1347,11 +1351,13 @@ public sealed class SqlServerAotRepository
             TotalEtapas = 4,
             EstadoGeneral = "EN_SOLICITUD",
             ResponsableActual = req.Responsable,
+            RolAprobadorActual = "CONTRATISTA_SOLICITANTE",
             FechaInicio = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             FechaUltimoMovimiento = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             CumplimientoPorc = 25,
             QrHash = "QR-" + nuevoCodigo,
-            Observaciones = req.Observaciones ?? string.Empty
+            Observaciones = req.Observaciones ?? string.Empty,
+            RequisitosValidados = "[]"
         };
     }
 
@@ -1372,6 +1378,8 @@ public sealed class SqlServerAotRepository
         cmd.Parameters.AddWithValue("@UsuarioResponsable", req.Usuario);
         cmd.Parameters.AddWithValue("@HashFirmaDigital", (object?)req.HashFirma ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Comentarios", (object?)req.Comentarios ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@RequisitosValidadosJson", (object?)req.RequisitosValidados ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@RolAprobador", (object?)req.RolAprobador ?? DBNull.Value);
 
         await cmd.ExecuteNonQueryAsync(ct);
         return true;

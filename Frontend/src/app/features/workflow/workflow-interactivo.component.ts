@@ -178,8 +178,8 @@ export type {
               <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; line-height: 1.3;">
                 {{ etapa.titulo }}
               </div>
-              <div style="font-size: 10.5px; color: #64748b; margin-top: 3px;">
-                {{ etapa.responsableRol }}
+              <div style="font-size: 10.5px; color: #004B87; font-weight: 700; margin-top: 3px;">
+                <i class="fa fa-id-badge"></i> {{ etapa.responsableRol }}
               </div>
 
               <!-- Etiqueta de Estado de la Etapa -->
@@ -196,15 +196,23 @@ export type {
           <div *ngIf="etapaSeleccionada()" style="margin-top: 18px; padding: 18px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; border-left: 5px solid #004B87;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
               <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span class="label label-primary" style="font-size: 11px;">Paso {{ etapaSeleccionada()?.paso }}</span>
                   <h5 style="margin: 0; font-weight: 800; color: #004B87; font-size: 15px;">
                     {{ etapaSeleccionada()?.titulo }}
                   </h5>
+                  <span *ngIf="etapaSeleccionada()?.plazoHoras" class="label label-info" style="font-size: 10.5px; padding: 3px 8px;">
+                    <i class="fa fa-clock-o"></i> Plazo: {{ etapaSeleccionada()?.plazoHoras }}h
+                  </span>
                 </div>
                 <p style="margin: 6px 0 0; font-size: 12px; color: #475569;">
-                  {{ etapaSeleccionada()?.subtitulo }} &bull; <strong>Responsable Regulatorio:</strong> <code>{{ etapaSeleccionada()?.responsableRol }}</code> &bull; <strong>Base Legal:</strong> <code>{{ etapaSeleccionada()?.normaLegal }}</code>
+                  {{ etapaSeleccionada()?.subtitulo }}
                 </p>
+                <div style="margin-top: 8px; font-size: 11.5px; color: #334155; display: flex; flex-wrap: wrap; gap: 14px;">
+                  <span><strong><i class="fa fa-id-badge text-primary"></i> Rol Aprobador Exclusivo:</strong> <code style="color: #004B87; font-weight: 700; background: #e0f2fe;">{{ etapaSeleccionada()?.responsableRol }}</code></span>
+                  <span><strong><i class="fa fa-balance-scale text-primary"></i> Base Legal:</strong> <code>{{ etapaSeleccionada()?.normaLegal }}</code></span>
+                  <span *ngIf="etapaSeleccionada()?.criterioAprobacion"><strong><i class="fa fa-check-circle text-success"></i> Criterio de Aprobación:</strong> <span style="color: #047857; font-weight: 600;">{{ etapaSeleccionada()?.criterioAprobacion }}</span></span>
+                </div>
               </div>
 
               <!-- BOTONERA DE ACCIONES SEGURAS DE LA ETAPA -->
@@ -248,7 +256,7 @@ export type {
             <div style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 11.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.02em;">
-                  <i class="fa fa-check-square-o text-primary"></i> Checklist de Cumplimiento Regulatorio Obligatorio (Auditoría):
+                  <i class="fa fa-check-square-o text-primary"></i> Checklist y Validaciones Obligatorias de la Etapa:
                 </span>
                 <span class="label" [ngClass]="resumenChecklistEtapa(etapaSeleccionada()).completo ? 'label-success' : 'label-warning'" style="font-size: 11px;">
                   {{ resumenChecklistEtapa(etapaSeleccionada()).marcados }} de {{ resumenChecklistEtapa(etapaSeleccionada()).total }} Requisitos Verificados ({{ resumenChecklistEtapa(etapaSeleccionada()).porc }}%)
@@ -273,7 +281,7 @@ export type {
                       style="cursor: pointer; width: 16px; height: 16px;"
                       (click)="$event.stopPropagation(); alternarChecklist(expedienteSeleccionado()?.codigoExpediente || 'DEFAULT', etapaSeleccionada()?.paso || 1, rIdx)"
                     >
-                    <span style="font-size: 12px; font-weight: 600; color: #1e293b;" [style.textDecoration]="esChecklistMarcado(expedienteSeleccionado()?.codigoExpediente || 'DEFAULT', etapaSeleccionada()?.paso || 1, rIdx) ? 'none' : 'none'">
+                    <span style="font-size: 12px; font-weight: 600; color: #1e293b;">
                       {{ req }}
                     </span>
                   </div>
@@ -361,11 +369,14 @@ export type {
                   <span style="font-weight: 600; color: #334155;">{{ exp.sujetoEntidad }}</span>
                 </td>
 
-                <!-- Etapa Actual -->
+                <!-- Etapa Actual & Rol Aprobador -->
                 <td style="vertical-align: middle;">
                   <span class="label label-primary" style="font-size: 10px; padding: 4px 8px;">
                     Etapa {{ exp.etapaActual }} / {{ exp.totalEtapas }}
                   </span>
+                  <div style="font-size: 9.5px; color: #004B87; font-weight: 700; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;" [title]="exp.rolAprobadorActual || ''">
+                    <i class="fa fa-id-badge"></i> {{ exp.rolAprobadorActual || 'AUDITOR SSOMA' }}
+                  </div>
                 </td>
 
                 <!-- Barra de Progreso -->
@@ -532,20 +543,45 @@ export type {
 
           <div class="panel-body" style="padding: 22px;">
 
-            <!-- Resumen del Expediente en Gestión -->
-            <div style="background: #f1f5f9; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #004B87;">
-              <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">
-                {{ expedienteEnAccion()?.titulo }}
+            <!-- Resumen del Expediente y Rol Aprobador en Gestión -->
+            <div style="background: #f1f5f9; padding: 14px 16px; border-radius: 8px; margin-bottom: 14px; border-left: 4px solid #004B87;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">
+                    {{ expedienteEnAccion()?.titulo }}
+                  </div>
+                  <div style="font-size: 11.5px; color: #475569; margin-top: 3px;">
+                    <strong>Sujeto:</strong> {{ expedienteEnAccion()?.sujetoEntidad }} &bull; <strong>Etapa Actual:</strong> Paso {{ expedienteEnAccion()?.etapaActual }} de {{ expedienteEnAccion()?.totalEtapas }}
+                  </div>
+                </div>
+                <span class="label label-primary" style="font-size: 11px; padding: 4px 8px;">
+                  {{ expedienteEnAccion()?.codigoExpediente }}
+                </span>
               </div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 4px;">
-                <strong>Sujeto:</strong> {{ expedienteEnAccion()?.sujetoEntidad }} &bull; <strong>Etapa Actual:</strong> Paso {{ expedienteEnAccion()?.etapaActual }} de {{ expedienteEnAccion()?.totalEtapas }}
+
+              <!-- Ficha de Validación y Rol Aprobador Obligatorio -->
+              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
+                <div>
+                  <strong><i class="fa fa-id-badge text-primary"></i> Rol Aprobador Oficial:</strong>
+                  <code style="color: #004B87; font-weight: 700; background: #e0f2fe; padding: 2px 6px; border-radius: 4px;">{{ etapaDeExpediente(expedienteEnAccion())?.responsableRol }}</code>
+                  <span style="color: #64748b; margin-left: 8px;">(Base Legal: {{ etapaDeExpediente(expedienteEnAccion())?.normaLegal }})</span>
+                </div>
+                <div *ngIf="etapaDeExpediente(expedienteEnAccion())?.criterioAprobacion">
+                  <strong><i class="fa fa-check-circle text-success"></i> Criterio Técnico:</strong>
+                  <span style="color: #047857; font-weight: 600;">{{ etapaDeExpediente(expedienteEnAccion())?.criterioAprobacion }}</span>
+                </div>
               </div>
             </div>
 
+            <!-- ALERTA DE ERROR DE VALIDACIÓN -->
+            <div *ngIf="mensajeErrorModal()" class="alert alert-danger" style="margin-bottom: 14px; padding: 10px 14px; font-size: 12px; border-radius: 6px; border-left: 4px solid #b91c1c;">
+              <i class="fa fa-ban"></i> <strong>Validación Requerida:</strong> {{ mensajeErrorModal() }}
+            </div>
+
             <!-- Selector de Acción Requerida -->
-            <div class="form-group">
-              <label style="font-weight: 700; color: #1e293b; font-size: 12.5px;">Seleccione la Acción Técnica / Regulatoria a Ejecutar:</label>
-              <select class="form-control" [(ngModel)]="tipoAccionModal" style="border-radius: 6px; font-weight: 600;">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label style="font-weight: 700; color: #1e293b; font-size: 12.5px;">Acción Técnica / Regulatoria a Ejecutar:</label>
+              <select class="form-control" [(ngModel)]="tipoAccionModal" (ngModelChange)="mensajeErrorModal.set('')" style="border-radius: 6px; font-weight: 600;">
                 <option value="AVANZAR">Aprobar requisitos y avanzar a la Siguiente Etapa</option>
                 <option value="OBSERVAR">Observar requisito y bloquear preventivamente (No Conforme)</option>
                 <option value="SUBIR_EVIDENCIA">Adjuntar documento o evidencia digital de sustento</option>
@@ -554,13 +590,13 @@ export type {
             </div>
 
             <!-- CHECKLIST DE VALIDACIÓN PREVIA (SI LA ACCIÓN ES AVANZAR) -->
-            <div *ngIf="tipoAccionModal() === 'AVANZAR'" style="margin-bottom: 16px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
+            <div *ngIf="tipoAccionModal() === 'AVANZAR'" style="margin-bottom: 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label style="margin: 0; font-weight: 800; color: #1e293b; font-size: 12px; text-transform: uppercase;">
-                  <i class="fa fa-list-check text-primary"></i> Validación de Requisitos Obligatorios de la Etapa:
+                  <i class="fa fa-list-check text-primary"></i> Verificación de Requisitos Obligatorios de la Etapa:
                 </label>
                 <span class="label" [ngClass]="resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo ? 'label-success' : 'label-warning'" style="font-size: 10.5px;">
-                  {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).marcados }} / {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).total }} Cumplidos
+                  {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).marcados }} / {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).total }} Cumplidos ({{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).porc }}%)
                 </span>
               </div>
 
@@ -576,9 +612,30 @@ export type {
               </div>
 
               <!-- Alerta si faltan requisitos -->
-              <div *ngIf="!resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo" class="alert alert-warning" style="margin: 10px 0 0; padding: 8px 12px; font-size: 11.5px; border-radius: 6px;">
-                <i class="fa fa-exclamation-triangle"></i> <strong>Advertencia:</strong> Aún existen prerrequisitos sin marcar. Se requiere dictamen técnico que justifique el pase o condicionalidad.
+              <div *ngIf="!resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).completo" class="alert alert-warning" style="margin: 10px 0 0; padding: 10px 12px; font-size: 11.5px; border-radius: 6px; border-left: 4px solid #d97706;">
+                <i class="fa fa-exclamation-triangle"></i> <strong>Requisitos pendientes:</strong> Faltan {{ resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).total - resumenChecklistEtapa(etapaDeExpediente(expedienteEnAccion())).marcados }} prerrequisito(s) por verificar. Para avanzar formalmente de modo condicional, es obligatorio registrar el Dictamen Técnico de Excepción Regulatoria (mínimo 15 caracteres) en el campo inferior.
               </div>
+            </div>
+
+            <!-- SELECCIÓN DE REQUISITO OBSERVADO (SI LA ACCIÓN ES OBSERVAR) -->
+            <div *ngIf="tipoAccionModal() === 'OBSERVAR'" style="margin-bottom: 14px; background: #fff; border: 1px solid #fecaca; border-radius: 8px; padding: 14px;">
+              <label style="margin: 0 0 8px; font-weight: 800; color: #dc2626; font-size: 12px; text-transform: uppercase;">
+                <i class="fa fa-exclamation-triangle"></i> Seleccione el Requisito Incumplido u Observado:
+              </label>
+              <div *ngFor="let req of etapaDeExpediente(expedienteEnAccion())?.requisitosObligatorios; let rIdx = index" style="margin-bottom: 6px;">
+                <label style="font-weight: 500; font-size: 12px; color: #7f1d1d; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input
+                    type="radio"
+                    name="requisitoObservado"
+                    [value]="req"
+                    [(ngModel)]="requisitoObservadoSeleccionado"
+                  >
+                  <span>{{ req }}</span>
+                </label>
+              </div>
+              <small style="color: #991b1b; display: block; margin-top: 4px;">
+                El expediente pasará al estado <strong>OBSERVADO / BLOQUEADO</strong> y se notificará para subsanación.
+              </small>
             </div>
 
             <!-- Formulario dinámico según tipo de acción -->
@@ -674,8 +731,10 @@ export class WorkflowInteractivoComponent implements OnInit {
   readonly modalAccionAbierto = signal<boolean>(false);
   readonly modalNuevoExpedienteAbierto = signal<boolean>(false);
   readonly tipoAccionModal = signal<'AVANZAR' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'>('AVANZAR');
+  readonly mensajeErrorModal = signal<string>('');
   idExpedienteAccion = 1;
   observacionModal = '';
+  requisitoObservadoSeleccionado = '';
   archivoSeleccionadoNombre = signal<string>('');
 
   nuevoTitulo = '';
@@ -732,6 +791,8 @@ export class WorkflowInteractivoComponent implements OnInit {
                 subtitulo: et.subtitulo,
                 responsableRol: et.responsableRol,
                 normaLegal: et.normaLegal,
+                criterioAprobacion: et.criterioAprobacion || '',
+                plazoHoras: et.plazoHoras || 24,
                 requisitosObligatorios: et.requisitosObligatorios || [],
                 estado: 'PENDIENTE'
               }));
@@ -751,6 +812,23 @@ export class WorkflowInteractivoComponent implements OnInit {
         const list = res?.['list'] || res?.['expedientes'];
         if (Array.isArray(list)) {
           this.expedientes.set(list);
+
+          // Cargar y persistir requisitos previamente validados en el checklist reactivo
+          const nuevoChecklist = { ...this.checklistVerificado() };
+          for (const item of list) {
+            if (item.requisitosValidados) {
+              try {
+                const arr = typeof item.requisitosValidados === 'string' ? JSON.parse(item.requisitosValidados) : item.requisitosValidados;
+                if (Array.isArray(arr)) {
+                  for (const key of arr) {
+                    nuevoChecklist[key] = true;
+                  }
+                }
+              } catch {}
+            }
+          }
+          this.checklistVerificado.set(nuevoChecklist);
+
           const act = this.expedienteSeleccionado();
           if (act) {
             const encontrado = list.find(e => e.codigoExpediente === act.codigoExpediente);
@@ -972,6 +1050,8 @@ export class WorkflowInteractivoComponent implements OnInit {
   abrirModalAccion(tipo: 'AVANZAR' | 'OBSERVAR' | 'SUBIR_EVIDENCIA' | 'FIRMAR_DIGITAL'): void {
     this.tipoAccionModal.set(tipo);
     this.observacionModal = '';
+    this.requisitoObservadoSeleccionado = '';
+    this.mensajeErrorModal.set('');
     this.archivoSeleccionadoNombre.set('');
     const exp = this.expedienteSeleccionado();
     if (exp) {
@@ -992,23 +1072,54 @@ export class WorkflowInteractivoComponent implements OnInit {
     if (!exp) return;
 
     const tipo = this.tipoAccionModal();
+    const etapa = this.etapaDeExpediente(exp);
+    this.mensajeErrorModal.set('');
+
+    // 1. Validaciones por Tipo de Acción
+    if (tipo === 'AVANZAR') {
+      const checkSummary = this.resumenChecklistEtapa(etapa);
+      if (!checkSummary.completo) {
+        if (!this.observacionModal || this.observacionModal.trim().length < 15) {
+          this.mensajeErrorModal.set(`Existen ${checkSummary.total - checkSummary.marcados} requisito(s) pendientes de verificación. Para autorizar el pase formal condicional, es obligatorio registrar un Dictamen Técnico de Excepción Regulatoria (mínimo 15 caracteres) en el campo inferior.`);
+          return;
+        }
+      }
+    } else if (tipo === 'OBSERVAR') {
+      if (!this.observacionModal || this.observacionModal.trim().length < 10) {
+        this.mensajeErrorModal.set('Es obligatorio ingresar la causal técnica y el requerimiento de subsanación de la observación (mínimo 10 caracteres).');
+        return;
+      }
+    }
+
     let nuevoEstado = exp.estadoGeneral;
     let accionDesc = '';
     let hashFirma: string | undefined = undefined;
     let etapaDestino = exp.etapaActual;
+    const rolAprobador = etapa?.responsableRol || exp.rolAprobadorActual || 'AUDITOR_SSOMA_PRINCIPAL';
 
     if (tipo === 'AVANZAR') {
       etapaDestino = Math.min(exp.totalEtapas, exp.etapaActual + 1);
       nuevoEstado = etapaDestino === exp.totalEtapas ? 'APROBADO_CONFORME' : 'EN_EVALUACION';
-      accionDesc = `Aprobación técnica de Etapa ${exp.etapaActual} y avance formal a Etapa ${etapaDestino}`;
+      const excNote = !this.resumenChecklistEtapa(etapa).completo ? ' [Con Dictamen de Excepción]' : '';
+      accionDesc = `Aprobación y conformidad técnica de Etapa ${exp.etapaActual} por ${rolAprobador}${excNote}. Avance formal a Etapa ${etapaDestino}`;
     } else if (tipo === 'OBSERVAR') {
       nuevoEstado = 'OBSERVADO_BLOQUEADO';
-      accionDesc = `Observación técnica registrada: ${this.observacionModal || 'Requiere subsanación documental y levantamiento de observaciones'}`;
+      const reqDetalle = this.requisitoObservadoSeleccionado ? ` (No conformidad en: ${this.requisitoObservadoSeleccionado})` : '';
+      accionDesc = `Observación técnica y detención preventiva por ${rolAprobador}${reqDetalle}: ${this.observacionModal}`;
     } else if (tipo === 'SUBIR_EVIDENCIA') {
-      accionDesc = `Evidencia digital cargada: ${this.archivoSeleccionadoNombre() || 'Documento adjunto'}`;
+      accionDesc = `Evidencia digital cargada por ${this.session.usuarioNombre()}: ${this.archivoSeleccionadoNombre() || 'Documento adjunto'}`;
     } else if (tipo === 'FIRMAR_DIGITAL') {
       hashFirma = 'SHA256-SIG-' + Math.random().toString(16).substring(2, 8).toUpperCase();
-      accionDesc = `Firma digital estampada por ${this.session.usuarioNombre()} (${hashFirma})`;
+      accionDesc = `Firma digital y sellado criptográfico estampado por ${this.session.usuarioNombre()} en calidad de ${rolAprobador} (${hashFirma})`;
+    }
+
+    // Recopilar requisitos validados para este expediente y persistirlos en SQL Server
+    const codExp = exp.codigoExpediente;
+    const clavesValidadas: string[] = [];
+    for (const [k, v] of Object.entries(this.checklistVerificado())) {
+      if (v && k.startsWith(codExp)) {
+        clavesValidadas.push(k);
+      }
     }
 
     this.api.callAjaxPost('/workflow/transicion', {
@@ -1019,14 +1130,17 @@ export class WorkflowInteractivoComponent implements OnInit {
       accion: accionDesc,
       usuario: this.session.usuarioNombre(),
       hashFirma,
-      comentarios: this.observacionModal || undefined
+      comentarios: this.observacionModal || undefined,
+      requisitosValidados: JSON.stringify(clavesValidadas),
+      rolAprobador
     }).subscribe({
       next: () => {
         this.modalAccionAbierto.set(false);
         this.cargarExpedientesDesdeBackend();
         this.cargarTrazabilidad(exp.codigoExpediente);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error al registrar transición:', err);
         this.modalAccionAbierto.set(false);
         this.cargarExpedientesDesdeBackend();
       }

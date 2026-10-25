@@ -627,6 +627,12 @@ public sealed class WorkflowEtapaDto
     [JsonPropertyName("normaLegal")]
     public string NormaLegal { get; set; } = string.Empty;
 
+    [JsonPropertyName("criterioAprobacion")]
+    public string CriterioAprobacion { get; set; } = string.Empty;
+
+    [JsonPropertyName("plazoHoras")]
+    public int PlazoHoras { get; set; } = 24;
+
     [JsonPropertyName("requisitosObligatorios")]
     public List<string> RequisitosObligatorios { get; set; } = new();
 }
@@ -687,6 +693,9 @@ public sealed class WorkflowExpedienteDto
     [JsonPropertyName("responsableActual")]
     public string ResponsableActual { get; set; } = string.Empty;
 
+    [JsonPropertyName("rolAprobadorActual")]
+    public string RolAprobadorActual { get; set; } = string.Empty;
+
     [JsonPropertyName("fechaInicio")]
     public string FechaInicio { get; set; } = string.Empty;
 
@@ -701,6 +710,9 @@ public sealed class WorkflowExpedienteDto
 
     [JsonPropertyName("observaciones")]
     public string Observaciones { get; set; } = string.Empty;
+
+    [JsonPropertyName("requisitosValidados")]
+    public string RequisitosValidados { get; set; } = "[]";
 }
 
 public sealed class WorkflowGuardarExpedienteRequest
@@ -749,6 +761,12 @@ public sealed class WorkflowTransicionRequest
 
     [JsonPropertyName("comentarios")]
     public string? Comentarios { get; set; }
+
+    [JsonPropertyName("requisitosValidados")]
+    public string? RequisitosValidados { get; set; }
+
+    [JsonPropertyName("rolAprobador")]
+    public string? RolAprobador { get; set; }
 }
 
 public sealed class WorkflowTrazabilidadDto

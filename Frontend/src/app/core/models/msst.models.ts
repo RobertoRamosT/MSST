@@ -36,6 +36,8 @@ export interface EtapaWorkflowCaso {
   subtitulo: string;
   responsableRol: string;
   normaLegal: string;
+  criterioAprobacion?: string;
+  plazoHoras?: number;
   requisitosObligatorios: string[];
   estado: EstadoEtapaWorkflow;
 }
@@ -50,11 +52,13 @@ export interface ExpedienteWorkflowItem {
   totalEtapas: number;
   estadoGeneral: EstadoExpedienteWorkflow;
   responsableActual: string;
+  rolAprobadorActual?: string;
   fechaInicio: string;
   fechaUltimoMovimiento: string;
   cumplimientoPorc: number;
   qrHash: string;
   observaciones: string;
+  requisitosValidados?: string;
 }
 
 export interface EventoTrazabilidad {
