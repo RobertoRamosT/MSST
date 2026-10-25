@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Requisitos Legales</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans'
+	rel='stylesheet' type='text/css'>
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon'
+	type='image/x-icon'>
+<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href="../css/estilosIndicadores.css" rel="stylesheet">
+<link href="../css/estiloAutocomplete.css" rel="stylesheet">
+<link href="../css/chosen.css" rel="stylesheet">
+</head>
+<body>
+	<div class="cargaPagina">
+		<img src="../imagenes/logo3.png" style="width: 200px; height: 210px">
+		<div id="barraCarga">
+			<div class="progress-label">Loading...</div>
+		</div>
+		<br>
+		<div id="mensajeGosst"> 
+		</div>
+	</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+	<ul class="nav nav-tabs" role="tablist" style="width: 600px">
+		<li id="liAbogado" role="presentation" onclick="javascript:cargarNormaLegal()"><a
+			href="#tabNormaLegal" aria-controls="home" role="tab"
+			data-toggle="tab">Norma Legal</a></li>
+		<li id="liUsuario" role="presentation" onclick="javascript:cargarNormaLegalEmpresa()"><a
+			href="#tabNormaLegalEmpresa" aria-controls="home" role="tab"
+			data-toggle="tab">Norma Legal de la empresa </a></li>
+	</ul>
+	<div class="tab-content">
+		<div role="tabpanel" id="tabNormaLegal" class="tab-pane">
+			<h2>Norma Legal</h2>
+			<div class="container-fluid" id="divContainNormaLegal">
+				<div style="height: 5px;"></div>
+				<button id="btnCancelarNormaLegal" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<button id="btnNuevoNormaLegal" type="button"
+					class="btn btn-success" title="Nuevo">
+					<i class="fa fa-file-o fa-2x"></i>
+				</button>
+				<button id="btnGuardarNormaLegal" type="button"
+					class="btn btn-success" title="Guardar">
+					<i class="fa fa-floppy-o fa-2x"></i>
+				</button>
+				<button id="btnEliminarNormaLegal" type="button"
+					class="btn btn-danger" title="Eliminar">
+					<i class="fa fa-times fa-2x"></i>
+				</button>
+				<button id="btnImportarNormaLegal" type="button"
+					class="btn btn-success" title="Importar Norma Legal">
+					<i class="fa fa-upload fa-2x"></i>
+				</button> 
+				<button id="btnImportarAlcance" type="button"
+					class="btn btn-success" title="Importar Alcance para la Norma Legal" style="padding: 6px 6px 6px 6px;">
+					 <i class="fa fa-upload fa-2x"></i> Importar Alcance
+				</button>
+				<div class="wrapper" id="wrapNormaLegal" > <!-- para mantener el encabezado congelado -->
+				<!--  <div class="table-responsive">-->
+					<table class="table table-striped table-bordered table-hover table-fixed"
+						id="tblNormaLegal" style="width: 100%;">
+						<thead>
+							<tr>
+								<th class="tb-acc" style="width: 55px;" id='ordenId' >N°</th>
+								<th class="tb-acc" style="width: 180px;" >Codigo</th>
+								<th class="tb-acc" style="width: 250px;" >Titulo</th>
+								<th class="tb-acc" style="width: 200px;" id='ordenRango'> Rango de Ley</th>
+								<th class="tb-acc" style="width: 200px;" id='ordenEntidad'>Entidad Emisora</th>
+								<th class="tb-acc" style="width: 200px;">Tipo</th>
+								<th class="tb-acc" style="width: 250px;">Tema General</th>
+								<th class="tb-acc" style="width: 200px;">Tema Especifico</th>
+								<th class="tb-acc" style="width: 180px;" id='ordenFecha'>Fecha de Publicación</th>
+								<th class="tb-acc" style="width: 130px;">Plazo de Implantación</th>
+								<th class="tb-acc" style="width: 180px;">Fecha de Vigencia Efectiva</th>
+								<th class="tb-acc" style="width: 180px;">Sumilla</th>
+								<th class="tb-acc" style="width: 380px;">Alcance</th>
+								<th class="tb-acc" style="width: 150px;">Detalle de Articulos</th>
+								<th class="tb-acc" style="width: 220px;">Evidencia</th>
+								<th class="tb-acc" style="width: 180px;">Estado</th>
+								<th class="tb-acc" style="width: 180px;">¿Vigente?</th>
+							</tr>
+						</thead>
+						<tbody>
+
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="modal fade bs-example-modal-lg" id="mdImportNormaLegal"
+				tabindex="-1" role="dialog" aria-labelledby="mdImpDatosLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-lg" style="width: 60%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title" id="mdImpDatosLabel">Importar Norma Legal</h4>
+						</div>
+						<div class="modal-body">
+							<form>
+								<div class="form-group">
+									<button id="btnGuardarNuevasNormas" type="button"
+										class="btn btn-success" title="Guardar" data-dismiss='modal'>
+										<i class="fa fa-floppy-o fa-2x"></i>
+									</button><br><br>
+									<label for="message-text" class="control-label">
+										Copie aqu&iacute; desde un excel segun el formato: 
+									</label>
+									<textarea class="form-control" rows="10"
+										id="txtListadoNormas" style="font-size: 11px;"
+										maxlength="1000000"
+										placeholder="Codigo  -  Titulo  -  Rango de Ley  -  Entidad Emisora  -  Tema General  -  Tema Especifico  -  Fecha Publicacion  -  Plazo  -  Sumilla  -  @"></textarea>
+								</div>
+							</form>
+						</div>
+						<div class='modal-footer'></div>
+					</div>
+				</div>
+			</div>
+			<div class="modal fade bs-example-modal-lg" id="mdImportAlcanceNorma"
+				tabindex="-1" role="dialog" aria-labelledby="mdImpDatosLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-lg" style="width: 60%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title" id="mdImpDatosLabel">Importar
+								Alcance de la Norma Legal</h4>
+						</div>
+						<div class="modal-body">
+							<form>
+								<div class="form-group">
+									<button id="btnGuardarNuevosAlcances" type="button"
+										class="btn btn-success" title="Guardar" data-dismiss='modal'>
+										<i class="fa fa-floppy-o fa-2x"></i>
+									</button><br><br>
+									<label for="message-text" class="control-label">
+										Copie aqu&iacute; desde un excel segun el formato: 
+									</label>
+									<textarea class="form-control" rows="10"
+										id="txtListadoAlcance" style="font-size: 11px;"
+										maxlength="1000000"
+										placeholder=" DESCRIPCIÓN DE CATEGORIA 3"></textarea>
+								</div>
+							</form>
+						</div>
+						<div class='modal-footer'></div>
+					</div>
+				</div>
+			</div>
+			<div class="container-fluid" id="divContainArticulos">
+				<div style="height: 5px;"></div>
+				<button id="btnCancelarArticulos" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<button id="btnNuevoArticulos" type="button" class="btn btn-success"
+					title="Nuevo">
+					<i class="fa fa-file-o fa-2x"></i>
+				</button>
+
+				<button id="btnGuardarArticulos" type="button"
+					class="btn btn-success" title="Guardar">
+					<i class="fa fa-floppy-o fa-2x"></i>
+				</button>
+				<button id="btnEliminarArticulos" type="button"
+					class="btn btn-danger" title="Eliminar">
+					<i class="fa fa-times fa-2x"></i>
+				</button>
+				<button id="btnimportarArticulos" type="button"
+					class="btn btn-success" title="Eliminar">
+					<i class="fa fa-upload fa-2x"></i>
+				</button>
+				<div class="wrapper" id="wrapArticulos">
+					<table class="table table-striped table-bordered table-hover table-fixed"
+						id="tblArticulos">
+						<thead>
+							<tr>
+								<th class="tb-acc" style="width: 150px;">Tipo de Articulo</th>
+								<th class="tb-acc" style="width: 200px;">Titulo</th>
+								<th class="tb-acc" style="width: 500px;">Descripcion</th>
+								<th class="tb-acc" style="width: 200px;">Comentario</th>
+								<th class="tb-acc" style="width: 150px;">Fecha de Registro</th>
+								<th class="tb-acc" style="width: 240px;">Evidencia</th>
+								<th class="tb-acc" style="width: 150px;">Modifica Artículo
+									de Norma Legal</th>
+								<th class="tb-acc" style="width: 150px;">Deroga
+									Articulo(s)de otra Norma Legal</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="modal fade bs-example-modal-lg" id="mdImportArticulos"
+				tabindex="-1" role="dialog" aria-labelledby="mdImpDatosLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-lg" style="width: 60%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title" id="mdImpDatosLabel">Importar
+								Articulos</h4>
+						</div>
+						<div class="modal-body">
+							<form>
+								<div class="form-group">
+									<button id="btnGuardarNuevosArticulos" type="button"
+										class="btn btn-success" title="Guardar" >
+										<i class="fa fa-floppy-o fa-2x"></i>
+									</button><br><br>
+									<label for="message-text" class="control-label">
+										Copie aquí desde un excel segun el formato: 
+									</label>
+									<textarea class="form-control" rows="10"
+										id="txtListadoArticulos" style="font-size: 11px;"
+										maxlength="1000000"
+										placeholder="Titulo del Articulo  -  Descripcion   -  Tipo de Articulo  - Comentario   -    @"></textarea>
+								</div>
+							</form>
+						</div>
+						<div class='modal-footer'></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid" id="divContainModArticuloNorma">
+				<div style="height: 5px;"></div>
+				<button id="btnCancelarModArticuloNorma" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<button id="btnNuevoModArticuloNorma" type="button"
+					class="btn btn-success" title="Nuevo">
+					<i class="fa fa-file-o fa-2x"></i>
+				</button>
+
+				<button id="btnGuardarModArticuloNorma" type="button"
+					class="btn btn-success" title="Guardar">
+					<i class="fa fa-floppy-o fa-2x"></i>
+				</button>
+				<button id="btnEliminarModArticuloNorma" type="button"
+					class="btn btn-danger" title="Eliminar">
+					<i class="fa fa-times fa-2x"></i>
+				</button>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover"
+						id="tblModArticuloNorma">
+						<thead>
+							<tr>
+								<th class="tb-acc">Norma Legal</th>
+								<th class="tb-acc">Articulo Modificado</th>
+								<th class="tb-acc">Fecha de Registro</th>
+								<th class="tb-acc">Texto Final</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="container-fluid" id="divContainDerogaArticuloNorma">
+				<div style="height: 5px;"></div>
+				<button id="btnCancelarDerogaArticuloNorma" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<button id="btnNuevoDerogaArticuloNorma" type="button"
+					class="btn btn-success" title="Nuevo">
+					<i class="fa fa-file-o fa-2x"></i>
+				</button>
+
+				<button id="btnGuardarDerogaArticuloNorma" type="button"
+					class="btn btn-success" title="Guardar">
+					<i class="fa fa-floppy-o fa-2x"></i>
+				</button> 
+				<button id="btnEliminarDerogaArticuloNorma" type="button"
+					class="btn btn-danger" title="Eliminar">
+					<i class="fa fa-times fa-2x"></i>
+				</button>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover"
+						id="tblDerogaArticuloNorma">
+						<thead>
+							<tr>
+								<th class="tb-acc">Norma Legal</th>
+								<th class="tb-acc">Articulo Derrogado</th>
+								<th class="tb-acc">Tipo de Derogación</th>
+								<th class="tb-acc">Fecha de Registro</th>
+								<th class="tb-acc">Texto Final(Solo Disponible cuando se
+									deroga parcialmente)</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div role="tabpanel" id="tabNormaLegalEmpresa" class="tab-pane">
+			<h2>Norma Legal de la Empresa</h2>
+			<div class="container-fluid" id="divContainNormaLegalEmpresa">
+				<div class="row" id="filtroPalabraClaveArticulos" style="width: 600px;float: right;">
+				</div>
+				<div style="height: 5px;"></div>
+				<button id="btnCancelarNormaLegalEmpresa" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<button id="btnExportarExcel" type="button"
+					class="btn btn-success" title="Exportar ">
+					 <i class="fa fa-file-excel-o fa-2x"></i>
+				</button>
+				<button id="btnOtrasNormas" type="button"
+					class="btn btn-success" title="Ver todas las normas legales ">
+					 <i class="fa fa-book fa-2x"></i> 
+				</button>
+				<button id="btnIndicadoresRequisitos" type="button"
+					class="btn btn-success" title="Ver Indicadores de Requisitos Legales">
+					<i class="fa fa-bar-chart fa-2x"></i>
+				</button>
+				<div class="wrapper" id="wrapNormaLegalEmpresa"  > <!-- para mantener el encabezado congelado (no se le asinga height acá!)-->
+			<!--	<div class="table-responsive" style="height: 700px">-->
+					<table class="table table-striped table-bordered table-hover fixed table-fixed"
+						id="tblNormaLegalEmpresa" style="min-width: 2300px; width: 100%;">
+						<thead >
+							<tr>
+								<th class="tb-acc" style="width: 100px;">Programar Revisión</th>
+								<th class="tb-acc"  id='ordenRangoEmp'>Rango de Ley</th>
+								<th class="tb-acc">Codigo Norma Legal Aplicable</th>
+								<th class="tb-acc" id='ordenIdEmp' style="width: 300px;" >Titulo de la Norma</th>
+								<th class="tb-acc">Estado de la Norma</th>
+								<th class="tb-acc"  id='ordenEntidadEmp'>Emitido Por</th>
+								<th class="tb-acc" style="width: 200px;">Tipo</th>
+								<th class="tb-acc" style="width: 170px;"  id='ordenFechaEmp'>Fecha Promulgación</th>
+								<th class="tb-acc" style="width: 110px;">Plazo de
+									Implementacion</th>
+								<th class="tb-acc" style="width: 100px;">Cant. Articulos
+									Totales</th>
+								<th class="tb-acc" style="width: 100px;">Cant. Articulos
+									Vigentes</th>
+								<th class="tb-acc" style="width: 100px;">Cant. Articulos
+									Derrogados</th>
+								<th class="tb-acc" style="width: 100px;">Q. Articulos
+									Informativos</th>
+								<th class="tb-acc" style="width: 100px;">Q. Articulos
+									Aplicables</th>
+								<th class="tb-acc">Archivo Descargable</th>
+								<th class="tb-acc">Asignado Por</th>
+							</tr>
+						</thead>
+						<tbody>
+
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="modal fade" id="modalArticulosEncontrados" role="dialog">
+				<div class="modal-dialog modal-lg" style="width: 80%; top: 10%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">Articulos Encontrados</h4>
+						</div>
+						<div class="modal-body">
+							<div class="table-responsive">
+								<table class="table table-striped table-bordered table-hover"
+									id="tblArtEncontrados">
+									<thead>
+										<tr> 
+											<th class="tb-acc" style="width: 30px;" >Id</th>
+											<th class="tb-acc" style="width: 150px;" >Titulo</th>
+											<th class="tb-acc" style="width: 180px;" >Descripcion</th>
+											<th class="tb-acc" style="width: 150px;" >Evidencia</th> 
+										</tr>
+									</thead>
+									<tbody>
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div class='modal-footer'>
+							<button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+						</div>
+					</div>
+				</div>
+			</div> 
+			<div class="container-fluid" id="divContainNormaLegalOtras">
+				<div style="height: 5px;"></div> 
+				<div class="row" id="filtroPorNormalLegal" style="width: 700px;position: absolute;left: 830px;top:140px">
+				</div>
+				<button id="btnCancelarNormaLegalOtras" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover"
+						id="tblNormaLegalOtras">
+						<thead>
+							<tr>
+								<th class="tb-acc" style="width: 55px;">N°</th>
+								<th class="tb-acc" style="width: 180px;" >Codigo</th>
+								<th class="tb-acc" style="width: 250px;" >Titulo</th>
+								<th class="tb-acc" style="width: 200px;"> Rango de Ley</th>
+								<th class="tb-acc" style="width: 200px;">Entidad Emisora</th> 
+								<th class="tb-acc" style="width: 200px;">Tipo</th>
+								<th class="tb-acc" style="width: 180px;">Fecha de Publicación</th> 
+								<th class="tb-acc" style="width: 150px;">Detalle de Articulos</th>
+								<th class="tb-acc" style="width: 220px;">Evidencia</th>  
+								<th class="tb-acc" style="width: 220px;">Estado de Evaluación</th> 
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="container-fluid" id="divContainNormaLegalRevision">
+				<div style="height: 5px;"></div>
+				<button id="btnCancelarNormaLegalRevision" type="button"
+					class="btn btn-success" title="Cancelar">
+					<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+				</button>
+				<button id="btnNuevoNormaLegalRevision" type="button"
+					class="btn btn-success" title="Nuevo">
+					<i class="fa fa-file-o fa-2x"></i>
+				</button>
+				<button id="btnGuardarNormaLegalRevision" type="button"
+					class="btn btn-success" title="Guardar">
+					<i class="fa fa-floppy-o fa-2x"></i>
+				</button>
+				<button id="btnEliminarNormaLegalRevision" type="button"
+					class="btn btn-danger" title="Eliminar">
+					<i class="fa fa-times fa-2x"></i>
+				</button>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover table-fixed"
+						id="tblNormaLegalRevision">
+						<thead>
+							<tr>
+								<th class="tb-acc" style="width : 190px">Fecha Panificada</th>
+								<th class="tb-acc" style="width : 190px">Hora Planificada</th>
+								<th class="tb-acc" style="width : 190px">Responsable de la revisión de la norma legal</th>
+								<th class="tb-acc" style="width : 190px">Fecha Real</th>
+								<th class="tb-acc"style="width : 150px">E.I Req. evaluados / Req. Aplicablesth>
+								<th class="tb-acc" style="width : 150px">I. Resultado de la evaluación</th>
+								<th class="tb-acc"  style="width : 150px">E.I. Acciones de Mejora Completadas / Planificadas</th>
+								<th class="tb-acc"  style="width : 190px">Vigencia de la Revisión</th>
+
+								<th class="tb-acc" style="width : 230px">Evidencia de la Revisión</th>
+								<th class="tb-acc"  style="width : 190px">Estado</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="container-fluid" id="divContainDetallePlanificacion">
+				<div style="height: 5px;"></div> 
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover"
+						id="tblDetallePlanificacion">
+						<thead>
+							<tr>
+								<th class="tb-acc">Requisito Legal</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="modal fade" id="modalEvaluacion" role="dialog">
+				<div class="modal-dialog modal-lg" style="width: 40%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">Evaluar / Editar</h4>
+						</div>
+						<div class="modal-body"></div>
+						<div class='modal-footer'></div>
+					</div>
+				</div>
+			</div> 
+			<div class="modal fade" id="modalSolicitudAccionMej" role="dialog">
+				<div class="modal-dialog modal-lg" style="width: 40%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">Agregar / Editar</h4>
+						</div>
+						<div class="modal-body"></div>
+						<div class='modal-footer'></div>
+					</div>
+				</div>
+			</div> 
+			<div class="container-fluid" id="divContainIndicadoresRequisitos">
+				
+				<button id="btnIndicadorRequisitos" type="button"
+					class="btn btn-success" title="Resumen de Indicadores">
+					<i class="fa fa-slack fa-2x"></i>
+				</button>
+				<div class="wrapper" id="wrapIndicadoresRequisitos"> 
+					<table class='table table-striped table-bordered table-hover table-fixed' 
+						id="tblIndicadoresRequisitos"> 
+						<thead >
+							
+						</thead>
+						<tbody>
+							
+						</tbody>
+					</table>
+				</div>
+				<br>
+				
+			</div>
+			<div class="modal fade" id="modalIndicadoresEmpresa" role="dialog" >
+				<div class="modal-dialog modal-lg" style="width: 40%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title">Resumen de Indicadores</h4>
+						</div>
+						<div class="modal-body">
+							<div class="wrapper" id="wrapIndicadoresEmpresa" > 
+								<table class="table table-striped table-bordered table-hover fixed table-fixed"
+									id="tblIndicadoresEmpresa" >
+									<thead >
+									</thead>
+									<tbody>
+										
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div class='modal-footer'>
+							<button type="button" class="btn btn-default" title="Cancelar" data-dismiss="modal">Cancelar</button>
+						</div>
+					</div>
+				</div>
+			</div> 
+		</div>
+
+
+	</div>
+<div class="modal fade bs-example-modal-lg" id="mdVerif" tabindex="-1"
+		role="dialog" aria-labelledby="mdEficLabel" aria-hidden="true">
+	</div>
+	<!-- script references -->
+	<!-- script references highcharts -->
+
+	<script src="../lib/HighCharts/highcharts.js"></script>
+	<script src="../lib/HighCharts/modules/data.js"></script>
+	<script src="../lib/HighCharts/modules/drilldown.js"></script>
+	<script src="../lib/HighCharts/highcharts-more.js"></script>
+	<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+	<script src="../lib/HighCharts/modules/exporting.js"></script>
+	<script src="../lib/HighCharts/modules/funnel.js"></script>
+	<!-- script references highcharts -->
+	<script src="../lib/jquery.min.js"></script>
+	<script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../lib/chosen.jquery.js"></script>
+	<script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+
+	<script src="../js/requisitos/normaLegal.js"></script>
+	<script src="../js/requisitos/articulos.js"></script>
+	<script src="../js/requisitos/modificarArticuloNorma.js"></script>
+	<script src="../js/requisitos/derogarArticuloNorma.js"></script>
+	<script src="../js/requisitos/normaLegalEmpresa.js"></script>
+	<script src="../js/requisitos/normaEmpresaRevision.js"></script>
+	<script src="../js/requisitos/detallePlanificacion.js"></script>
+	<script src="../js/requisitos/otrasNormasLegales.js"></script>
+	<script src="../js/requisitos/indicadoresRequisitosLegales.js"></script>
+
+<script src="../js/accionmejora/agregaraccionmejora.js"></script>
+
+</body>
+</html>

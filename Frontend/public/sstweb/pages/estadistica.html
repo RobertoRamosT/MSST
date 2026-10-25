@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Estadísticas</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+	<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+
+		<![endif]-->
+	<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+ <style>
+  .carousel-inner > .item > div {
+      width: 90%;
+      margin: auto;
+  }
+  
+  th{
+  text-align: center;
+}
+  </style>
+</head>
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	 
+	 
+	
+	</div>
+</div>
+	
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+	
+	<ul class="nav nav-tabs" role="tablist" style="width:800px">
+	   <li role="presentation" class="active" id="tabEstadisticoPanel">
+	      <a href="#estadisticaPanel" aria-controls="estadisticaPanel" role="tab" data-toggle="tab">
+             Estadisticas <i class='fa fa-1x fa-question-circle' style='color:#1D858C' onclick='javascript:llenarEspacioAyudaEstadistica();'>
+                          </i>
+          </a>
+       </li>
+						
+	   <li role="presentation" id="tabGraficoPanel" >
+	      <a href="#graficoPanel" aria-controls="graficoPanel" role="tab" data-toggle="tab">
+		     Gráficos <i class='fa fa-question-circle fa-1x' style='color:#1D858C' onclick='javascript:llenarEspacioAyudaGrafico();'>
+		              </i>
+		  </a>
+	   </li>				
+	</ul>
+				
+				<div class="tab-content">
+				<div role="tabpanel"  id="estadisticaPanel"  class="tab-pane active" >
+					
+					
+							<ul class="listaAnalisis list-group"  role="tablist" id="estadisticaOpcionesLista" style="width:30%">
+					
+				<li role="presentation" class="  list-group-item"><a href="#tabCapa"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  		<i class="fa fa-square-o fa-stack-2x"></i>
+  		<i class="fa fa-exclamation-triangle fa-stack-1x"></i>
+			</span>
+ 			Accidente</a></li>
+				<li role="presentation" class="list-group-item"><a href="#tabExamen"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+			  <i class="fa fa-square-o fa-stack-2x"></i>
+			  <i class="fa fa-graduation-cap fa-stack-1x"></i>
+			</span>
+ 			Formaciones</a></li>
+						<li role="presentation" class="list-group-item" ><a href="#tabEntrega"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-clock-o fa-stack-1x"></i>
+</span>
+Horas Formaciones</a></li>
+					<li role="presentation"  class="list-group-item"><a href="#tabActos"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-stethoscope fa-stack-1x"></i>
+</span>
+Examen M&eacute;dico</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabSancion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa Example of headphones fa-headphones fa-stack-1x"></i>
+</span>
+Entrega EPPs</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabParticipacion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-exclamation fa-stack-1x"></i>
+</span>
+Peligros Significativos IPERC</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabEntrega"
+					aria-controls="profile" role="tab" data-toggle="tab">
+					<span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-th-large fa-stack-1x"></i>
+</span>
+Accidente / Area</a></li>
+
+					<li role="presentation" class="list-group-item" style="display:none"><a href="#tabActos"
+					aria-controls="home" role="tab" data-toggle="tab" >
+					<span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-credit-card fa-stack-1x"></i>
+</span>
+Inversión Controles a Implementar</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabSancion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-forward fa-stack-1x"></i>
+</span>
+Controles a Implementar de IPERC</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabParticipacion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-money fa-stack-1x"></i>
+</span>
+Detalle de Inversiones</a></li>
+					<li role="presentation" class="list-group-item"><a href="#tabSancion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-exclamation-circle fa-stack-1x"></i>
+</span>
+Eventos Negativos de Trabajadores</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabParticipacion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa  fa-medkit fa-stack-1x"></i>
+</span>
+Examen Médico Mensual</a></li>
+<li role="presentation" class="list-group-item"><a href="#tabAccUnidad"
+					aria-controls="profile" role="tab" data-toggle="tab">
+					<span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-th-large fa-stack-1x"></i>
+</span>
+Accidente / Unidad</a></li>
+			</ul>
+					
+					
+					 
+					<div id='opcionesEstadistica'>
+					<div id="paramEmpresa">
+					<div id="opcionTodoEmpresa"><input name="checkEstadEmpresa" id="checkEstadEmpresa" type="checkbox" onchange="verUnidadesEsp()">
+					<label for="checkEstadEmpresa" style="color:#1D858C" >Todas las Unidades</label><br>
+					</div>
+					<div id="opcionTodoUnidad"><input name="checkResumenFormaciones" id="checkResumenFormaciones" type="checkbox" onchange="verUnidadesFormacion()">
+					<label for="checkResumenFormaciones" style="color:#1D858C" >Buscar por Unidad</label><br>
+					</div>
+					<div id="opcionTodoIperc"><input name="checkTodoIperc" id="checkTodoIperc" type="checkbox" onchange="verIpercUnidad()">
+					<label for="checkTodoIperc" style="color:#1D858C" >Buscar por Iperc</label><br>
+					</div>
+					<div id="paramMdf">
+					
+					<label style="color:#1D858C">Unidad:</label>
+					<br>
+					<div id="paramSelMdf"></div>
+					<br>
+					</div>
+					
+					
+					<div id="paramIperc">
+					
+					<label style="color:#1D858C">Iperc:</label>
+					<br>
+					<div id="paramSelIperc"></div>
+					<br>
+					</div>
+					
+					
+					
+					<div id="paramDiv">
+					<label style="color:#1D858C">Divisi&oacute;n:</label>
+					<br>
+					<div id="paramSelDiv"></div>
+					<br>
+					</div>
+					
+					<div id="paramArea">
+					<label style="color:#1D858C">&Aacute;rea:</label>
+					<br>
+					<div id="paramSelArea"></div>
+					<br>
+					</div>
+					
+					<div id="paramPuesto">
+					<label style="color:#1D858C">Puesto de Trabajo:</label>
+					<br>
+					<div id="paramSelPuesto"></div>
+					
+					
+					
+					
+					</div>
+					</div><br>
+						<div id="paramFecha">
+							<label style="color:#1D858C">Fecha inicio:</label><br>
+							<input class="form-control" type='date' id="fechaIniciaEst" ><br><br>
+							<label style="color:#1D858C">Fecha Fin:</label><br>
+							<input class="form-control" type='date' id="fechaFinEst" >
+							<br>
+							<div id="agrupEstad">
+							<br>
+							<label style="color:#1D858C">Agrupar por;</label><br>
+							<select  class="form-control">
+							<option value="1">Total</option>
+							<option value="2" selected>Meses</option>
+							<option value="3">A&ntilde;os</option>
+							
+							</select>
+							</div>
+							</div>
+							
+							
+							<br>
+							
+							<button class="btn btn-success" id="verParamEstad" 
+	onclick="javascript:crearTablaEstadística()"><i class="fa fa-search" aria-hidden="true"></i>Generar Indicadores</button>
+						</div>
+						
+					
+					
+					</div>
+						<div role="tabpanel" id="graficoPanel" class="tab-pane" >
+						
+									
+					
+					<ul class="listaAnalisis list-group"  role="tablist" id="graficoOpcionesLista" style="width:30%">
+					<li role="presentation" class="list-group-item"><a href="#tabCapa"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-pie-chart fa-stack-1x"></i>
+</span>
+Actividades Planificadas</a></li>
+<li role="presentation" class="list-group-item"><a href="#tabCapa"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-pie-chart fa-stack-1x"></i>
+</span>
+Uso de Recuros</a></li>
+				<li role="presentation" class="list-group-item"><a href="#tabCapa"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-pie-chart fa-stack-1x"></i>
+</span>
+Accidentes</a></li>
+				<li role="presentation" class="list-group-item"><a href="#tabExamen"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-bar-chart fa-stack-1x"></i>
+</span>
+Inversiones</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabEntrega"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-bar-chart fa-stack-1x"></i>
+</span>
+Indicadores de Accidentabilidad por periodo de tiempo</a></li>
+					<li role="presentation" class="list-group-item"><a href="#tabActos"
+					aria-controls="home" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-bar-chart fa-stack-1x"></i>
+</span>
+Indicadores de Accidentabilidad segun categoría de riesgo</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabSancion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-area-chart fa-stack-1x"></i>
+</span>
+Accidentes incapacitantes vs Acciones de mejora</a></li>
+						<li role="presentation" class="list-group-item"><a href="#tabParticipacion"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-line-chart fa-stack-1x"></i>
+</span>
+Curva S de inversiones</a></li>
+						<li role="presentation" class="list-group-item" ><a href="#tabEntrega"
+					aria-controls="profile" role="tab" data-toggle="tab"><span class="fa-stack fa-lg">
+  <i class="fa fa-square-o fa-stack-2x"></i>
+  <i class="fa fa-bar-chart fa-stack-1x"></i>
+</span>
+Indicadores de accidentabilidad según forma del accidente</a></li>
+			</ul>
+						
+					 
+					<div id='opcionesGrafico'>
+						<div id="paramMdfGraf">
+					
+					<label style="color:#1D858C">Unidad:</label>
+					<br>
+					<div id="paramSelMdfGraf"></div>
+					<br>
+					</div>
+					<br>
+						<div id="paramFechaGraf">
+							<label style="color:#1D858C">Fecha inicio:</label><br>
+							<input type='date' id="fechaIniciaGraf" value="2017-01-01"  class="form-control"><br><br>
+							<label style="color:#1D858C">Fecha Fin:</label><br>
+							<input type='date' id="fechaFinGraf" value="2017-12-31" class="form-control">
+							<br>
+							
+							</div><br>
+								<button class="btn btn-success" id="verParamGRaf" 
+	onclick="javascript:llamarGraficos()"><i class="fa fa-search" aria-hidden="true"></i>Generar Indicadores</button>
+							</div>
+							
+						</div>
+					
+					
+					</div>
+			
+			
+   <div class="container-fluid">
+      <button id='btnClipTabla' type='button' class='btn btn-success' title='Tabla Clipboard' >
+	     <i class='fa fa-clipboard fa-2x'></i>
+	  </button>
+	
+	  <button id='btnReporteEpp' type='button' class='btn btn-success' title='Tabla Reporte de Epps' >
+	     <i class='fa fa-file-excel-o fa-2x'></i>
+	  </button>
+	     
+      <div id="graficoEst" style='width:inherit;height:inherit'></div>
+		<div class="table-responsive">
+
+			<table class="table table-striped table-bordered table-hover"
+				id="tblEst">
+				<thead>
+					<tr>
+						<th class="tb-acc" ></th>
+					
+					<th  class="tb-acc" > <button id="mostrar" class="btn  btn-primary btn-sm"  type="button" style=" border: 1px solid #ffff !important; " >Mostar >  Columna Alternativa H.H. Registrados 
+					<i class='fa fa-exclamation fa-1.5x' style='color:#ffff' onclick='javascript:llenarEspacioAyudaGrafico();'>
+		              </i> </button></th>
+				
+					<th  class="col tb-acc" ><button id="ocultar"  class="btn  btn-primary btn-sm"type="button" style=" border: 1px solid #ffff !important; " title="El registro manual de Horas hombre se realiza en &#10 - Modulo: trabajador &#10 - Botón: Registro de horas " > < ocultar</button></th>
+					
+					<th class="tb-acc" ></th>
+					<th class="tb-acc"  >   </th>
+					<th  class="tb-acc" colspan="4"># Accidentes</th>
+					
+					<th class="tb-acc" ></th>
+					<th class="tb-acc" ></th>
+					<th class="tb-acc"  >   </th>
+					<th class="tb-acc" colspan="3" >Índice de Frecuencia</th>
+				<th class="tb-acc" ></th>
+					<th class="tb-acc" ></th>
+					
+					
+
+					</tr>
+					<tr >
+					<th class="tb-acc" rowspan="2" id="fechaEstad" style="width: 80px;">Mes</th>
+					<th class="tb-acc" rowspan="2" id="HorasHombre">Horas Hombre H-H</th>
+					<th class="col tb-acc" rowspan="2" id="HorasHombre">Horas Hombre H-H (registro manual) </th>
+					<th class="tb-acc" rowspan="2" id="Enfermedades" style="width: 120px;"># Enfermedades</th>
+					<th class="tb-acc" rowspan="2" id="IndiceMorbalidadOcupacional">Índice de Morbilidad ocupacional</th>
+					
+					<th class="tb-acc" id="AccidentesLeves">L</th>
+					<th class="tb-acc" id="AccidentesGraves">I</th>
+					<th class="tb-acc" id="AccidentesFatales">F</th>
+					<th class="tb-acc" id="TotalAccidentes">Total</th>
+					
+					<th class="tb-acc" rowspan="2" id="AccidentesVehiculares"># Accidentes vehiculares</th>
+					<th class="tb-acc" rowspan="2" id="DaniosMateriales">Danios materiales</th>
+					<th class="tb-acc" rowspan="2" id="DiasPerdidos"># Dias perdidos</th>
+					
+					<th class="tb-acc" id="IndiceFrecuenciaLeves">L</th>
+					<th class="tb-acc" id="IndiceFrecuenciaIncapacitantes">I+F</th>
+					<th class="tb-acc" id="IndiceFrecuenciaTotal" >Total</th>
+						
+							<th class="tb-acc" rowspan="2" id="IndiceSeveridad">Indice de Severidad</th>
+					<th class="tb-acc" rowspan="2" id="IndiceAccidentabilidad">Indice de Accidentabilidad</th>
+					
+
+					
+					</tr>
+
+				</thead>
+				<tbody id="tbodyC">
+				
+				
+				</tbody>
+			</table>
+		</div>
+	</div>
+			<div class="table-responsive">
+		
+	
+		<table id="tblCantidadFormacion" class="table table-striped table-bordered table-hover">
+		<thead>
+			<tr>
+		<th > </th>
+		<th > Con 0 formaci&oacute;n</th>
+			<th > Con 1 formaci&oacute;n</th>
+			<th >  Con 2 formaciones</th>
+			<th >  Con 3 formaciones</th>
+				<th >  Con 4 o m&aacute;s formaciones</th>
+			
+		
+		</tr>
+		</thead>
+		<tbody>
+		<tr>
+		<th >N&uacute;mero de trabajadores </th>
+			<th id="formNum0"> </th>
+			<th id="formNum1"> </th>
+			<th id="formNum2"> </th>
+			<th id="formNum3">  </th>
+				<th id="formNum4">  </th>
+			
+		
+		</tr>
+		</tbody>
+		</table>
+		 
+		</div>
+		
+		<div class="table-responsive">
+		
+		
+		
+		
+		<table id="tblFormacion" class="table table-striped table-bordered table-hover">
+		<thead>
+		
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		</div>
+		
+	
+		<div  style="text-align:center;" id="estadExam" class="wrapper">
+			<div id="buscadorExamEstad"  >
+		<input  type="text" id="buscadorTrabajadorInput" 
+					style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+					<button id='resetBuscador' type='button' 
+						title='Reset' style="color:red">
+						<i class="fa fa-times " >  </i>
+					</button>
+					</div>
+		<table id="tblExamMedico" 
+		class="table table-striped table-bordered table-hover table-fixed" style="text-align:left;margin: 0 auto;" >
+		<thead>
+		<tr>
+		<th style="width:200px">División </th>
+		<th style="width:200px">Área</th>
+		<th style="width:200px">Puesto</th>
+		<th style="width:200px">Tiempo en la empresa</th>
+		<th style="width:200px">Trabajador <a id='btnSelect' href='#' onclick='obtenerListaNombresTrabajador();'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a></th>
+		<th   style="width:200px"> Último examen realizado</th>
+		<th style="width:200px" >Fecha </th>
+		<th style="width:200px">Aptitud médica </th>
+		<th style="width:200px">Vigencia del examen </th>
+		<th style="width:200px">Tiempo de vigencia </th>
+		</tr>
+		
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		</div>
+		
+		
+		<div  style="text-align:center;" >
+		
+		<table id="tblFechaExamenes" 
+		class="table table-striped table-bordered table-hover" style="width:800px;text-align:left;margin: 0 auto;" >
+		<thead>
+		<tr>
+		<th >Año </th>
+		<th >Mes </th>
+		<th >Cantidad Trabajadores </th>
+		</tr>
+		
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		</div>
+		
+		
+		<table id="tblFormacionNumero" class="table table-striped table-bordered table-hover">
+		<thead>
+		<tr>
+		<th rowspan="2"> División</th>
+		<th rowspan="2"> Área</th>
+		<th rowspan="2"> Puesto de Trabajo</th>
+		<th rowspan="2"> Trabajador</th>
+	
+		<th colspan="2">Entrenamiento</th>
+		<th colspan="2">Capacitaciones</th>
+		
+		<th colspan="2">Total</th>
+		
+		</tr>
+		<tr>
+	
+			<th > # Formaciones</th>
+			<th > # Horas</th>
+			<th > # Formaciones</th>
+			<th > # Horas</th>
+			<th > # Formaciones</th>
+			<th > # Horas</th>
+		
+		</tr>
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		
+	
+	
+
+		
+		
+		
+		
+		<table id="tblEntregaEpp" class="table table-striped table-bordered table-hover">
+		<thead>
+		
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		
+		
+		<div class="col-md-12">
+		
+		
+		
+		
+		<table id="tblControlesArea" class="table table-striped table-bordered table-hover">
+		<thead>
+		<tr>
+		<td>
+		
+		</td>
+		</tr>
+		</thead>
+		<tbody>
+		
+		</tbody>
+		</table>
+		</div>
+		
+		
+		
+		
+		
+		
+		
+		<table id="tblPlanificacionArea" class="table table-striped table-bordered table-hover">
+		<thead>
+		<tr>
+		<td>
+		
+		</td>
+		</tr>
+		</thead>
+		<tbody>
+		
+		</tbody>
+		</table>
+		
+		
+		
+		<div class="col-md-12">
+		
+		
+		
+		
+		<table id="tblAccidentesGeneral" class="table table-striped table-bordered table-hover">
+		<thead>
+		
+		</thead>
+		
+		<tbody>
+		
+		</tbody>
+		</table>
+		</div>
+		
+		
+		
+		
+		
+	
+	<div class="col-md-12">
+		
+		
+		
+		
+		<table id="tblIpercPeligro" class="table table-striped table-bordered table-hover">
+		<thead>
+		<tr>
+		<th >Puesto de Trabajo</th>
+			<th >Numero trabajadores</th>
+		<th style="width:95px">General</th>
+		<th style="width:95px">Fisico</th>
+		<th style="width:95px">Quimico</th>
+		<th style="width:95px">Biologico</th>
+		<th style="width:95px">Ergonomico</th>
+		<th style="width:95px">Psicologico</th>
+		<th style="width:95px" >Antropico</th>
+			<th style="width:95px" >Total</th>
+		
+		</tr>
+		
+		
+		
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		</div>
+		
+		<div>
+		
+		</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdDetallePlanificaciones"
+		tabindex="-1" role="dialog" aria-labelledby="mdDatoGeneralLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="tituloDetalle">Detalle de Controles</h4>
+				</div>
+				<div class="modal-body" id="modalRep">
+					<button id='btnClipDetalleControl' 
+					type='button' class='btn btn-success' title='Tabla Clipboard' >
+					<i class='fa fa-clipboard fa-2x'></i></button>
+							<table id="tblDetallePlan" class="table table-striped table-bordered table-hover">
+							<thead>
+							<tr>
+							<th>Procedencia</th>
+							<th>Tipo de Control</th>
+							<th>Control</th>
+								<th>Peligro Asociado</th>
+							<th>Responsable</th>
+							<th>Fecha Planificada</th>
+							<th>Fecha Realiazda</th>
+							
+							</tr>
+							</thead>
+							<tbody>
+							
+							</tbody>
+							
+							</table>
+							
+							
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div class="modal fade bs-example-modal-lg" id="mdDetalleAccidentesArea"
+		tabindex="-1" role="dialog" aria-labelledby="mdDatoGeneralLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="tituloDetalleAccidentes">Detalle de Accidentes</h4>
+				</div>
+				<div class="modal-body" >
+					<button id='btnClipDetalleAccidente' 
+					type='button' class='btn btn-success' title='Tabla Clipboard' >
+					<i class='fa fa-clipboard fa-2x'></i></button>
+					
+							<table id="tblDetalleAccidentesArea" 
+							class="table table-striped table-bordered table-hover">
+							<thead>
+							<tr>
+							<th>Descripci&oacute;n</th>
+							<th>Información Extra</th>
+							<th>Fecha Registrada</th>
+							
+							
+							
+							</tr>
+							</thead>
+							<tbody>
+							
+							</tbody>
+							
+							</table>
+							
+							
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div class="modal fade bs-example-modal-lg" id="mdDetalleExamenesFecha"
+		tabindex="-1" role="dialog" aria-labelledby="mdDatoGeneralLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" >Detalle de Examenes Mensuales</h4>
+				</div>
+				<div class="modal-body" >
+					<button id='btnClipDetalleExamen' 
+					type='button' class='btn btn-success' title='Tabla Clipboard' >
+					<i class='fa fa-clipboard fa-2x'></i></button>
+							<table id="tblDetalleExamenesFecha" 
+							class="table table-striped table-bordered table-hover">
+							<thead>
+							<tr>
+							<th>Fecha Vencimiento</th>
+							
+							<th>Nombre Trabajador</th>
+							
+							
+							
+							</tr>
+							</thead>
+							<tbody>
+							
+							</tbody>
+							
+							</table>
+							
+							
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div class="modal fade bs-example-modal-lg" id="mdDetalleInversiones"
+		tabindex="-1" role="dialog" aria-labelledby="mdDatoGeneralLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="tituloDetalleInversiones">Detalle de Controles</h4>
+				</div>
+				<div class="modal-body" id="modalRep">
+					<button id='btnClipDetalleInversion' 
+					type='button' class='btn btn-success' title='Tabla Clipboard' >
+					<i class='fa fa-clipboard fa-2x'></i></button>
+							<table id="tblDetalleInversiones" class="table table-striped table-bordered table-hover">
+							<thead>
+							<tr>
+							<th>Descripci&oacute;n</th>
+							<th>Inversi&oacute;n</th>
+							<th>Fecha Planificada</th>
+								<th>Fecha Realizada</th>
+						
+							
+							</tr>
+							</thead>
+							<tbody>
+							
+							</tbody>
+							
+							</table>
+							
+							
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+			
+	<div  style="text-align:center;">
+		<table id="tblInversionesSeguridad" 
+		class="table table-striped table-bordered table-hover" 
+		style="width:100%;text-align:left;margin: 0 auto;" >
+		<thead>
+		<tr>
+		<th></th>
+		<th > IPER-Controles</th>
+		<th > Formaci&oacute;n</th>
+		<th > Examen M&eacute;dico</th>
+		<th > EPP´s </th>
+			<th > Equipos de Emergencia</th>
+			<th > Señalética / Carteles </th>
+				<th > EPC</th>
+					
+		<th > Diagn&oacute;sticos</th>
+			<th >Inspecciones </th>
+	
+		<th >Correciones Inmediatas </th>
+			<th >Acciones de Mejora </th>
+			<th >Disposiciones de grupos de trabajo </th>
+			<th >Total </th>
+		</tr>
+		
+		</thead>
+		<tbody>
+		
+		<tr id="invRetrasada"></tr>
+		<tr id="invProceso"></tr>
+		<tr id="invCompletada"></tr>
+		<tr id="invTotal"></tr>
+		</tbody>
+		</table>
+		</div>
+		
+		
+		<div  style="text-align:center;">
+		<table id="tblReporteSanciones" 
+		class="table table-striped table-bordered table-hover" style="width:1200px;text-align:left;margin: 0 auto;" >
+		<thead>
+		<tr>
+		<th></th>
+		<th > Sanciones</th>
+		<th > Incidentes</th>
+		<th > Accidentes</th>
+	
+		</tr>
+		
+		</thead>
+		<tbody>
+		
+	
+		</tbody>
+		</table>
+		</div>
+		<div class="modal fade bs-example-modal-lg" id="mdDetalleSanciones"
+		tabindex="-1" role="dialog" aria-labelledby="mdDatoGeneralLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="tituloDetalleSanciones">Detalle de Accidentes/Sanciones/Incidentes</h4>
+				</div>
+				<div class="modal-body" id="modalRep">
+					<button id='btnClipDetalleSancion' 
+					type='button' class='btn btn-success' title='Tabla Clipboard' >
+					<i class='fa fa-clipboard fa-2x'></i></button>
+							<table id="tblDetalleSanciones" class="table table-striped table-bordered table-hover">
+							<thead>
+							<tr>
+							<th>Fecha ocurrencia</th>
+							<th>Descripción</th>
+							<th>Información extra</th>
+								
+						
+							
+							</tr>
+							</thead>
+							<tbody>
+							
+							</tbody>
+							
+							</table>
+							
+							
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+	
+	
+	
+	
+	<div class="modal fade" id="modalAyudaEstadistica" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Ayuda Adicional</h4>
+        </div>
+        <div class="modal-body">
+       
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+      
+    </div>
+    </div>
+	
+
+	<!-- script references -->
+	
+		<script src="../lib/jquery-2.2.0.js"></script>
+	<script src="../lib/jquery-ui.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	
+	<script src="../lib/clipboard.min.js"></script>
+	
+	<script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	
+	<script src="../lib/bootstrap.min.js"></script>
+<script src="../js/estadistica/entregaEpp.js"></script>
+		<script src="../js/estadistica/accidentesArea.js"></script>
+		<script src="../js/estadistica/presupuestoControles.js"></script>
+		<script src="../js/estadistica/planificacionIndicadores.js"></script>
+			<script src="../js/estadistica/presupestoInversiones.js"></script>
+				<script src="../js/estadistica/registroSanciones.js"></script>
+		<script src="../js/estadistica/examenMedico.js"></script>
+		
+	<script src="../js/estadistica/estadistica.js"></script>
+	
+		<script src="../js/estadistica/graficos.js"></script>
+
+		
+	
+	<!-- script para graficos -->
+	
+	
+		<script src="../lib/HighCharts/highcharts.js"></script>
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	
+	
+	
+	
+	
+	
+	</body>
+</html>

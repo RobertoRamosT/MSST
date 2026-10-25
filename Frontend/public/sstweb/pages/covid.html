@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-COVID-19</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+	
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href="../css/estilosIndicadores.css" rel="stylesheet">
+			<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>	
+	 
+	<link href="../css/chosen.css" rel="stylesheet">
+	
+<!--	Solo para calendario
+	<link rel="stylesheet" href="../lib/codebase/calendario_glossy_blue/dhtmlxscheduler_blue.css" 
+	type="text/css" media="screen" title="no title" charset="utf-8">
+	-->
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+<body>
+  
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	<!-- ya no es necesario, los mensajes se cargan desde
+	la BD
+	[Mensaje inspirador]
+	<br> 	<br> 
+	<strong>[Autor del mensaje]</strong>
+		-->
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+	
+	<form style="text-align: center;width: 50%;float: right;" class="form-inline" id="divListaTabsCovid"></form>
+	
+		 
+	<div class="tab-content" style="display : block;margin-top: -20px;" id="divCovidFull">
+	   <div role="tabpanel"  id="tabCovid"  class="tab-pane" >
+	      <h2>COVID-19  </h2>
+			
+		  <button type="button" class="btn btn-success " id="btnVerFiltroCovid" 
+			      title="Ver filtro Covid" onclick="verFiltroCovid()" >
+		     <i class="fa fa-filter fa-2x"></i>
+	      </button> 
+	      
+	      <button type="button" class="btn btn-success " id="btnClipTablaCovid" 
+			      title="Copiar la información de la tabla actual" onclick="copiarTablaCovid()" >
+		     <i class="fa fa-clipboard fa-2x"></i>
+	      </button> 
+			 
+		  <button type="button" class="btn btn-success " id="btnConsolidadoFormularioCovid" 
+			      title="Descargar un archivo .xlsx con todos los formularios registrados, indicándose 
+			             el estado del trabajador según la información registrada." 
+			      onclick="filtrarRegistrosConsolidadoFormularioCovid()" >
+		     <i class="fa fa-2x fa-file-excel-o"></i>
+	      </button>  
+	      
+	      <button type="button" class="btn btn-info" id="btnConsolidadoNumTrabajadoresCovid" 
+			      title="Elige la opción respectiva para poder descargar un archivo .xlsx con 
+			             la cantidades de trabajadores divididas en 
+			             diversas columnas, relacionadas al COVID-19." 
+			      onclick="elegirConsolidadoNumTrabajadoresCovid()" >
+		     <i class="fa fa-2x fa-file-excel-o"></i>
+	      </button> 
+	      
+	      <button type="button" class="btn btn-info" id="btnConsolidadoNumTrabajadoresPorPerfilMedicoCovid" 
+			      title="Descargar un archivo .xlsx con la cantidades de trabajadores observados 
+			             según la empresa y el perfil del médico covid, relacionadas al COVID-19." 
+			      onclick="generarConsolidadoNumTrabajadoresEmpresaPorPerfilMedicoCovid()" >
+		     <i class="fa fa-2x fa-th"></i>
+	      </button>
+	      
+	      <button type="button" class="btn btn-info" id="btnConsolidadoEstTrabObsMed" 
+			      title="Descargar un archivo .xlsx con todos los registros del 
+			             estado del trabajador según la observación médica respectiva." 
+			      onclick="filtrarPrevioObsMedicaEstadoTrabCovid()" >
+		     <i class='fa fa-file-excel-o fa-2x'></i>
+             <i class='fa fa-eye'></i>
+	      </button> 
+			 
+		  <div class="wrapper" id="wrapperCovid">
+		     <table class="table table-bordered table-hover table-fixed" id="tblCovid">
+		        <thead>
+				   <tr>
+				      <th class="tb-acc" style="width:250px">Nombre del trabajador</th>
+					  <th class="tb-acc" style="width:150px">DNI</th>
+					  <th class="tb-acc" style="width:150px">Edad</th>
+					  <th class="tb-acc" style="width:250px">Dirección</th>
+					  <th class="tb-acc" style="width:250px">Correo</th>
+				      <th class="tb-acc" style="width:180px">Teléfono de contacto personal</th>
+					  <th class="tb-acc" style="width:250px">Persona de contacto</th>
+					  <th class="tb-acc" style="width:180px">Teléfono de la persona de contacto</th>
+					  <th class="tb-acc" style="width:200px">Unidad</th>
+					  <th class="tb-acc" style="width:200px">División</th>
+					  <th class="tb-acc" style="width:200px">Área</th>
+					  <th class="tb-acc" style="width:220px">Puesto de trabajo</th>
+					  <th class="tb-acc" style="width:150px">Trabajador en grupo de riesgo</th>
+					  <th class="tb-acc" style="width:150px">Entorno en grupo de riesgo</th>
+					  <th class="tb-acc" style="width:150px">Sospecha de COVID-19</th>
+					  <th class="tb-acc" style="width:180px">Modalidad de trabajo</th>
+					  <th class="tb-acc" style="width:200px">Fecha del último llenado del formulario</th>
+					  <th class="tb-acc" style="width:180px">Resultado de la última observación médica</th>
+					  <th class="tb-acc" style="width:200px">Fecha de la última observación médica</th>
+					  <th class="tb-acc" style="width:180px">Estado actual del trabajador</th>
+				   </tr>
+				</thead>
+			    <tbody>
+				</tbody>
+			 </table>
+		  </div>
+	   </div> 
+	   
+	    <div role="tabpanel"  id="tabFormularioRenovable"  class="tab-pane" >
+	      <h2>Trabajadores - Estado Formulario renovable  <span id="idFechaForRenTitulo"></span></h2>
+			
+		  <button type="button" class="btn btn-success" id="btnVerFiltroEstadoForRen" 
+			      title="Ver filtro estado formulario renovable" onclick="verFiltroFormularioRenovable()" >
+		     <i class="fa fa-filter fa-2x"></i>
+	      </button> 
+	      
+	      <button type="button" class="btn btn-success" id="btnClipTablaEstadoForRen" 
+			      title="Copiar la información de la tabla actual" onclick="copiarEstadoFormularioRenovable()" >
+		     <i class="fa fa-clipboard fa-2x"></i>
+	      </button> 
+			 
+		  <div class="wrapper" id="wrapperEstadoFormularioRenovable">
+		     <table class="table table-bordered table-hover table-fixed" id="tblEstadoForRen">
+		        <thead>
+				   <tr>
+				      <th class="tb-acc" style="width:200px">Fecha y hora de registro</th>
+					  <th class="tb-acc" style="width:200px">Unidad</th>
+					  <th class="tb-acc" style="width:200px">División</th>
+					  <th class="tb-acc" style="width:200px">Área</th>
+					  <th class="tb-acc" style="width:250px">Nombre</th>
+					  <th class="tb-acc" style="width:250px">Estado del formulario renovable</th>
+				   </tr>
+				</thead>
+			    <tbody>
+				</tbody>
+			 </table>
+		  </div>
+	   </div> 	
+	   
+	  <div role="tabpanel"  id="tabEstadoTrabajadorHoy"  class="tab-pane">
+	      <h2>Trabajador - Estado de hoy </h2>
+			
+		  <button type="button" class="btn btn-success" id="btnVerFiltroEstadoHoyTrab" 
+			      title="Ver filtro Estado de hoy - Trabajador" onclick="verFiltroEstadoTrabHoyCov()" >
+		     <i class="fa fa-search fa-2x"></i>
+	      </button> 
+	      
+	      <button type="button" class="btn btn-success" id="btnClipTablaEstadoHoyTrab" 
+			      title="Copiar la información de la tabla actual" onclick="copiarEstadoHoyTrabajadorCov()" >
+		     <i class="fa fa-clipboard fa-2x"></i>
+	      </button> 
+	      
+	      <button type="button" class="btn btn-success " id="btnConsolidadoFormularioCovid" 
+			      title="Descargar un archivo .xlsx con todos los formularios registrados, indicándose 
+			             el estado del trabajador según la información registrada." 
+			      onclick="filtrarRegistrosConsolidadoFormularioCovid()" >
+		     <i class="fa fa-2x fa-file-excel-o"></i>
+	      </button>  
+			 
+		  <div class="wrapper" id="wrapperEstadoHoyTrabCov">
+		     <table class="table table-bordered table-hover table-fixed" id="tblEstadoTrabHoyCov">
+		        <thead>
+				   <tr>
+				      <th class="tb-acc" style="width:200px">Trabajador</th>
+					  <th class="tb-acc" style="width:200px">Estado actual</th>
+				   </tr>
+				</thead>
+			    <tbody>
+				</tbody>
+			 </table>
+		  </div>
+	   </div>  
+	   
+	   <div role="tabpanel" id="tabReunionVirtualCovid" class="tab-pane">
+	      <h2><label>Programación asistencia presencial</label></h2>
+	      
+	      <button id="btnCancelarReuVirCov" type="button" class="btn btn-success" 
+	              title="Regresar a la vista inicial." onclick="cancelarReunionVirtualCovid()">
+		     <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		  </button> 
+			
+		  <button id="btnNuevoReuVirCov" type="button" class="btn btn-success" 
+			      title="Registrar una nueva programación asistencia presencial." onclick="nuevaReunionVirtualCovid()">
+		     <i class="fa fa-file-o fa-2x"></i>
+		  </button>
+			
+		  <button id="btnGuardarReuVirCov" type="button" class="btn btn-success" 
+		          title="Guardar la información ingresada/modificada" onclick="validacionFechaReunionVirCov()">
+		     <i class="fa fa-floppy-o fa-2x"></i>
+		  </button>
+			
+		  <button id="btnEliminarReuVirCov" type="button" class="btn btn-danger" 
+		          title="Eliminar el registro seleccionado." onclick="eliminarReunionVirtualCovid()">
+		     <i class="fa fa-times fa-2x"></i>
+		  </button>
+		  
+		  <button type="button" class="btn btn-success" id="btnVerFiltroReuVirCov" 
+			      title="Ver filtro Programaciones asistencia presencial" onclick="verFiltroReunionVirtualCovid()">
+		     <i class="fa fa-filter fa-2x"></i>
+	      </button> 
+		  
+		  <button id="btnConsGeneralReuVirCov" type="button" class="btn btn-success" 
+		          title="Descargar el consolidado Programaciones asistencia presencial incluyendo solo a los registros mostrados 
+		                 en pantallas." onclick="descargarConsolidadoGeneralReunionVirtualCovid()">
+		     <i class="fa fa-file-excel-o fa-2x"></i>
+		  </button>
+	      
+		  <div class="wrapper" id="wrapperReunionVirtualCovid">
+		     <table class="table table-bordered table-hover table-fixed" id="tblReunionVirtualCovid">
+		        <thead>
+				   <tr>
+				      <th class="tb-acc" style="width:200px">Fecha de la reunión</th>
+					  <th class="tb-acc" style="width:200px">Aforo</th>
+					  <th class="tb-acc" style="width:200px">Cupos disponibles</th>
+					  <th class="tb-acc" style="width:200px">Cupos apartados</th>
+					  <th class="tb-acc" style="width:200px">Registrado el</th>
+					  <th class="tb-acc" style="width:200px">Modificado el</th>
+				   </tr>
+				</thead>
+			    <tbody>
+				</tbody>
+			 </table>
+		  </div>
+	   </div> 	 
+	</div>
+	<!-- script references -->
+	<!-- script references highcharts
+	
+	<script src="../lib/HighCharts/highcharts.js"></script>
+	<script src="../lib/HighCharts/modules/data.js"></script>
+<script src="../lib/HighCharts/modules/drilldown.js"></script>
+
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	 -->
+	 
+	<!-- script references highcharts -->
+	 
+	<script src="../lib/jquery.min.js"></script>
+		<script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/chosen.jquery.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	
+	<script src="../lib/bootstrap.min.js"></script>
+	
+	<script src="../js/generic/util.js"></script>
+
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	 
+	<script src="../js/covid/covid.js"></script>
+	<script src="../js/covid/formulario_renovable.js"></script>
+	<script src="../js/covid/estado_trabajador_hoy.js"></script>
+	<script src="../js/covid/reunion_virtual.js"></script>
+	
+	<!-- Si hay calendario
+		<script src="../lib/codebase/sources/dhtmlxscheduler.js" type="text/javascript" charset="utf-8"></script>
+ 
+	<script src="../lib/codebase/locale/locale_es.js" type="text/javascript" charset="utf-8"></script>
+
+ -->
+
+</body>
+</html>

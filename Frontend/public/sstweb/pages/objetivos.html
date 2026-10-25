@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-[Objetivos]</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	  content="width=device-width, initial-scale=1, maximum-scale=1">
+	
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href="../css/estilosIndicadores.css" rel="stylesheet">
+<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>	
+	 
+<link href="../css/chosen.css" rel="stylesheet">
+	
+<!--	Solo para calendario
+	<link rel="stylesheet" href="../lib/codebase/calendario_glossy_blue/dhtmlxscheduler_blue.css" 
+	type="text/css" media="screen" title="no title" charset="utf-8">
+	-->
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+<body>
+  
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	[Mensaje inspirador]
+	<br> 	<br> 
+	<strong>[Autor del mensaje]</strong>
+		
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+	
+	<form style="text-align: center;width: 50%;float: right;" class="form-inline" id="divListaTabs"></form>
+	
+		 
+		<div class="tab-content" style="display : block;margin-top: -20px; ">
+		<div role="tabpanel"  id="tabObjetivos"  class="tab-pane" >
+			<h2> Objetivos </h2>
+			<button id="btnCancelarObjetivo" type="button" class="btn btn-success" title="Cancelar">
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoObjetivo" type="button" class="btn btn-success" title="Nuevo">
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarObjetivo" type="button" class="btn btn-success" title="Guardar">
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarObjetivo" type="button" class="btn btn-danger" title="Eliminar">
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+			<!-- 
+			<form id="divSelEstadoPlantilla" class="form-inline" style="margin-top: 10px;">Estado
+			   <select id="selEstadoAuxProyecto" class="form-control" onchange="cargarPlantilla()">
+			      <option value="1">Pendiente</option>
+			      <option value="2" selected="">En curso</option>
+			      <option value="3">Completado</option>
+			   </select>
+			   <button type="button" class="btn btn-success " id="btnResetFiltroPlantilla" title="Refresh"  >
+			      <i class="fa fa-refresh "></i> Reset
+			   </button>	 
+			   <button type="button" class="btn btn-success " id="btnVerFiltroPlantilla" title="Ver filtro"  >
+			      <i class="fa fa-filter "> </i>Ver filtros
+			   </button> 	 
+			</form>
+			 -->
+			 
+			 <div class="wrapper" id="wrapperObjetivos">
+			 
+			 <table class="table table-striped table-bordered table-hover fixed table-fixed"
+				    id="tblObjetivos">
+				<thead>
+					<tr>
+						<th class="tb-acc" style="width:100px">Nro</th>
+						<th class="tb-acc" style="width:300px">Objetivo general</th>
+						<th class="tb-acc" style="width:180px">Responsable general</th>
+						<th class="tb-acc" style="width:300px">Requisito asociado</th>
+						<th class="tb-acc" style="width:180px">Fecha de inicio</th>
+						<th class="tb-acc" style="width:180px">Fecha fin</th>
+						<th class="tb-acc" style="width:300px">Objetivos específicos</th>
+						<th class="tb-acc" style="width:180px">Presupuesto</th>
+						<th class="tb-acc" style="width:300px">Recursos</th>
+						<th class="tb-acc" style="width:180px">Actividades programadas/completadas</th>
+						<th class="tb-acc" style="width:150px">Avance objetivo general (metas)</th>
+						<th class="tb-acc" style="width:150px">Objetivo cumplido</th>
+						<th class="tb-acc" style="width:150px">Objetivo general activo</th>
+					 </tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			
+			 </div>
+		</div> 	 
+	</div>
+	
+	<div id="divRequisitoAsociado">
+	  <h3 id="tituloRequisitoAsociado"> Requisito asociado </h3>
+	     
+		    <button id="btnCancelarRequisitoAsociado" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoRequisitoAsociado" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarRequisitoAsociado" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarRequisitoAsociado" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+		<strong id="mensajeRequisitoAsociado"></strong>
+		
+		<div class="wrapper" id="wrapRequisitoAsociado">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblRequisitoAsociado" style="min-width : 1300px">
+				<thead>
+					  <tr>
+						<th class="tb-acc" style="width:100px">Nro</th>
+						<th class="tb-acc" style="width:220px">Requisito asociado</th>
+					 </tr>
+				</thead>
+					<tbody>
+					</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<div id="divObjetivoEspecifico">
+	  <h3 id="tituloObjetivoEspecifico"> Objetivo Específico </h3>
+	     
+		    <button id="btnCancelarObjetivoEspecifico" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoObjetivoEspecifico" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarObjetivoEspecifico" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarObjetivoEspecifico" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+		<strong id="mensajeObjetivoEspecifico"></strong>
+		
+		<div class="wrapper" id="wrapObjetivoEspecifico">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblObjetivoEspecifico" style="min-width : 1300px">
+				<thead>
+					  <tr>
+						<th class="tb-acc" style="width:100px">Nro</th>
+						<th class="tb-acc" style="width:300px">Objetivo Especifico</th>
+						<th class="tb-acc" style="width:300px">Unidad/Área</th>
+						<th class="tb-acc" style="width:180px">Meta</th>
+						<th class="tb-acc" style="width:180px">Actividades programadas</th>
+						<th class="tb-acc" style="width:180px">Presupuesto</th>
+						<th class="tb-acc" style="width:300px">Recursos</th>
+						<th class="tb-acc" style="width:150px">Objetivo Activo</th>
+					 </tr>
+				</thead>
+					<tbody>
+					</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdAreaObjEsp" tabindex="-1"
+		role="dialog" aria-labelledby="mdProgFechaLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Áreas</h4>
+				</div>
+				<div class="modal-body" id="modalTree">
+					<h4 class="modal-title">Seleccione a la Áreas auditadas</h4>
+					<div id="jstree"></div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	 
+	<div id="divMeta">
+	  <h3 id="tituloMeta"> Meta </h3>
+	     
+		    <button id="btnCancelarMeta" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoMeta" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarMeta" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarMeta" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+		<strong id="mensajeMeta"></strong>
+		
+		<div class="wrapper" id="wrapMeta">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblMeta" style="min-width : 1300px">
+				<thead>
+					  <tr>
+						<th class="tb-acc" style="width:100px">Nro</th>
+						<th class="tb-acc" style="width:300px">Meta</th>
+						<th class="tb-acc" style="width:300px">Indicadores</th>
+						<th class="tb-acc" style="width:180px">Avance de la meta</th>
+						<th class="tb-acc" style="width:120px">Fecha de medición</th>
+						<th class="tb-acc" style="width:100px">Meta completada</th>
+					 </tr>
+				</thead>
+					<tbody>
+					</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<div id="divMetaAvance">
+	  <h3 id="tituloMetaAvance"> Meta Avance </h3>
+	     
+		    <button id="btnCancelarMetaAvance" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoMetaAvance" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarMetaAvance" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarMetaAvance" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+		<strong id="mensajeMetaAvance"></strong>
+		
+		<div class="wrapper" id="wrapMetaAvance">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblMetaAvance" style="min-width : 1300px">
+				<thead>
+					  <tr>
+						<th class="tb-acc" style="width:100px">Nro</th>
+						<th class="tb-acc" style="width:300px">Avance a la fecha</th>
+						<th class="tb-acc" style="width:150px">Fecha de medición</th>
+						<th class="tb-acc" style="width:300px">Observaciones</th>
+						<th class="tb-acc" style="width:180px">Evidencia</th>
+						<th class="tb-acc" style="width:150px">Meta alcanzada</th>
+					 </tr>
+				</thead>
+					<tbody>
+					</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<div id="divActividad">
+	  <h3 id="tituloActividad"> Actividad </h3>
+	     
+		    <button id="btnCancelarActividad" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoActividad" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarActividad" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarActividad" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+		<strong id="mensajeActividad"></strong>
+		
+		<div class="wrapper" id="wrapActividad">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblActividad" style="min-width : 1300px">
+				<thead>
+					  <tr>
+						<th class="tb-acc" style="width:100px">Nro</th>
+						<th class="tb-acc" style="width:300px">Descripción de la actividad</th>
+						<th class="tb-acc" style="width:150px">Presupuesto</th>
+						<th class="tb-acc" style="width:300px">Recursos</th>
+						<th class="tb-acc" style="width:150px">Fecha planificada</th>
+				  <!--  <th class="tb-acc" style="width:180px">Hora planificada</th> -->
+						<th class="tb-acc" style="width:200px">Responsable de la actividad</th>
+						<th class="tb-acc" style="width:150px">Fecha realizada</th>
+						<th class="tb-acc" style="width:230px">Evidencia</th>
+						<th class="tb-acc" style="width:300px">Comentario</th>
+						<th class="tb-acc" style="width:180px">Estado</th>
+					 </tr>
+				</thead>
+					<tbody>
+					</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<!-- script references -->
+	<!-- script references highcharts
+	
+	<script src="../lib/HighCharts/highcharts.js"></script>
+	<script src="../lib/HighCharts/modules/data.js"></script>
+<script src="../lib/HighCharts/modules/drilldown.js"></script>
+
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	 -->
+	 
+	<!-- script references highcharts -->
+	 
+	<script src="../lib/jquery.min.js"></script>
+	<script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/chosen.jquery.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../lib/jstree.min.js"></script>
+	<script src="../js/generic/util.js"></script>
+
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	  
+	<script src="../js/objetivos/objetivos.js"></script>
+	<script src="../js/objetivos/objetivo_requisito.js"></script>
+	<script src="../js/objetivos/objetivo_especifico.js"></script>
+	<script src="../js/objetivos/objetivo_especifico_meta.js"></script>
+	<script src="../js/objetivos/objetivo_especifico_meta_avance.js"></script>
+	<script src="../js/objetivos/objetivo_especifico_actividad.js"></script>
+	
+	
+	<!-- Si hay calendario
+		<script src="../lib/codebase/sources/dhtmlxscheduler.js" type="text/javascript" charset="utf-8"></script>
+ 
+	<script src="../lib/codebase/locale/locale_es.js" type="text/javascript" charset="utf-8"></script>
+
+ -->
+
+</body>
+</html>

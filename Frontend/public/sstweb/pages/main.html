@@ -1,0 +1,1324 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta charset="utf-8">
+    <title>GOSST-Principal</title>
+    <meta name="generator" content="Bootply"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../css/bootstrap-s.css" rel="stylesheet">
+    <link href="../css/estilosIndicadores.css" rel="stylesheet">
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <script src="../lib/codebase/sources/dhtmlxscheduler.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../lib/codebase/sources/ext/dhtmlxscheduler_agenda_view.js"></script>
+    <script src="../lib/codebase/ext/dhtmlxscheduler_year_view.js"></script>
+
+    <script src="../lib/jquery-2.2.0.js"></script>
+    <script src="../lib/jquery-ui.js"></script>
+    <script src="../lib/jquery.blockUI.min.js"></script>
+    <script src="../lib/codebase/locale/locale_es.js" type="text/javascript" charset="utf-8"></script>
+    <!-- script references -->
+
+    <script src="../lib/jquery.blockUI.min.js"></script>
+    <script src="../lib/chosen.jquery.js"></script>
+    <script src="../lib/bootstrap.min.js"></script>
+    <!-- PowerBI (CDN rawgit) removido en F1.1: rawgit esta apagado (404) y PowerBI ya no se usa. -->
+
+
+
+    <link rel="stylesheet" href="../lib/codebase/calendario_glossy_blue/dhtmlxscheduler_blue.css" type="text/css"
+          media="screen" title="no title" charset="utf-8">
+
+    <link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+          rel="stylesheet">
+    <link href="../css/jquery-ui.css" rel="stylesheet">
+    <link href="../css/chosen.css" rel="stylesheet">
+    <link href="../css/estiloAutocomplete.css" rel="stylesheet">
+    <link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+    <!-- ingresado por antoni -->
+    <link href="../css/terminosCondiciones.css" rel="stylesheet">
+    <!-- fin de antoni -->
+</head>
+
+
+<body>
+<div class="cargaPagina">
+    <img src="../imagenes/logoEspera.png" style="width:200px;height:210px">
+    <div id="barraCarga">
+        <div class="progress-label">Loading...</div>
+    </div>
+    <br>
+    <div id="mensajeGosst">
+    </div>
+</div>
+<div class="modal fade" id="modalAccionesAuditoria" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Solicitud de Accion de mejora Asociadas</h4>
+            </div>
+
+            <div class="modal-body" id="divOrigenAccion">
+                <div class="table-responsive">
+
+                    <table class="table table-striped table-bordered table-hover"
+                           id="tblItemAsoc" style="min-width:1600px">
+                        <thead>
+                        <tr>
+                            <th class="tb-acc">Módulo</th>
+                            <th class="tb-acc">Categoría</th>
+                            <th class="tb-acc" style="width:380px">Requisito</th>
+                            <th class="tb-acc" style="width:280px">Observación</th>
+                            <th class="tb-acc" style="width:120px">Fecha Observada</th>
+                            <th class="tb-acc" style="width:190px">...</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="modal fade bs-example-modal-lg" id="modalTutorial"
+     tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width:90%;max-height:1500px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="">Video Actualización</h4>
+            </div>
+
+
+            <div class="modal-body">
+
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade bs-example-modal-sm" id="modalInformeGosst" tabindex="-1"
+     role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdUploadLabel">Reporte Gestión de Seguridad</h4>
+            </div>
+            <div class="modal-body">
+                <button id='btnGenerarReporte' type='button'
+                        class='btn btn-success' title='Generar Reporte'>
+                    <i class='fa fa-file fa-2x'></i>
+                </button>
+                <br>
+                <form class="form-inline">
+                    Desde:
+                    <input type="date" id="fechaInicioReporte" class="form-control">
+                    Hasta
+                    <input type="date" id="fechaFinReporte" class="form-control">
+
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade bs-example-modal-sm" id="mdUpload" tabindex="-1"
+     role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdUploadLabel">...</h4>
+            </div>
+<!--            <button id='btnUploadArchivo' type='button'-->
+<!--                    class='btn btn-success' title='Subir archivo'>-->
+<!--                <i class='fa fa-floppy-o fa-2x'></i>-->
+<!--            </button>-->
+            <h4 class="modal-title">Subir archivo</h4>
+            <input type="file" name="fileEvi" id="fileEvi">
+
+        </div>
+    </div>
+</div>
+<nav class="navbar navbar-default" id="barraMenu">
+
+</nav>
+
+
+<div id="options" style="">
+    <ul class="list-group">
+        <li id="opcion1" onclick="verAux(1)" class="list-group-item"><i class="fa fa-calendar " aria-hidden="true"></i>Calendario
+        </li>
+        <li id="opcion2" onclick="verAux(2)" class="list-group-item"><i class="fa  fa-check-square-o "
+                                                                        aria-hidden="true"></i>Cumplimiento de Objetivos
+        </li>
+        <li id="opcion3" onclick="verAux(3)" class="list-group-item"><i class="fa fa-newspaper-o "
+                                                                        aria-hidden="true"></i>Reporte de eventos
+            planificados
+        </li>
+        <li id="opcion4" onclick="verAux(4)" class="list-group-item"><i class="fa fa-bullseye " aria-hidden="true"></i>Resumen
+            SGSST
+        </li>
+    </ul>
+</div>
+<div id="windowOptions" style="position: absolute;
+ height:calc(100% - 55px);width: calc(100% - 350px);left:350px;background: white;z-index:10;margin-top: -20px;">
+</div>
+<div id="scheduler_gosst"
+     class="dhx_cal_container"
+     style='width:100%; height:105%;margin-top:-9px'>
+    <div id="contenedorBotonesCalendario" class="dhx_cal_navline">
+        <div class="dhx_cal_prev_button" style="top:-5px;">&nbsp;</div>
+        <div class="dhx_cal_next_button" style="top:-5px;">&nbsp;</div>
+        <div class="dhx_cal_today_button" style="top:-5px;"></div>
+        <div class="dhx_cal_date" style="top:-5px;"></div>
+        <div class="dhx_cal_tab" name="day_tab" id="day_tab" style="right:204px;top:10px"></div>
+        <div class="dhx_cal_tab" name="week_tab" id="week_tab" style="right:140px;top:10px"></div>
+        <div class="dhx_cal_tab" name="agenda_tab" id="agenda_tab" style="right:280px;top:10px"></div>
+        <div class="dhx_cal_tab" name="year_tab" id="year_tab" style="top:10px"></div>
+        <div class="dhx_cal_tab" name="month_tab" id="month_tab" style="right:76px;top:10px"></div>
+        <div id="#nombreFiltroCalendario" style="padding:2px 10px;border:2px solid #0056b3;right:10px;top:0px" onclick="verFiltroCalendario()">Filtro</div>
+
+    </div>
+    <div id="contenedorCabezalCalendario" class="dhx_cal_header">
+    </div>
+    <div id="contenedorCuerpoCalendario" class="dhx_cal_data">
+    </div>
+</div>
+<div id="cuadrosIndicadores">
+    <div class="cuadroGeneral" id="cuadroRadial1" style="padding-top:10px">
+
+    </div>
+    <div class="cuadroGeneral" id="cuadroRadial2" style="padding-top:12px">
+
+        Reporte de eventos planificados
+        <br>
+        <form class="form-inline">
+            Módulo:<select class="form-control" id="slcModulo"
+                           onchange="actualizarTablasEventos()">
+        </select>
+            Unidad:
+            <div id="divUnidadEvento" style="width:200px;display: inline-block;"></div>
+            <br>
+            Responsable:
+            <div id="divRespEvento"
+                 style="width:200px;display: inline-block;margin-top: 10px; margin-bottom: 10px;"></div>
+            <br>
+            Desde: <input type="date"
+                          class="form-control"
+                          id="fechaInicioEvento"
+                          onchange="actualizarTablasEventos();verResponsablesAcuerdoFecha();"
+        >
+            Hasta:
+            <input type="date"
+                   class="form-control" id="fechaFinEvento"
+                   onchange="actualizarTablasEventos();verResponsablesAcuerdoFecha();"
+            >
+
+        </form>
+        <div id="advertenciaFecha"></div>
+        <br>
+        <div id="divResumen">
+            <strong>Periodo: </strong>
+            <div class="radio radio-primary radio-inline">
+                <input type="radio" name="tipoPeriodo" id="radio1" value="1">
+                <label for="radio1">
+                    Dias
+                </label>
+            </div>
+            <div class="radio radio-primary radio-inline">
+                <input type="radio" name="tipoPeriodo" id="radio2" value="2">
+                <label for="radio2">
+                    Semanas
+                </label>
+            </div>
+            <div class="radio radio-primary radio-inline">
+                <input type="radio" name="tipoPeriodo" id="radio3" value="3" checked>
+                <label for="radio3">
+                    Meses
+                </label>
+            </div>
+            <br>
+
+            <div id="wrapper2">
+
+                <table class="table table-striped table-bordered table-hover fixed"
+                       id=tblResumen>
+                    <thead>
+                    <tr>
+                        <td class="tb-acc">Periodo</td>
+                        <td class="tb-acc">Retrasadas</td>
+                        <td class="tb-acc">En proceso</td>
+                        <td class="tb-acc">Completadas</td>
+                        <td class="tb-acc">Avance</td>
+                    </tr>
+                    </thead>
+                    <tbody id="tbodyC">
+
+                    </tbody>
+                </table>
+
+            </div>
+
+
+        </div>
+        <div id="graficoEventos">
+
+        </div>
+        <div id="divDetalle">
+            <strong>Tipo de eventos: </strong>
+            <div class="checkbox checkbox-warning checkbox-inline">
+                <input id="tipoEvento1" type="checkbox" checked>
+                <label for="tipoEvento1">
+                    En Proceso
+                </label>
+            </div>
+            <div class="checkbox checkbox-success checkbox-inline">
+                <input id="tipoEvento2" type="checkbox" checked>
+                <label for="tipoEvento2">
+                    Completado
+                </label>
+            </div>
+            <div class="checkbox checkbox-danger checkbox-inline">
+                <input id="tipoEvento3" type="checkbox" checked>
+                <label for="tipoEvento3">
+                    Retrasado
+                </label>
+            </div>
+            <br>
+            <div id="wrapper3" class="wrapper">
+                <table class="table table-striped table-bordered table-hover fixed"
+                       id="tblDetalleEventos">
+                    <thead>
+                    <tr>
+                        <td class="tb-acc">Actividad</td>
+                        <td class="tb-acc">Responsable</td>
+
+                        <td class="tb-acc" style="width: 120px;">Fecha Planeada</td>
+                        <td class="tb-acc" style="width: 100px;">Hora</td>
+                        <td class="tb-acc">Estado</td>
+                    </tr>
+                    </thead>
+                    <tbody id="tbodyC">
+
+                    </tbody>
+                </table>
+            </div>
+
+
+        </div>
+
+        <button class="btn btn-success" id="detalleEventos">
+            <i class="fa fa-tasks fa-2x "></i>&nbsp;Detalle
+        </button>
+        <button class="btn btn-info" id="btnGrafEvent">
+            <i class="fa fa-area-chart fa-2x "></i>&nbsp;Gráfico
+        </button>
+        <button id='btnClipTabla' type='button'
+                class='btn btn-success' style="display:none">
+            <i class='fa fa-clipboard fa-2x'></i></button>
+    </div>
+
+    <div class="cuadroGeneral" id="cuadroRadial3">
+        <div class="tituloRadial1">Resumen de SGSST</div>
+        <div style="width:50%;float:left" id="info1" class="cuadroInfoIndicador">
+            IPERC
+            <a href="#" onclick="javascript:llamarSubGrafico(1);">
+                <i class="fa fa-pie-chart" style="color:#0E9290"></i></a>
+            <div id="subInfo1" style="width:100%;height:92%">
+
+
+            </div>
+        </div>
+        <div style="width:50%;float:left" id="info2" class="cuadroInfoIndicador">
+            Accidentabilidad del último año:
+            <a href="#" onclick="javascript:llamarSubGrafico(2);">
+                <i class="fa fa-chevron-circle-up" style="color:#0E9290"></i></a>
+
+            <div id="subInfo2" style="width:100%;height:92%">
+
+            </div>
+        </div>
+
+        <div style="width:50%;float:right" id="info3" class="cuadroInfoIndicador">
+            Capacitación y Entrenamiento del último año
+            <a href="#" onclick="javascript:llamarSubGrafico(3);">
+                <i class="fa fa-bar-chart" style="color:#0E9290"></i></a>
+            <br>
+            <div id="subInfo3" style="width:100%;height:92%">
+
+
+            </div>
+
+        </div>
+        <div style="width:50%;float:right" id="info4" class="cuadroInfoIndicador">
+            Exámenes Médico
+            <a href="#" onclick="javascript:llamarSubGrafico(4);">
+                <i class="fa fa-circle-o-notch" aria-hidden="true" style="color:#0E9290"></i></a>
+            <div id="subInfo4" style="width:100%;height:92%">
+
+
+            </div>
+        </div>
+    </div>
+
+    <div class="cuadroGeneral" id="divActualizacionesGosst">
+
+        <h2>Actualizaciones GOSST</h2>
+        <div class="container-fluid" id="divContainActualizaciones">
+            <div style="margin-top: 25px;
+    margin-bottom: 25px;">
+                Mejoras y cambios de imagen que se realizaran en el sistema
+            </div>
+            <table class="table table-striped table-bordered table-hover"
+                   id="tblActualizacion">
+                <thead>
+                <tr>
+                    <td class="tb-acc" style="width:180px"> Versión <i class="fa fa-search" aria-hidden="true"
+                                                                       id="filtroVersionActu"> </i></td>
+                    <td class="tb-acc" style="width:180px">Fecha <i class="fa fa-search" aria-hidden="true"
+                                                                    id="filtroFechaActu"> </i></td>
+                    <td class="tb-acc" style="width:200px">Módulo <i class="fa fa-search" aria-hidden="true"
+                                                                     id="filtroModuloActu"> </i></td>
+                    <td class="tb-acc">Actualización</td>
+                    <td class="tb-acc">Ver detalle</td>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="cuadroGeneral" id="divSugerenciasGosst">
+
+        <h2>Sug ST</h2>
+
+        <div class="container-fluid" id="divContainSugerencia">
+
+            <button id="btnCancelarSugerencia" type="button" class="btn btn-success"
+                    onclick="javascript:cancelarNuevoSugerencia();" title="Cancelar">
+                <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+            </button>
+            <button id="btnNuevoSugerencia" type="button" class="btn btn-success"
+                    onclick="javascript:nuevoSugerencia();" title="Nuevo">
+                <i class="fa fa-file-o fa-2x"></i>
+            </button>
+
+
+            <button id="btnGuardarSugerencia" type="button" class="btn btn-success"
+                    onclick='javascript:guardarSugerencia();' title="Guardar">
+                <i class="fa fa-floppy-o fa-2x"></i>
+            </button>
+
+            <button id="btnEliminarSugerencia" type="button" class="btn btn-danger"
+                    onclick="javascript:eliminarSugerencia();" title="Eliminar">
+                <i class="fa fa-times fa-2x"></i>
+            </button>
+            <div class="wrapper table-responsive" id="wrapperSug">
+                <table class="table table-striped table-bordered table-hover"
+                       id="tblSugerencia" style="min-width:2200px">
+                    <thead>
+                    <tr>
+                        <td class="tb-acc" colspan="5">Cliente</td>
+                        <td class="tb-acc" colspan="4">GOSST</td>
+                        <td class="tb-acc" style="width:180px" rowspan="2">Calificación de la solicitud</td>
+                    </tr>
+                    <tr>
+                        <td class="tb-acc" style="width:180px"> Fecha de solicitud</td>
+                        <td class="tb-acc" style="width:180px">Motivo</td>
+                        <td class="tb-acc" style="width:220px">Módulos involucrados</td>
+                        <td class="tb-acc" style="width:250px">Solicitud</td>
+                        <td class="tb-acc">Evidencia</td>
+                        <td class="tb-acc" style="width:180px">Fecha Planificada</td>
+                        <td class="tb-acc" style="width:180px">Fecha Realizada</td>
+                        <td class="tb-acc" style="width:170px">Estado <i class="fa fa-search" aria-hidden="true"
+                                                                         id="filtroEstadoSug"> </i></td>
+
+                        <td class="tb-acc">Observaciones</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="container-fluid" id="divContainCalificacion">
+            <button id="btnGuardarCalificacionSugerencia" type="button" class="btn btn-success"
+                    onclick='javascript:guardarSugerencia();' title="Guardar">
+                <i class="fa fa-floppy-o fa-2x"></i>
+            </button>
+
+
+            <div class="table-responsive">
+
+                <table class="table table-striped table-bordered table-hover"
+                       id="tblPeligrosResiduos" style="min-width:1800px">
+                    <thead>
+                    <tr>
+                        <td class="tb-acc" style="width:30%">
+                            Estimado Usuario, su calificación para nosotros
+                            es muy importante, favor de calificar los siguientes aspectos
+                        </td>
+                        <td class="tb-acc" style="width:70%"></td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>¿La solución resuelve su problema?
+                        </td>
+                        <td id="tdResuelveSug"></td>
+
+                    </tr>
+                    <tr>
+                        <td>El tiempo de solución fue adecuado
+                        </td>
+                        <td id="tdTiempoSug" style='color:rgba(6, 141, 133, 0.92)'></td>
+
+                    </tr>
+                    <tr>
+                        <td>Comentario
+                        </td>
+                        <td id="tdComentSug"></td>
+
+                    </tr>
+                    <tr>
+                        <td colspan="2"> Nota: En caso exista alguna disconformidad, favor de anotarlo
+                            en el cuadro de Comentario.
+                            Gracias por involucrarse con su software GOSST
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+
+        </div>
+
+    </div>
+</div>
+
+<div id="botonesIndicadores">
+
+    <div class="iconoIndicador" id="indRadial1">
+
+        <button class="btn btn-primary">
+            <br>
+
+            <br>
+            <br>
+            <i class="fa fa-arrow-right"></i>
+            <br>
+            <br>
+
+            <br>
+        </button>
+    </div>
+    <div class="iconoIndicador" id="indRadial2">
+
+        <button class="btn btn-primary">
+            <br>
+
+            <br>
+            <br>
+            <i class="fa fa-arrow-left"></i>
+            <br>
+            <br>
+
+            <br>
+        </button>
+    </div>
+    <div class="iconoIndicador" id="indRadial3">
+
+        <button class="btn btn-primary">
+            <br>
+
+            <br>
+            <br>
+            <i class="fa fa-arrow-left"></i>
+            <br>
+            <br>
+
+            <br>
+        </button>
+    </div>
+</div>
+
+
+<fieldset id="fieldFiltro" style="background-color:white;
+	border:solid ;border-width: 1px;width:100%;
+	border-color:#586A7E;color:#279D62;font-size:11px;font-weight:bold">
+    <div class="col-md-1" style="text-align:center;border-color:black;" id="legend">
+        <strong>Módulo</strong>
+    </div>
+
+</fieldset>
+
+<fieldset id="legendEstado" style="background-color:white;
+	border:solid ;border-width: 1px;width:100%;
+	border-color:#586A7E;color:#279D62;font-size:13px;font-weight:bold">
+    <div class="col-md-1" style="text-align:center;border-color:black;" id="legend">
+        <strong>Leyenda</strong>
+    </div>
+    <div class="col-md-2 leyendaActivada" id="estadoCumplimiento1">
+        <div style="" class="col-md-1 leyProceso"></div>
+        <div style="width:100%">&nbsp;Eventos en Proceso</div>
+    </div>
+    <div class="col-md-2 leyendaActivada" id="estadoCumplimiento2">
+        <div style="" class="col-md-1 leyCompleto"></div>
+        <div style="width:100%">&nbsp;Eventos Completados</div>
+    </div>
+
+    <div class="col-md-2 leyendaActivada" id="estadoCumplimiento3">
+        <div class="col-md-1 leyRetrasado"></div>
+        <div style="width:100%">&nbsp;Eventos Retrasados &nbsp;</div>
+    </div>
+    <div class="col-md-2 leyendaActivada" id="estadoCumplimiento4">
+        <div style="" class="col-md-1 leyAlertas"></div>
+        <div style="width:100%">&nbsp;Alertas</div>
+    </div>
+
+    <div class="col-md-2 leyendaActivada" id="estadoCumplimiento5">
+        <div style="" class="col-md-1 leyIncidentes"></div>
+        <div style="width:100%">&nbsp;Incidentes</div>
+    </div>
+
+</fieldset>
+
+
+<div class="modal fade" id="modalProyeccion" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%">
+
+        <!-- Modal content-->
+        <div class="modal-content" style="height:95%">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Indicadores proyectados</h4>
+            </div>
+            <div class="modal-body" style="height:100%;width:95%">
+                <form class="form-inline">
+                    Tipo de proyección<select class="form-control" id="slcTipoProy">
+                    <option value="1">Vigencia Formación</option>
+                    <option value="2">Vigencia Médica</option>
+                    <option value="3"> Vigencia EPP</option>
+                </select>
+                    Desde: <input type="date"
+                                  class="form-control"
+                                  id="fechaInicioProy"
+                                  value="2016-01-01">
+                    Hasta:
+                    <input type="date"
+                           class="form-control" id="fechaFinProy"
+                           value="2016-12-30">
+                    Nivel de despliegue<select class="form-control" id="slcNivel">
+                    <option value="1">Empresa</option>
+                    <option value="2">Unidad</option>
+                    <option value="3"> División</option>
+                    <option value="4">Area</option>
+                    <option value="5">Puesto</option>
+                    <option value="6">Trabajador</option>
+                </select>
+                    <input type="text" class="form-control" id="buscadorProy" placeholder="Buscar...">
+                    <div id="indicadorBusqueda" style="float:right">
+
+                    </div>
+                </form>
+                <br>
+                <button id='btnTogleParam' type='button'
+                        class='btn btn-warning' title='Parámetros' onclick="toggleParametros()">
+                    <i class='fa fa-arrow-up fa-2x'></i></button>
+
+                <button id='btnProyect' type='button'
+                        class='btn btn-success' title='Generar Proyecciones' onclick="hallarProyeccion()">
+                    <i class='fa fa-external-link  fa-2x'></i></button>
+
+                <button id='btnGraficoProyeccion' type='button'
+                        class='btn btn-success ' title='Generar gráfico' onclick="generarGraficoProyeccion()">
+                    <i class='fa fa-pie-chart fa-2x'></i></button>
+                <button id='btnClipTablaProyeccion' type='button'
+                        class='btn btn-success ' title='Tabla Clipboard'>
+                    <i class='fa fa-clipboard fa-2x'></i></button>
+                <div class="table-responsive" id="divProyeccion">
+
+                    <table class="table table-striped table-bordered table-hover"
+                           id="tblProyeccion">
+                        <thead>
+                        <tr>
+                            <th class="tb-acc">Trabajador</th>
+                            <th class="tb-acc">2016-05</th>
+                            <th class="tb-acc">2016-06</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyC">
+                        </tbody>
+                    </table>
+
+                </div>
+                <div id="graficoProyeccion">
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Volver</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="modal fade" id="modalZoomGrafico" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%;">
+
+        <!-- Modal content-->
+        <div class="modal-content" style="">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Gráfico Gosst</h4>
+            </div>
+            <div class="modal-body" style="width:95%">
+
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+<div class="modal fade" id="modalEspecifoInd" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%">
+
+        <!-- Modal content-->
+        <div class="modal-content" style="height:95%">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Indicadores específicos</h4>
+            </div>
+            <div class="modal-body" style="height:100%;width:95%">
+                <button id='btnClipTablaEspecifica' type='button'
+                        class='btn btn-success'>
+                    <i class='fa fa-clipboard fa-2x'></i></button>
+                <br>
+
+                <div class="table-responsive" id="divEspIndicador">
+
+                    <table class="table table-striped table-bordered table-hover"
+                           id="tblEspecificaInd">
+                        <thead>
+                        <tr>
+
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyC">
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Volver</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="cuadroGeneral" id="divComunicadosTrabajador">
+    <h2>Comunicados - Colaborador</h2>
+    <div class="container-fluid" id="divContainComunicadosTrabajador">
+        <button id="btnCancelarComunicadoTrabajador" type="button" class="btn btn-success"
+                onclick="javascript:cancelarComunicadoTrabajador();" title="Cancelar">
+            <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+        </button>
+        <button id="btnNuevoComunicadoTrabajador" type="button" class="btn btn-success"
+                onclick="javascript:nuevoComunicadoTrabajador();" title="Nuevo">
+            <i class="fa fa-file-o fa-2x"></i>
+        </button>
+        <button id="btnGuardarComunicadoTrabajador" type="button" class="btn btn-success"
+                onclick='javascript:guardarComunicadoTrabajador();' title="Guardar">
+            <i class="fa fa-floppy-o fa-2x"></i>
+        </button>
+        <button id="btnEliminarComunicadoTrabajador" type="button" class="btn btn-danger"
+                onclick="javascript:eliminarComunicadoTrabajador();" title="Eliminar">
+            <i class="fa fa-times fa-2x"></i>
+        </button>
+        <div class="wrapper" id="wrapComunicado">
+            <table class="table table-striped table-bordered table-hover" id="tblComunicadosTrabajador">
+                <thead>
+                <tr>
+                    <td class="tb-acc" style="width:150px">Tipo</td>
+                    <td class="tb-acc" style="width:150px">Fecha de Mensaje</td>
+                    <td class="tb-acc" style="width:150px">Hora</td>
+                    <td class="tb-acc" style="width:300px">Comunicado</td>
+                    <td class="tb-acc" style="width:150px">Link</td>
+                    <td class="tb-acc" style="width:200px">Evidencia</td>
+                    <td class="tb-acc" style="width:100px">Visto</td>
+                    <td class="tb-acc" style="width:100px">Oculto</td>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="modalVistosComunicado"
+     tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%;max-height:1500px">
+        <div class="modal-content">
+            <div class="modal-header" style="display:flex; justify-content:space-between">
+                <h4 class="modal-title" id="modalVistosComunicadoTitulo">Comunicados Trabajador - Vistos</h4>
+                <button type="button" class="close" data-dismiss="modal">×</button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="table-responsive" id="divTblVistosComunicado" style="height:600px">
+                    <table class="table table-striped table-bordered table-hover" id="tblVistosComunicado"
+                           style="min-width:1250px">
+                        <thead>
+                        <tr>
+                            <th class="tb-acc" style="width:100px">Nro</th>
+                            <th class="tb-acc" style="width:200px">Unidad</th>
+                            <th class="tb-acc" style="width:200px">División</th>
+                            <th class="tb-acc" style="width:200px">Área</th>
+                            <th class="tb-acc" style="width:200px">Trabajador</th>
+                            <th class="tb-acc" style="width:300px">Fecha del visto</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="modal fade bs-example-modal-lg" id="modalAprobGerencia" tabindex="-1"
+     role="dialog" aria-labelledby="mdProgFechaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdProgFechaLabel">Validación de gerencia</h4>
+            </div>
+            <div class="modal-body">
+
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="cuadroGeneral" id="divAuditoriasConsolidado">
+    <h2>Lista de Visualizacion</h2>
+    <div class="container-fluid" id="divContainAuditoriasConsolidado">
+        <button id="btnCancelarAudis" type="button" class="btn btn-success"
+                onclick="javascript:cancelarAuditoriasAtajo();" title="Cancelar">
+            <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+        </button>
+        <button id=btnListarVerificaciones type="button" class="btn btn-success"
+                onclick="javascript:();" title="Lista de Verificaciones">
+            <i class="fa fa-list-ol fa-2x"></i>
+        </button>
+        <button id="btnMonitoreo" type="button" class="btn btn-success"
+                onclick="javascript:();" title="Monitoreo">
+            <i class="fa fa-video-camera fa-2x"></i>
+        </button>
+        <button id="btnHallazgo" type="button" class="btn btn-success"
+                onclick="javascript:();" title="Hallazgo">
+            <i class="fa fa-indent fa-2x"></i>
+        </button>
+        <div class="wrapper" id="wrapAuditoriasConsolidado">
+            <table class="table table-striped table-bordered table-hover fixed table-fixed"
+                   id="tblAuditoriasConsolidado">
+                <thead>
+                <tr>
+                    <td class="tb-acc" style="width:115px"> Codigo del evento</td>
+                    <td class="tb-acc" style="width:300px"> Origen del evento</td>
+                    <td class="tb-acc" style="width:200px"> Evento asociado a</td>
+                    <td class="tb-acc" style="width:150px"> Area Interna asociada</td>
+                    <td class="tb-acc" style="width:180px"> Titulo del evento</td>
+                    <td class="tb-acc" style="width:200px"> Detalle del evento</td>
+                    <td class="tb-acc" style="width:200px"> Fecha del evento - hora</td>
+                    <td class="tb-acc" style="width:200px"> Responsable del evento</td>
+                    <td class="tb-acc" style="width:150px"> Resultado del informe</td>
+                    <td class="tb-acc" style="width:200px"> Evidencia del evento</td>
+                    <td class="tb-acc" style="width:200px"> E.Estado de evaluación del informe</td>
+                    <td class="tb-acc" style="width:200px"> Observación / Retroalimentación</td>
+                    <td class="tb-acc" style="width:200px"> Fecha de notificacion a partes interesadas</td>
+                    <td class="tb-acc" style="width:180px"> Accion de mejora asociadas(A.MA)</td>
+                    <td class="tb-acc" style="width:180px"> Evaluacion de A.M.A</td>
+                    <td class="tb-acc" style="width:180px"> Fecha de evaluaciÓn de A.M.A</td>
+
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="cuadroGeneral" id="divListaVerificacion">
+    <div class="container-fluid" id="divVerif">
+        <h2 id="tituloRegresar"></h2>
+        <div class="table-responsive">
+            <table class="table table-bordered" style="width: 650px;" id="indicadorAuditoriaTbl">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:70px">Buenas</th>
+                    <th class="tb-acc">Parcialmente</th>
+                    <th class="tb-acc" style="width:70px">Malas</th>
+                    <th class="tb-acc" style="width:70px">Vac&iacute;as</th>
+                    <th class="tb-acc" style="width:120px">&Iacute;ndice Parcial</th>
+                    <th class="tb-acc" style="width:200px">Porcentaje de Llenado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td id="indicador1" style="background-color:green" class="success">0</td>
+                    <td id="indicador2" style="background-color:yellow" class="success">0</td>
+                    <td id="indicador3" style="background-color:red" class="danger">0</td>
+                    <td id="indicador4" class="success">0</td>
+                    <td id="indicador5" class="success">0</td>
+                    <td id="indicador6" class="success">0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="wrapper">
+            <table class="table table-striped table-bordered table-hover fixed table-fixed"
+                   id="tblVerif">
+                <thead>
+                <tr>
+                    <th class="tb-acc" rowspan="2" style="width: 50px;">Id</th>
+                    <th class="tb-acc" rowspan="2" style="width: 400px;">Requisito</th>
+                    <th class="tb-acc" rowspan="2" style="width: 80px;">¿Aplica?</th>
+                    <th class="tb-acc" colspan="3" style="width: 170px;">Cumplimiento</th>
+                    <th class="tb-acc" rowspan="2" style="width: 100px;">¿Riesgo potencial?</th>
+                    <th class="tb-acc" rowspan="2" style="width: 300px;">Comentarios</th>
+                    <th class="tb-acc" rowspan="2" style="width: 260px;">Partes interesadas área</th>
+                    <th class="tb-acc" rowspan="2" style="width: 260px;">Partes interesadas empresa</th>
+                    <th class="tb-acc" rowspan="2" style="width: 200px;">Solicitud de Acción de Mejora Asociada</th>
+                    <th class="tb-acc" rowspan="2" style="width: 200px;">Evidencia</th>
+                </tr>
+                <tr>
+                    <th class="tb-acc" style="width: 50px;">Si</th>
+                    <th class="tb-acc" style="width: 70px;">Parcial</th>
+                    <th class="tb-acc" style="width: 50px;">No</th>
+                </tr>
+                </thead>
+                <tbody id="tbodyC">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="modal fade bs-example-modal-lg" id="modalHallazgos"
+     tabindex="-1" role="dialog" aria-labelledby="mdReporteLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdReporteLabel"> Hallazgos </h4>
+            </div>
+            <div class="modal-body" id="modalRespuesta">
+
+                <button id="btnVolverHall" type="button" class="btn btn-success"
+                        title="Cancelar">
+                    <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+                </button>
+
+                <button id="btnGuardarHall" type="button" class="btn btn-success"
+                        title="Guardar">
+                    <i class="fa fa-floppy-o fa-2x"></i>
+                </button>
+                <button id="btnEliminarHall" type="button" class="btn btn-danger"
+                        title="Eliminar">
+                    <i class="fa fa-times fa-2x"></i>
+                </button>
+                <div class="wrapper" id="wrapper3">
+                    <table class="table table-striped table-bordered table-hover fixed table-fixed"
+                           id="tblHallazgo" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th class="tb-acc" style="width:250px">Descripción</th>
+                            <th class="tb-acc" style="width:180px">Observación</th>
+                            <th class="tb-acc" style="width:250px">Evidencia</th>
+                            <th class="tb-acc" style="width: 190px">Tipo de reporte</th>
+                            <th class="tb-acc" style="width:200px">Nivel de Riesgo</th>
+                            <th class="tb-acc" style="width: 190px">Factor de seguridad</th>
+                            <th class="tb-acc" style="width:200px">Causa que origina el hallazgo</th>
+                            <th class="tb-acc" style="width:200px">Lugar específico</th>
+                            <th class="tb-acc" style="width: 220px;">Partes interesadas área</th>
+                            <th class="tb-acc" style="width: 220px;">Partes interesadas empresa</th>
+
+                            <th class="tb-acc" style="width:220px">Solicitud de Acción de Mejora</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdVistaPreviaHallz" tabindex="-1"
+     role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdImpDatosLabel">Vista Previa</h4>
+            </div>
+            <div class="modal-body">
+                <button id='btnDescargarVista' type='button' class='btn btn-success' title='Descargar'>
+                    <i class='fa fa-download fa-lg'></i>Descargar
+                </button>
+                <br/><br/>
+                <div class="input-group">
+                    <label class="input-group-btn">
+                    </label>
+                </div>
+                <br/>
+                <div id="divVistaImagenHallazgo">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade bs-example-modal-lg" id="modalMonitoreo"
+     tabindex="-1" role="dialog" aria-labelledby="mdReporteLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdReporteLabel"> Monitoreos </h4>
+            </div>
+            <div class="modal-body" id="modalBodyMonitoreo">
+                <div class="wrapper" id="wrapper4">
+                    <table class="table table-striped table-bordered table-hover fixed table-fixed"
+                           id=tblMonitoreo>
+                        <thead>
+
+                        <tr>
+                            <th class="tb-acc" style="width: 200px">Area Monitoreada</th>
+                            <th class="tb-acc" style="width: 200px">Tipo de Agente</th>
+                            <th class="tb-acc" style="width: 200px">Agente Monitoreado</th>
+                            <th class="tb-acc" style="width: 100px">Dentro del Programa</th>
+                            <th class="tb-acc" style="width: 200px">Frecuencia</th>
+                            <th class="tb-acc" style="width: 180px">Próxima Fecha</th>
+                            <th class="tb-acc" style="width: 200px">Trabajadores Expuestos</th>
+                            <th class="tb-acc" style="width: 200px">Organización Realizadora</th>
+                            <th class="tb-acc" style="width: 200px">Resultado</th>
+                            <th class="tb-acc" style="width: 200px">Observaciones</th>
+                            <th class="tb-acc" style="width: 180px">Hallazgos</th>
+                        </tr>
+
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-body" id="modalPuestosMonitoreo">
+                <div id="jstreePuesto"></div>
+            </div>
+            <div class="modal-body" id="modalHallazgoMonitoreo">
+                <div class="wrapper" id="wrapper5">
+                    <table class="table table-striped table-bordered table-hover fixed table-fixed"
+                           id="tblHallazgoMonitoreo" style="min-width: 100%">
+                        <thead>
+                        <tr>
+                            <th class="tb-acc" style="width:200px">Descripción</th>
+                            <th class="tb-acc" style="width:200px">Causa que origina el hallazgo</th>
+                            <th class="tb-acc" style="width:200px">Lugar específico</th>
+                            <th class="tb-acc" style="width: 220px;">Partes interesadas área</th>
+                            <th class="tb-acc" style="width: 220px;">Partes interesadas empresa</th>
+                            <th class="tb-acc" style="width:200px">Solicitud de Acción de Mejora</th>
+                            <th class="tb-acc" style="width:250px">Evidencia</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade bs-example-modal-lg" id="mdInformeOpt" tabindex="-1"
+     role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width: 30%; top: 20%;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+            </div>
+            <div class="modal-footer">
+                <button id='btnEnviarInformeOpt' type='button' class='btn btn-success' title='Descargar'>
+                    <i class='fa fa-paper-plane fa-lg'></i> Enviar
+                </button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    <span aria-hidden="true">Cancelar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdVerif" tabindex="-1"
+     role="dialog" aria-labelledby="mdEficLabel" aria-hidden="true">
+</div>
+
+<div class="wrapper" id="wrapperConsolidadoAccidentesV3">
+    <table id="tblConsolidadoAccV3" class="table table-striped table-bordered table-hover table-fixed">
+        <thead>
+        <tr></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+</body>
+
+<!-- script references highcharts -->
+
+<script src="../lib/HighCharts/highcharts.js"></script>
+<script src="../lib/HighCharts/highcharts-more.js"></script>
+<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+<script src="../lib/HighCharts/modules/exporting.js"></script>
+<script src="../lib/HighCharts/modules/funnel.js"></script>
+
+<script src="../lib/HighCharts/modules/drilldown.js"></script>
+<!-- script references highcharts -->
+ 
+ <script src="../js/generic/config.js"></script>
+
+ <script>
+    var version = typeof config !== 'undefined' && config.g_version ? config.g_version : '1.0';
+    
+    document.write('<script src="../js/generic/util.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/constantes.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/constantesApp.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/contratista/proyectos.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/contratista/trabajador_proyecto.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/contratista/moodle_contratistas.js?v='+version+'"><\/script>');
+
+    document.write('<script src="../js/main/main.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/accidentes.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/main/vista_trabajador.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/objetivo_sst.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/contratistas.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/capacitacion_online.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/agregar_evento.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspecciones.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspecciones_version_dos.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspecciones_extintor.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspecciones_gabinete_incendio.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspecciones_trabajador_epp.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/status_documento.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/evento_inseguro.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/trabajadores.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/eleccion_virtual.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/evento_formacion.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/consulta_contratista.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/consulta_vehiculo_maquinaria.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/consulta_equipo_herramienta.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/consulta_trabajador_contratista.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/accidentes_ssoma.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/accidentes.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspecciones_version_tres.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspeccionV2/inspeccionV2.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspeccionV2/tipo/inspeccion_general.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador/inspeccionV2/tipo/opciones_inspeccion_general/evidencia_auxiliar.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/main/vista_trabajador_contratista/main.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/perfil.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/inducciones.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/documento_grupo_riesgo_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/documento_prueba_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/documento_ficha_sintomatologica_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/consulta_estado_acceso.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_trabajador_contratista/aviso_ia.js?v='+version+'"><\/script>');
+
+    document.write('<script src="../js/main/vista_visitante/main.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/perfil.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/inducciones.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/documento_grupo_riesgo_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/documento_prueba_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/documento_ficha_sintomatologica_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/documento_vacuna_covid.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/documento_sctr.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/main/vista_visitante/consulta_estado_acceso.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/main/vista_medico/main.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/main/vista_sctr/main.js?v='+version+'"><\/script>');
+ </script>
+
+<!--   <script src="../js/generic/util.js"></script>-->
+<!--   <script src="../js/generic/constantes.js"></script>-->
+<!-- <script src="../js/generic/constantesApp.js"></script> -->
+<script src="../js/generic/openjs.js"></script>
+
+<script src="../js/residuos/indicadores.js"></script>
+
+<!-- <script src="../js/main/main.js"></script> -->
+<script src="../js/main/actualizacion.js"></script>
+<script src="../js/main/comunicadoTrabajador.js"></script>
+<script src="../js/main/auditoriasConsolidado.js"></script>
+<!--<script src="../js/main/accidentes.js"></script>-->
+<script src="../js/main/buscadorUnidad.js"></script>
+
+<!-- <script src="../js/main/vista_trabajador.js"></script> 
+<script src="../js/main/vista_trabajador/capacitacion_online.js"></script> -->
+<script src="../js/main/vista_trabajador/consolidado_trabajadores_asignados.js"></script>
+<!-- <script src="../js/main/vista_trabajador/contratistas.js"></script> -->
+<script src="../js/main/vista_trabajador/comunicado_trabajador.js"></script>
+<script src="../js/main/vista_trabajador/observacion_fast.js"></script>
+<!-- <script src="../js/main/vista_trabajador/evento_inseguro.js"></script> -->
+<!-- <script src="../js/main/vista_trabajador/inspecciones.js"></script>
+<script src="../js/main/vista_trabajador/inspecciones_extintor.js"></script>
+<script src="../js/main/vista_trabajador/inspecciones_gabinete_incendio.js"></script>
+<script src="../js/main/vista_trabajador/inspecciones_trabajador_epp.js"></script> -->
+<!-- <script src="../js/main/vista_trabajador/status_documento.js"></script> -->
+<script src="../js/main/vista_trabajador/observacion_colaborador.js"></script>
+<script src="../js/main/vista_trabajador/incidente_colaborador.js"></script>
+<script src="../js/main/vista_trabajador/antecedente_covid.js"></script>
+<script src="../js/main/vista_trabajador/formulario_covid.js"></script>
+<script src="../js/main/vista_trabajador/bitacora_contacto_covid.js"></script>
+<script src="../js/main/vista_trabajador/resumen_trabajador_covid.js"></script>
+<script src="../js/main/vista_trabajador/estado_diario_covid.js"></script>
+<script src="../js/main/vista_trabajador/reunion_virtual_covid.js"></script>
+<script src="../js/main/vista_trabajador/historial_vacuna_covid.js"></script>
+
+<!-- <script src="../js/main/vista_trabajador/eleccion_virtual.js"></script>
+ <script src="../js/main/vista_trabajador_contratista/main.js"></script>
+<script src="../js/main/vista_trabajador_contratista/perfil.js"></script>
+<script src="../js/main/vista_trabajador_contratista/inducciones.js"></script> 
+<script src="../js/main/vista_trabajador_contratista/documento_grupo_riesgo_covid.js"></script>
+<script src="../js/main/vista_trabajador_contratista/documento_prueba_covid.js"></script>
+<script src="../js/main/vista_trabajador_contratista/documento_ficha_sintomatologica_covid.js"></script>
+<script src="../js/main/vista_trabajador_contratista/consulta_estado_acceso.js"></script>
+
+ <script src="../js/main/vista_visitante/main.js"></script>
+<script src="../js/main/vista_visitante/perfil.js"></script>
+<script src="../js/main/vista_visitante/inducciones.js"></script> 
+<script src="../js/main/vista_visitante/documento_grupo_riesgo_covid.js"></script>
+<script src="../js/main/vista_visitante/documento_prueba_covid.js"></script>
+<script src="../js/main/vista_visitante/documento_ficha_sintomatologica_covid.js"></script>
+<script src="../js/main/vista_visitante/documento_vacuna_covid.js"></script>
+<script src="../js/main/vista_visitante/documento_sctr.js"></script>
+<script src="../js/main/vista_visitante/consulta_estado_acceso.js"></script> -->
+
+<!-- <script src="../js/contratista/proyectos.js"></script>
+<script src="../js/contratista/trabajador_proyecto.js"></script> -->
+<script src="../js/contratista/vista_contratista.js"></script>
+<script src="../js/contratista/vista_contratista/hallazgo_proyecto.js"></script>
+
+<script src="../js/main/vista_vigilante/main.js"></script>
+<script src="../js/main/vista_vigilante/induccion.js"></script>
+
+<!-- <script src="../js/main/vista_medico/main.js"></script>
+<script src="../js/main/vista_sctr/main.js"></script> -->
+
+<script src="../js/main/vista_residuo/main.js"></script>
+<script src="../js/main/vista_residuo/locatario.js"></script>
+<script src="../js/main/vista_residuo/actividad.js"></script>
+<script src="../js/main/vista_residuo/alquiler.js"></script>
+<script src="../js/main/vista_residuo/generacion.js"></script>
+<script src="../js/main/vista_residuo/detalle_generacion.js"></script>
+<script src="../js/main/vista_residuo/transportista.js"></script>
+<script src="../js/main/vista_residuo/vehiculo_transportista.js"></script>
+<script src="../js/main/vista_residuo/salida.js"></script>
+<script src="../js/main/vista_residuo/detalle_salida.js"></script>
+<script src="../js/main/vista_residuo/indicadores.js"></script>
+
+<script src="../js/main/vista_medico_covid/main.js"></script>
+<script src="../js/main/vista_medico_covid/consolidado_trabajador_covid.js"></script>
+<script src="../js/main/vista_medico_covid/consolidado_resumen_covid.js"></script>
+<script src="../js/main/vista_medico_covid/consolidado_seguimiento_covid.js"></script>
+<script src="../js/main/vista_medico_covid/general.js"></script>
+<script src="../js/main/vista_medico_covid/historial_vacuna_covid.js"></script>
+<script src="../js/main/vista_medico_covid/consolidado_historial_vacuna_covid.js"></script>
+<script src="../js/main/vista_medico_covid/consolidado_evaluacion_vacunacion_covid.js"></script>
+<script src="../js/main/vista_movil/main.js"></script>
+
+<script src="../js/main/vista_trabajador/examen_medico.js"></script>
+<script src="../js/main/vista_trabajador/evento_opt.js"></script>
+<!-- <script src="../js/main/vista_trabajador/agregar_evento.js"></script> 
+<script src="../js/main/vista_trabajador/evento_formacion.js"></script> -->
+<script src="../js/main/vista_trabajador/homologacion.js"></script>
+<!-- <script src="../js/main/vista_trabajador/inspecciones_version_dos.js"></script> -->
+<!-- <script src="../js/main/vista_trabajador/objetivo_sst.js"></script> -->
+
+<!-- Incluir JavaScript de SweetAlert2 -->
+<script src="../lib/toastr.min.js"></script>
+
+<script src="../lib/clipboard.min.js"></script>
+
+<script src="../js/iperc/detalleiperc.js"></script>
+<script src="../js/iperc/detalleiperc2.js"></script>
+
+<script src="../js/accionmejora/agregaraccionmejora.js"></script>
+<!-- antoni agregado -->
+
+<script src="../js/contratista/vista_contratista/indicador_contratista.js"></script>
+<!-- <script src="../js/trabajador/horas_trabajador.js"></script> -->
+
+
+<!-- fin antoni agregado -->
+
+<img id="test-antes">
+<img id="test-despues">
+</html>

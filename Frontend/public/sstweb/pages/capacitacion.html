@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Formaciones</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+<link href="../lib/jstree/themes/default/style.css" rel="stylesheet">
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+<link href="../css/jquery-ui.css" rel="stylesheet">
+	<link href="../css/estiloAutocomplete.css" rel="stylesheet">
+<link href="../css/chosen.css" rel="stylesheet">
+
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+		
+<style type="text/css">
+
+
+html, body {
+	height: 100%;
+	min-height: 100%;
+	overflow: auto;
+}
+
+#wrapper {
+	height: 100%;
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: auto;
+}
+
+.desempleado{
+ background-color:grey;
+ }
+ table {
+	table-layout: fixed;
+}
+</style>
+	<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+
+</head>
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	""
+	<br> 	<br> 
+	<strong>- </strong>
+		
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+<!-- <div id="fsBotones"></div> -->
+
+   <div class="container-fluid">
+      <div id="TituloArriba">
+	     <h2>Listado de Formaciones</h2>
+	  </div>
+		
+	  <div id="fsBotones"></div>
+	  
+	  <div style="height: 5px;"></div>
+		
+      <div id="wrapper" class="wrapper">
+	     <table class="table table-striped table-bordered table-hover fixed table-fixed"  
+	            id="tblCap">
+		    <thead>
+			   <tr>
+			      <th class="tb-acc" style="width:220px">Tema general</th>
+				  <th class="tb-acc" style="width:150px">Tipo de Formación</th>
+				  <th class="tb-acc" style="width:150px">Clasificación</th>
+				  <th class="tb-acc" style="width:150px">Categoría</th>
+				  <th class="tb-acc" style="width:220px">Coordinador general de la formación</th>
+				  <th class="tb-acc" style="width:200px">Tema específico</th>
+				  <th class="tb-acc" style="width:150px">Horas Programadas</th>
+				  <th class="tb-acc" style="width:150px">Vigencia</th>
+				  <th class="tb-acc" style="width:150px">T. Aprobados / T.Planificados</th>
+				  <th class="tb-acc" style="width:150px">Prog. Realizadas / Prog. Planificadas</th>
+				  <th class="tb-acc" style="width:250px">Video Guía</th>
+				  <th class="tb-acc" style="width:150px">Puestos Asignados</th>
+				  <th class="tb-acc" style="width:200px">Excepciones</th>
+			   </tr>
+		    </thead>
+			<tbody></tbody>
+	     </table>
+	  </div>
+   </div>
+
+<div class="modal fade bs-example-modal-lg" id="modalEvaluacion"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:1100px;max-height:1500px">
+			<div class="modal-content" >
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="modalCorreosTitulo">Registro Evaluación Formaci&oacute;n de Trabajadores</h4>
+				</div>
+				
+
+				
+
+				
+
+				<div class="modal-body" id="modalEvaluacionBody">
+				<div  id="divEvalNormal">
+				
+					<button id="btnCancelarEval" type="button" class="btn btn-success"
+						title="Volver a Programación">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnGuardarEval' type='button' class='btn btn-success'
+						title='Guardar Evaluaciones'>
+						<i class='fa fa-save fa-2x'></i>
+					</button>
+					<button id='btnUploadEvaluacion' type='button' class='btn btn-info' title='Subir desde Excel'>
+							<i class='fa fa-upload fa-2x'></i>
+							</button>
+				<button id="btnClipboardEvalsForm" type="button" class="btn btn-success clipGosst"
+						title="Copiar Clipboard">
+						<i class="fa fa-clipboard fa-2x"></i>
+					</button>
+					
+					
+						<div class="table-responsive wrapper" style="height:400px" id="wrapperEval">
+
+							<table class="table table-striped table-bordered table-hover"
+								id="tblEval">
+								<thead>
+									<tr>
+										<th class="tb-acc">Trabajador  <a id='btnSelectTrabs' href='#' onclick='obtenerListaNombresTrabajador();'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a></th>
+										<th class="tb-acc">Resultado </th>
+										<th class="tb-acc" style="width:140px">Detalle</th>
+								
+									</tr>
+								</thead>
+								<tbody id="tbodyProg">
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+					
+					<div id="divImportarEval">
+					<form>
+						<div class="form-group">
+							
+							<button id='btnUploadEvaluacionNormal' type='button' class='btn btn-info' title='Upload Stándar'>
+							<i class='fa fa-exchange fa-2x'></i>
+							</button>
+							<button id="btnGuardarImportEvals" type="button"
+								class="btn btn-success" title="Volver y Guardar">
+								<i class=" fa fa-save fa-2x"></i>
+							</button>
+							<br/>
+							
+							
+							<label for="message-text" class="control-label">Copie aquí desde un excel segun el formato:</label>
+							<textarea class="form-control" rows="10" id="txtListadoEval" style="font-size:11px; width:840px;"
+								maxlength="100000" placeholder="  Trabajador/DNI     Resultado     Detalle  "></textarea>
+						</div>
+					</form>
+				</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="modalFormacionTrabajadores"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:1100px;max-height:1500px">
+			<div class="modal-content" >
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="modalCorreosTitulo">Historial Trabajadores</h4>
+				</div>
+				
+
+
+				<div class="modal-body" >
+				<button id="btnClipboardSmart" type="button" class="btn btn-success clipGosst"
+						title="Copiar Clipboard">
+						<i class="fa fa-clipboard fa-2x"></i>
+					</button>
+				<button id="btnSmartProg" type="button" class="btn btn-success"
+						title="Smart Programacion">
+						<i class="fa fa-magic fa-2x"></i>
+					</button>
+					
+					<div >
+						<div class="table-responsive" style="height:400px">
+
+							<table class="table table-striped table-bordered table-hover"
+								id="tblTrabFormacion">
+								<thead>
+									<tr>
+										<th class="tb-acc">DNI</th>
+										<th class="tb-acc">Área</th>
+										<th class="tb-acc">Trabajador</th>
+										<th class="tb-acc">Fecha Próxima </th>
+										<th class="tb-acc" style="width:140px">Días restantes</th>
+								
+									</tr>
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+   <div class="modal fade bs-example-modal-lg" id="mdProgFecha" tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width:80%">
+	 <div class="modal-content">
+	  <div class="modal-header">
+	   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	      <span aria-hidden="true">&times;</span>
+	   </button>
+					
+	   <h4 class="modal-title" id="mdProgFechaLabel">Programaci&oacute;n</h4>
+	  </div>
+				
+	  <div class="modal-body" id="modalProg">
+	   <button id="btnCancelarProg" type="button" class="btn btn-success" title="Cancelar">
+	      <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+	   </button>
+				   
+	   <button id='btnAgregarProg' type='button' class='btn btn-success' title='Agregar Nueva programacion'>
+	      <i class='fa fa-file-o fa-2x'></i>
+	   </button>
+				   
+	   <button id="btnGuardarProg" type="button" class="btn btn-success" title="Guardar">
+	      <i class="fa fa-floppy-o fa-2x"></i>
+	   </button>
+	   
+	   <button id='btnEliminarProg' type='button' class='btn btn-danger' title='Eliminar programacion'>
+	      <i class='fa fa-times fa-2x'></i>
+	   </button>
+				   
+	   <!-- <button id='btnGenReporte' type='button' class='btn btn-success' title='Generar Reporte'>
+	      <i class='fa fa-file-text fa-2x'></i>
+	   </button> -->
+	      
+	   <!-- <button id='btnVerCorreos' type='button' class='btn btn-success' title='Ver Correos'>
+	      <i class='fa fa fa-envelope fa-2x'></i>
+	   </button> -->
+				   
+	   <button id='btnEvaluar' type='button' class='btn btn-success' title='Evaluar trabajadores'>
+	      <i class='fa fa-graduation-cap fa-2x'></i>
+	   </button>
+			       
+	   <button id='btnClipTablaProgramacion' type='button' class='btn btn-success' title='Tabla Clipboard' >
+	      <i class='fa fa-clipboard fa-2x'></i>
+	   </button>
+	                
+	   <button id='btnSmartUploadCapacitacion' type='button' onclick="verSmartImportProgCapacitacion()"
+			   title='Smart upload programación capacitación' class='btn btn-success'>
+	      <i class='fa fa-upload fa-2x'></i><i class='fa fa-info'></i> 
+	   </button>
+	   
+	   <button id='btnGenReporteExcelEval' type='button' class='btn btn-excel' title='Generar Reporte Excel' onclick='generarExcelFormatoRegistroFormacion()'>
+	      <i class='fa fa-2x fa-file-excel-o'></i>
+	   </button>
+					
+	   <div class="table-responsive">
+	    <br>
+	    <div class="table-responsive" id="progFormacionesDiv">
+		 <input type="text" id="buscadorTrabajadorInput" 
+			    style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+		 <button id='resetBuscador' type='button' title='Reset' style="color:red">
+		    <i class="fa fa-times"></i>
+		 </button>
+
+		 <table class="table table-striped table-bordered table-hover" id="tblProg" style="min-width:2000px">
+		  <thead>
+		   <tr>
+		    <th class="tb-acc" style="min-width:140px;width:15%">Coordinador del evento de formación</th>
+			<th class="tb-acc" style="width:195px">Detalle del tema</th>
+			<th class="tb-acc" style="width:155px">Duración (horas)</th>
+			<th class="tb-acc" style="width:175px">Fecha Planificada</th>
+			<th class="tb-acc" style="width:175px">Hora Planificada</th>
+		    <th class="tb-acc" style="width:175px">Fecha Realizada</th>
+			<th class="tb-acc">Inversión</th>
+		    <th class="tb-acc">Trabajadores Planificados</th>
+			<th class="tb-acc">Trabajadores Asistentes</th>
+			<th class="tb-acc">Trabajadores Aprobados /<br>  Evaluados</th>
+			<th class="tb-acc">Evidencia</th>
+			<th class="tb-acc">Estado implementación</th>
+		   </tr>
+		  </thead>
+		  <tbody id="tbodyProg"></tbody>
+		 </table>
+		 
+		 <a href="#" class="izquierda_flecha"><img src="../imagenes/flecha_01.png" /></a>
+		 <em id='labelFlechas'></em>
+	     <a href="#" class="derecha_flecha"><img src="../imagenes/flecha_02.png" /></a>
+	    </div>
+	   </div>
+	  </div>
+
+				<div class="modal-body" id="modalTree">
+					<button id="btnCancelarTrabs" type="button" class="btn btn-success"
+						title="Volver y Guardar" onclick="javascript:cancelarSeleccionarTrabs();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					
+					<button id="btnSmartSelect" type="button" class="btn btn-success"
+						title="Seleccionar Trabajadores" onclick="javascript:smartSelectJsTree();">
+						<i class="fa fa-search  fa-2x"></i>
+					</button>
+					<h4 class="modal-title">Seleccione a los trabajadores planificados</h4>
+					
+					<input id="buscarTrabJstree" 	style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+					<textarea id="listTrabBuscar" style="width:500px;height:200px;resize: none;"></textarea>
+					<div id="resultSearchTrab"> </div>
+					<button id='cambiarBuscador' type='button' 
+						title='cambiar' style="color:blue">
+						<i class="fa fa-arrow-circle-down	 " ></i>
+					</button>
+					
+					<div id="jstree" ></div>
+				</div>
+
+				<div class="modal-body" id="modalTreeAsist">
+					<button id="btnCancelarTrabs" type="button" class="btn btn-success"
+						title="Volver y Guardar" onclick="javascript:cancelarSeleccionarTrabs();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					
+					<h4 class="modal-title">Seleccione a los trabajadores asistentes</h4>
+					<input id="buscarTrabAsisJstree" 	style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+					<textarea id="listTrabAsistBuscar" style="width:500px;height:200px;resize: none;"></textarea>
+					<div id="resultSearchTrabAsist"> </div>
+					<button id='cambiarBuscadorAsist' type='button' 
+						title='cambiar' style="color:blue">
+						<i class="fa fa-arrow-circle-down	 " ></i>
+					</button>
+					<div id="jstreeAsist"></div>
+				</div>
+
+				<div class="modal-body" id="modalUpload">
+					<button id="btnCancelarUpload" type="button" class="btn btn-success"
+						title="Cancelar" onclick="javascript:cancelarUploadEvidencia();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnUploadEvidencia' type='button' class='btn btn-success'
+						title='Subir imagen'
+						onclick="javascript:uploadEvidencia();">
+						<i class='fa fa-floppy-o fa-2x'></i>
+					</button>
+					<h4 class="modal-title">Subir evidencia</h4>
+					<input type="file" name="fileEvi" id="fileEvi" accept="image/jpg,image/png,image/jpeg,image/gif" >
+
+				</div>
+
+			</div>
+		</div>
+   </div>
+	
+<div class="modal fade bs-example-modal-lg" id="modalCorreos"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:1100px;">
+			<div class="modal-content" >
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="modalCorreosTitulo">Correos de Trabajadores</h4>
+				</div>
+				
+
+				
+
+				
+
+				<div class="modal-body" id="modalBodyCorreos">
+				
+				<p>
+				Hola Hola
+				</p>
+				
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdImpDatos" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Importar datos Formación</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<button id="btnGuardarNuevos" type="button"
+								class="btn btn-success" title="Guardar">
+								<i class="fa fa-floppy-o fa-lg"></i>
+							</button><br/>
+							
+							
+							<label for="message-text" class="control-label">Copie aqu&iacute; desde un excel segun el formato:</label>
+							<textarea class="form-control" rows="10" id="txtListado" style="font-size:11px; width:840px;"
+								maxlength="10000" placeholder=" Formación    Tipo de Formación    Clasificación      Responsable    Tema      Horas Programadas    "></textarea>
+						</div>
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<!-- script references -->
+	<!-- script references highcharts -->
+	
+		<script src="../lib/HighCharts/highcharts.js"></script>
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	
+	<!-- script references highcharts -->
+	
+	<script src="../lib/jquery.min.js"></script>
+	
+	<script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../lib/chosen.jquery.js"></script>
+			
+ <script src="../js/generic/config.js"></script>
+ 
+ <script>
+    var version = typeof config !== 'undefined' && config.g_version ? config.g_version : '1.0';
+    
+    document.write('<script src="../js/generic/constantes.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/util.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/constantesApp.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/recursos/capacitacion.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/recursos/progcapacitacion.js?v='+version+'"><\/script>');
+ </script>
+				
+	<!-- <script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script> -->
+	<!-- <script src="../js/recursos/capacitacion.js"></script> 
+	<script src="../js/recursos/progcapacitacion.js"></script> -->
+	<script src="../js/recursos/asignacion.js"></script>
+	<script src="../js/recursos/capacitacion_online_excepcion.js"></script>
+   <script src="../lib/jstree/jstree.js"></script>
+
+
+</body>
+</html>

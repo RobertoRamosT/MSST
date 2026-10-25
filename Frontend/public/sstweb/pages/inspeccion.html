@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Inspección</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+<link href="../lib/jstree/themes/default/style.min.css" rel="stylesheet">
+	<link href="../css/jquery-ui.css" rel="stylesheet">
+		<link href="../css/estiloAutocomplete.css" rel="stylesheet">
+		<link href="../css/chosen.css" rel="stylesheet">
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+	<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+<style type="text/css">
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html, body {
+	height: 100%;
+	min-height: 100%;
+	overflow: auto;
+}
+
+#wrapper {
+	width: 100%;
+	height: 100%;
+	overflow-x: auto;
+	overflow-y: auto;
+}
+#wrapper2 {
+	height: 400px;
+	overflow-x: auto;
+	overflow-y: auto;
+}
+table {
+	table-layout: fixed;
+}
+</style>
+</head>
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	 
+	</div>
+</div>
+	 <nav class="navbar navbar-default" id="barraMenu"></nav>
+<!-- <div id="fsBotones"></div> -->
+
+   <div id="divGeneral">
+    <div id="TituloArriba">
+       <h2 id="tituloAuditoria">Auditorias / Inspecciones / Listado de verificación</h2>
+    </div>
+
+    <div id="fsBotones"></div>
+    
+	<form class="form-inline" style="margin-top:10px;">
+	 <button type="button" class="btn btn-success" id="btnResetBuscadorAuditoria" 
+		     title="Refresh" onclick="reiniciarBuscadorAuditoria()" style="float:right;">
+	    <i class="fa fa-refresh fa-2x"></i>
+	 </button>
+			          
+	 <button type="button" class="btn btn-success" onclick="aplicarBuscadorAuditoria()" 
+		     style="float:right;margin-right:5px;" title="Buscar los registros cuyo 'Título', 'Tipo de inspección', 
+		     'Lugar de la inspección' o 'Responsable de la ejecución del evento' con las palabras ingresadas." 
+		     id="btnAplicarBuscadorAuditoria" >
+        <i class="fa fa-search fa-2x"></i>
+     </button>
+		       
+	 <input placeholder='Título, tipo, lugar o responsable' class='form-control' id='valBuscarValorAuditoria'
+			onkeypress='bloquearBotonEnter(this)' style='float:right;margin-right:5px;'>
+    </form>
+    
+   <div class="container-fluid" id="divResumAudiLista">
+      <form class="form-inline" >
+	     Desde: 
+		 <input type="date" class="form-control" id="fechaInicioResuAudiLista"  onchange="verResumenAuditoriaLista()" >
+		 Hasta: 
+		<input type="date" class="form-control" id="fechaFinResuAudiLista"  onchange="verResumenAuditoriaLista()">
+	  </form>
+ <!-- <button id='btnClipTablaResAudiLista' type='button' 
+		      class='btn btn-success clipGosst' title='Tabla Clipboard' >
+	     <i class='fa fa-clipboard fa-2x'></i> 
+	  </button> -->
+	<br>
+	<strong id="mensajeResumenDetalle"></strong>
+	<div class="wrapper" id="wrapResumAudiListaDivision">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblResumAudiListaDivision" style="min-width : 1300px">
+				<thead>
+				<tr>
+				<th class="tb-acc" style="width: 220px"  rowspan="2" > Unidad</th> 
+				<th class="tb-acc divisionAlternativa" style="width: 220px"  rowspan="2"  > División </th> 
+				<th class="tb-acc"  rowspan="2" id="tdResAudiListaDivision">  </th> 
+				<th class="tb-acc"  colspan="4">Requisitos evaluado</th> 
+				<th class="tb-acc"  colspan="3">Acciones de mejora</th> 
+				
+				</tr>
+				<tr>
+					  
+					<th class="tb-acc" style="width: 190px; background-color: #70aa59  !important;">Cumple</th>   
+					
+					<th class="tb-acc" style="width: 190px; background-color: #bec047 !important;">Cumple parcialmente</th>   
+					<th class="tb-acc" style="width: 190px; background-color: #c74747 !important;">No cumple</th>
+					
+					<th class="tb-acc" style="width: 190px">% alcanzado</th>      
+					<th class="tb-acc" style="width: 190px">Cerrado</th>   
+					<th class="tb-acc" style="width: 190px">Abierto</th>   
+					<th class="tb-acc" style="width: 190px">% alcanzado</th>   
+					 
+				</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		
+		</div>
+	<div class="wrapper" id="wrapResumAudiLista">
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblResumAudiLista" >
+				<thead>
+				<tr>
+				<th class="tb-acc" style="width: 220px"  rowspan="2" > Unidad</th> 
+				<th class="tb-acc"  rowspan="2" id="tdResAudiLista">  </th> 
+				<th class="tb-acc"  colspan="4">Requisitos evaluado</th> 
+				<th class="tb-acc"  colspan="3">Acciones de mejora</th> 
+				
+				</tr>
+				<tr>
+					  
+					<th class="tb-acc" style="width: 190px; background-color: #70aa59  !important;">Cumple</th>   
+					
+					<th class="tb-acc" style="width: 190px; background-color: #bec047 !important;">Cumple parcialmente</th>   
+					<th class="tb-acc" style="width: 190px; background-color: #c74747 !important;">No cumple</th>
+					
+					<th class="tb-acc" style="width: 190px">% alcanzado</th>      
+					<th class="tb-acc" style="width: 190px">Cerrado</th>   
+					<th class="tb-acc" style="width: 190px">Abierto</th>   
+					<th class="tb-acc" style="width: 190px">% alcanzado</th>   
+					 
+				</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		
+		</div>
+	</div>
+
+<div class="container-fluid" id="divResumInspecc">
+	
+	<form class="form-inline">
+						Desde: 
+						<input type="date" class="form-control" id="fechaInicioResuInsp"  onchange="verResumenHallazgosGeneral()" >
+						Hasta: 
+						<input type="date" class="form-control" id="fechaFinResuInsp"  onchange="verResumenHallazgosGeneral()">
+		
+	</form>
+       <button id='btnClipTablaResInspecc' type='button' class='btn btn-success clipGosst' 
+               title='Copiar los elementos de la tabla - Permite copiar las filas de la tabla Resumen de inspecciones libres por unidades para pegarlos en otro archivo (por ejemplo, en un excel).' >
+	      <i class='fa fa-clipboard fa-2x'></i> 
+	   </button>
+	<br>       
+	<div class="wrapper" id="wrapResumInspecc">
+
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblResumInspecc" >
+				<thead>
+				<tr>
+				<th class="tb-acc" style="width: 220px"  rowspan="2" id="tdResAudi"> Unidad</th> 
+				<th class="tb-acc"  rowspan="2"># Inspecciones</th> 
+				<th class="tb-acc"  colspan="5"  id="thObservacionesResumen">Observaciones</th> 
+				<th class="tb-acc"  colspan="2">Estado de mejora asociada</th> 
+				
+				</tr>
+				<tr id="trNivelesResumen">
+					<th class="tb-acc" style="width: 190px">Total</th>   
+					<th class="tb-acc" style="width: 190px; background-color: #c74747 !important;">Excesivamente Alto</th>   
+					<th class="tb-acc" style="width: 190px; background-color: #db7859 !important;">Alto</th>   
+					<th class="tb-acc" style="width: 190px; background-color: #bec047 !important;">Medio</th>   
+					<th class="tb-acc" style="width: 190px; background-color: #70aa59 !important;">Bajo</th>   
+					<th class="tb-acc" style="width: 190px">Cerrado</th>   
+					<th class="tb-acc" style="width: 190px">Abierto</th>   
+					 
+				</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		
+		</div>
+   <div class="wrapper" id="wrapResumInspeccArea">
+      <table class="table table-striped table-bordered table-hover table-fixed" id="tblResumInspeccArea" >
+	     <thead>
+		    <tr>
+			   <th class="tb-acc" style="width:220px" rowspan="2" id="tdResAudi">Unidad</th> 
+			   <th class="tb-acc" style="width:220px" rowspan="2">Área</th> 
+			   <th class="tb-acc" rowspan="2"># Inspecciones</th> 
+			   <th class="tb-acc" colspan="5" id="thObservacionesResumenArea">Observaciones</th> 
+			   <th class="tb-acc" colspan="2">Estado de mejora asociada</th> 
+			</tr>
+			<tr id="trNivelesResumenArea">
+			   <th class="tb-acc" style="width:190px">Total</th>   
+			   <th class="tb-acc" style="width:190px; background-color: #c74747 !important;">Excesivamente Alto</th>   
+			   <th class="tb-acc" style="width:190px; background-color: #db7859 !important;">Alto</th>   
+			   <th class="tb-acc" style="width:190px; background-color: #bec047 !important;">Medio</th>   
+			   <th class="tb-acc" style="width:190px; background-color: #70aa59 !important;">Bajo</th>   
+			   <th class="tb-acc" style="width:190px">Cerrado</th>   
+			   <th class="tb-acc" style="width:190px">Abierto</th>   
+		   </tr>
+		</thead>
+		<tbody>
+		</tbody>
+	  </table>
+   </div>
+</div>
+
+ <div class="container-fluid" id="divAudi">
+    <div style="height: 5px;"></div>	
+	<br><br>
+	<strong>Para visualizar reportes anteriores, modificar parámetros</strong>
+	
+	<div class="wrapper" id="wrapper2">
+       <table class="table table-striped table-bordered table-hover fixed table-fixed"  id="tblAudi">
+		  <thead>
+		     <tr>
+			    <th class="tb-acc" style="width:250px">Título</th>
+				<th class="tb-acc" style="width:250px">Tipo de Inspección</th>
+				 <th class="tb-acc" style="width:350px">Unidad</th>
+				 <th class="tb-acc" style="width:350px">Área</th>
+				<th class="tb-acc" style="width:200px">Lugar de la inspección</th>
+				<th class="tb-acc" style="width:90px">¿Inspección planificada?</th>
+				<th class="tb-acc" style="width:170px">Fecha Planificada</th>
+				<th class="tb-acc" style="width:140px">Hora Planificada</th>
+				<th class="tb-acc" style="width:130px">Inversión</th>
+				<th class="tb-acc" style="width:220px">Responsable de la ejecución del evento</th>
+				<th class="tb-acc" style="width:180px">Puesto</th>
+				<th class="tb-acc" style="width:170px">Fecha en que se realizó el evento</th>
+				<th class="tb-acc" style="width:400px">Detalle de Evento</th>
+				<th class="tb-acc" style="width:250px">Resultado</th>
+				<th class="tb-acc" style="width:90px">Nivel de Avance </th> 
+				<th class="tb-acc" style="width:250px">Evidencia del Evento</th>
+				<th class="tb-acc" style="width:190px">Estado del Evento</th>
+				<th class="tb-acc" style="width:220px">E.Estado de evaluación del informe</th>
+				<th class="tb-acc" style="width:220px">Código de informe</th>
+				<th class="tb-acc" style="width:200px">Estado de informe (a enviar a partes interesadas)</th>
+				<th class="tb-acc" style="width:135px">Acciones de Mejora Completas / Total</th>
+			 </tr>
+	      </thead>
+		  <tbody>
+		  </tbody>
+	   </table>
+	</div>
+ </div>
+ 
+	<div class="container-fluid" id="divVerif">
+		 <div class="table-responsive">
+		<table class="table table-bordered" style="width: 650px;" id="indicadorAuditoriaTbl"> 
+			<thead>
+				<tr>
+					<th  class="tb-acc" style="width:70px">Buenas</th>
+					<th class="tb-acc">Parcialmente</th>
+					<th class="tb-acc" style="width:70px">Malas</th>
+					<th class="tb-acc" style="width:70px">Vac&iacute;as</th>
+					<th class="tb-acc" style="width:120px">&Iacute;ndice Parcial</th>
+					<th class="tb-acc" style="width:200px">Porcentaje de Llenado</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td id="indicador1"  style="background-color:green" class="success">0</td>
+					<td id="indicador2" style="background-color:yellow" class="success">0</td>
+					<td id="indicador3"  style="background-color:red" class="danger">0</td>
+					<td id="indicador4" class="success">0</td>
+					<td id="indicador5" class="success">0</td>
+					<td id="indicador6" class="success">0</td>
+				</tr>
+			</tbody>
+		</table>
+		</div> 
+		<div id="wrapper">
+
+			<table class="table table-striped table-bordered table-hover fixed table-fixed"
+				id="tblVerif" >
+				<thead>
+					<tr>
+						<th class="tb-acc" rowspan="2" style="width: 50px;">Id</th>
+						<th class="tb-acc" rowspan="2" style="width: 400px;">Requisito</th>
+						<th class="tb-acc" rowspan="2" style="width: 80px;">¿Aplica?</th>
+						<th class="tb-acc" colspan="3" style="width: 170px;">Cumplimiento</th>
+						<th class="tb-acc" rowspan="2" style="width: 100px;">¿Riesgo potencial?</th>
+						<th class="tb-acc" rowspan="2" style="width: 200px;">Nivel de riesgo</th>
+						<th class="tb-acc" rowspan="2" style="width: 300px;">Comentarios</th>
+						
+						<th class="tb-acc" rowspan="2" style="width: 260px;">Partes interesadas área</th>
+						<th class="tb-acc" rowspan="2" style="width: 260px;">Partes interesadas empresa</th>
+						<th class="tb-acc" rowspan="2" style="width: 200px;">Solicitud de mejora asociada</th>
+						<th class="tb-acc" rowspan="2" style="width: 200px;">Evidencia</th>
+						<th class="tb-acc" rowspan="2" style="width: 100px;">Historial</th>
+						<th class="tb-acc" rowspan="2" style="width:100px;">Indicador</th>
+		                <th class="tb-acc" rowspan="2" style="width:250px;">Estado</th>
+					</tr>
+					<tr>
+						<th class="tb-acc" style="width: 50px;">Si </th>
+						<th class="tb-acc" style="width: 70px;">Parcial</th>
+						<th class="tb-acc" style="width: 50px;">No</th>
+					</tr>
+				</thead>
+				<tbody id="tbodyC">
+				</tbody>
+			</table>
+		</div>
+	
+	
+	</div>
+
+</div>
+<div class="modal fade bs-example-modal-lg" id="modalAprobGerencia" tabindex="-1"
+	 role="dialog" aria-labelledby="mdProgFechaLabel" aria-hidden="true">
+   <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+	     <div class="modal-header">
+		    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			   <span aria-hidden="true">&times;</span>
+			</button>
+			<h4 class="modal-title" id="mdProgFechaLabel">Validación de gerencia</h4>
+		 </div>
+		 <div class="modal-body">
+					 
+		 </div>
+      </div>
+   </div>
+</div>
+<div class="modal fade bs-example-modal-lg" id="mdInformeAuditoria" tabindex="-1"
+		role="dialog" aria-labelledby="mdProgFechaLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">asd</h4>
+				</div>
+				<div class="modal-body"  >
+					 
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdArea" tabindex="-1"
+		role="dialog" aria-labelledby="mdProgFechaLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Áreas</h4>
+				</div>
+				<div class="modal-body" id="modalTree">
+					<h4 class="modal-title">Seleccione a las Áreas inspeccionadas</h4>
+					<div id="jstree"></div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+
+	<div class="modal fade bs-example-modal-sm" id="mdUpload" tabindex="-1"
+		role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdUploadLabel">Areas</h4>
+				</div>
+				<button id='btnUploadEvidencia' type='button'
+					class='btn btn-success' title='Subir imagen'
+					onclick="javascript:uploadEvidencia();">
+					<i class='fa fa-floppy-o fa-2x'></i>
+				</button>
+				<h4 class="modal-title">Subir evidencia</h4>
+				<input type="file" name="fileEvi" id="fileEvi"
+					accept="image/jpg,image/png,image/jpeg,image/gif">
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-sm" id="modalUploadAuditoria" tabindex="-1"
+		role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdUploadLabel">&Aacute;reas</h4>
+				</div>
+				<button id='btnUploadEvidencia' type='button'
+					class='btn btn-success' title='Subir imagen'>
+<!--					onclick="javascript:uploadEvidenciaAuditoria();">-->
+					<i class='fa fa-floppy-o fa-2x'></i>
+				</button>
+				<h4 class="modal-title">Subir evidencia</h4>
+				<input type="file" name="fileEviAuditoria" id="fileEviAuditoria">
+
+			</div>
+		</div>
+	</div>
+	  
+   <div class="modal fade bs-example-modal-lg" id="modalHallazgos" tabindex="-1" 
+        role="dialog" aria-labelledby="mdReporteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width:90%">
+	 <div class="modal-content">
+	  <div class="modal-header">
+	     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		    <span aria-hidden="true">&times;</span>
+	     </button>
+		 <h4 class="modal-title" id="mdReporteLabel"> Hallazgos </h4>
+	  </div>
+	  
+	  <div class="modal-body" id="modalRespuesta">
+       <fieldset>
+	    <button id="btnVolverHall" type="button" class="btn btn-success" title="Cancelar">
+           <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		</button>
+		
+		<button id="btnNuevoHall" type="button" class="btn btn-success" title="Nuevo">
+		   <i class="fa fa-file-o fa-2x"></i>
+		</button>
+	
+		<button id="btnGuardarHall" type="button" class="btn btn-success" title="Guardar">
+	       <i class="fa fa-floppy-o fa-2x"></i>
+		</button>
+	
+	    <button id="btnImportarHall" type="button" class="btn btn-success" title="Importar">
+	       <i class="fa fa-upload fa-2x"></i>
+	    </button>
+	
+	    <button id="btnImportarHallNuevo" type="button" class="btn btn-info" title="Importar">
+	       <i class="fa fa-upload fa-2x"></i>
+	       <i class="fa fa-info"></i>
+	    </button>
+		
+	    <button id="btnEliminarHall" type="button" class="btn btn-danger" title="Eliminar">
+		   <i class="fa fa-times fa-2x"></i>
+	    </button>
+	    
+	    <button id="btnGraficoHall" type="button" class="btn btn-success" title="Ver gráfico por estado"
+	            onclick="verGraficoPorEstadoHallazgoLibre()">
+		   <i class="fa fa-bar-chart fa-2x"></i>
+	    </button>
+	    
+	   </fieldset>
+	
+	   <div class="wrapper" id="wrapper3"> 
+	    <table class="table table-striped table-bordered table-hover fixed table-fixed"
+			   id="tblHallazgo">
+		 <thead>
+		  <tr>
+		   <th class="tb-acc" style="width:250px">Descripción</th>
+		   <th class="tb-acc" style="width: 190px">Tipo de reporte</th> 
+		   <!-- ><th class="tb-acc" style="width:200px">Area</th>-->			
+		   <th class="tb-acc" style="width: 200px">Nivel de Riesgo</th>
+		   <th class="tb-acc" style="width: 190px">Factor de seguridad</th> 
+		   <th class="tb-acc" style="width:200px">Causa que origina el hallazgo</th>
+		   <th class="tb-acc" style="width:200px">Lugar específico</th>
+		   <th class="tb-acc" style="width: 220px;">Partes interesadas área</th>
+		   <th class="tb-acc" style="width: 220px;">Partes interesadas empresa</th>
+		   <th class="tb-acc" style="width:220px">Solicitud de mejora asociada</th>
+		   <th class="tb-acc" style="width:250px">Evidencia</th>
+		   <th class="tb-acc" style="width:180px">Observación Gerencia</th>
+		   <th class="tb-acc" rowspan="2" style="width: 100px;">Historial</th>
+		   <th class="tb-acc" rowspan="2" style="width:100px;">Indicador</th>
+		   <th class="tb-acc" rowspan="2" style="width:250px;">Estado</th>
+		  </tr>
+	     </thead>
+		 <tbody></tbody>
+	    </table>
+	   </div>
+	  </div>
+	 </div>
+	</div>
+   </div>
+	
+	<div class="modal fade bs-example-modal-lg in" id="mdVistaPreviaHallz" tabindex="-1"
+			role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title" id="mdImpDatosLabel">Vista Previa</h4>
+					</div>
+					<div class="modal-body">
+						<button id='btnDescargarVista' type='button' class='btn btn-success' title='Descargar'>
+							<i class='fa fa-download fa-lg'></i>Descargar
+						</button>
+						<button id='btnGuardarVista' type='button' class='btn btn-success' title='Subir'>
+							<i class='fa fa-floppy-o fa-lg'></i>Guardar 
+						</button>
+						<br/><br/>
+						<div class="input-group"> 
+			                <label class="input-group-btn"> 
+			                    <span class="btn btn-primary">
+			                     	<i class='fa fa-upload fa-lg'></i> Subir Nuevo&hellip; 
+			                     	<input style="display: none;" type="file" name="fileEviHallz" id="fileEviHallz" accept="image/jpg,image/png,image/jpeg,image/gif">
+			                    </span>
+			                </label>
+			                <input type="text" class="form-control" readonly>
+	           		 	</div>
+						<br/>
+						<div id="divVistaImagenHallazgo">
+								
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade bs-example-modal-lg" id="modalImportHall" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Importar Hallazgos</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<button id="btnSaveImportarHall" type="button"
+								class="btn btn-success" title="Guardar">
+								<i class="fa fa-floppy-o fa-lg"></i>
+							</button><br/>
+							
+							
+							<label for="message-text" class="control-label">Copie aqu&iacute; desde un excel segun el formato:</label>
+							<textarea class="form-control" rows="10" id="txtListadoHall" style="font-size:12px; "
+								maxlength="10000" placeholder=" Descripción - Área - Nivel de riesgo - Causa - Lugar específico  "></textarea>
+						</div>
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdVerif" tabindex="-1"
+		role="dialog" aria-labelledby="mdEficLabel" aria-hidden="true">
+	</div>
+	<div class="modal fade" id="modalAccionesAuditoria" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%">
+    
+    <!-- Modal content-->
+    <div class="modal-content" >
+       <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Solicitudes de acciones de mejora asociadas</h4>
+       </div>
+         
+       <div class="modal-body" id="divTotalAcciones">
+          <div class="table-responsive">
+			<div class="wrapper" id="wrapperAccionesAudiAux">			
+			  <table class="table table-striped table-bordered table-hover"
+				    id="tblAccionesAudi" >
+			    <thead>
+			      <tr> 
+				     <td class="tb-acc" style="width:200px">Hallazgo</td>
+				     <td class="tb-acc" style="width:200px">Evidencia del hallazgo</td>
+				  	 <td class="tb-acc" style="width:200px">Solicitud de mejora</td>
+				  	 <!-- <td class="tb-acc" style="width:170px">Asociados</td> -->
+				  	 <td class="tb-acc" style="width:240px">Descripción de la acción correctiva</td>
+				  	 <td class="tb-acc" style="width:160px">Clasificación de la acción correctiva según tipo de Hallazgo</td>
+				  	 <td class="tb-acc" style="width:160px">Clasificación de la acción correctiva según tipo de Control</td>
+				  	 <td class="tb-acc" style="width:200px">Responsable de la acción correctiva</td>
+				  	 <td class="tb-acc" style="width:150px">Fecha planificada</td>
+				  	 <td class="tb-acc" style="width:150px">Fecha realizada</td>
+				  	 <!-- <td class="tb-acc" style="width:160px">Inversión</td> -->
+				  	 <td class="tb-acc" style="width:160px">Estado de la acción correctiva</td>	
+				  	 <td class="tb-acc" style="width:200px">Evidencia</td>					
+			   	  </tr>
+			     </thead>
+			     <tbody>
+			     </tbody>
+			  </table>
+			</div> 
+		  </div>
+       </div>
+       
+       <div class="modal-body" id="divOrigenAccion">
+          <div class="table-responsive">
+
+			 <table class="table table-striped table-bordered table-hover"
+					id="tblItemAsoc" style="min-width:1600px">
+			    <thead>
+				   <tr>
+					  <th class="tb-acc">Módulo</th>
+					  <th class="tb-acc">Categoría</th>
+					  <th class="tb-acc" style="width:380px">Requisito</th>
+					  <th class="tb-acc" style="width:280px">Observación</th>
+					  <th class="tb-acc" style="width:120px">Fecha Observada</th>
+					  <th class="tb-acc" style="width:190px">...</th> 
+					</tr>
+				</thead>
+				<tbody id="tbodyItemAsoc">
+				</tbody>
+			 </table>
+		  </div>
+       </div>
+    </div>
+      
+    </div>
+    </div>
+   
+	<div class="modal fade bs-example-modal-sm" id="modalUploadHallazgo" tabindex="-1"
+		role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdUploadLabel">Subir Evidencia</h4>
+				</div>
+				<button id='btnUploadEvidencia' type='button'
+					class='btn btn-success' title='Subir'
+					onclick="javascript:uploadEvidenciaHallazgo();">
+					<i class='fa fa-floppy-o fa-2x'></i>
+				</button>
+				<h4 class="modal-title">Subir evidencia</h4>
+				<input type="file" name="fileEviHallazgo" id="fileEviHallazgo">
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="modalMonitoreo"
+		tabindex="-1" role="dialog" aria-labelledby="mdReporteLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" >
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdReporteLabel"> Monitoreos </h4>
+				</div>
+				<div class="modal-body" id="modalBodyMonitoreo">
+		<fieldset>
+		
+		<button id="btnCancelarMonitoreo" type="button" class="btn btn-success"
+			title="Cancelar">
+			<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		</button>
+		<button id="btnAgregarMonitoreo" type="button" class="btn btn-success"
+			title="Nuevo">
+			<i class="fa fa-file-o fa-2x"></i>
+		</button>
+	
+		<button id="btnGuardarMonitoreo" type="button" class="btn btn-success"
+			title="Guardar">
+			<i class="fa fa-floppy-o fa-2x"></i>
+		</button>
+	<button id="btnGenReporteMon" type="button" class="btn btn-success"
+			 title="Generar Reporte">
+			<i class='fa fa-file-word-o fa-2x'></i>
+		</button>
+	
+		
+	<button id="btnEliminarMonitoreo" type="button" class="btn btn-danger"
+			 title="Eliminar">
+			<i class="fa fa-times fa-2x"></i>
+		</button>
+		
+			</fieldset>
+					<div class="wrapper" id="wrapper4"> 
+							<table class="table table-striped table-bordered table-hover fixed table-fixed"
+								id=tblMonitoreo>
+								<thead>
+									
+									<tr>
+										<th class="tb-acc" style="width: 200px">Area Monitoreada</th>
+										<th class="tb-acc" style="width: 200px">Tipo de Agente</th>
+										<th class="tb-acc" style="width: 200px">Agente Monitoreado</th>
+										<th class="tb-acc" style="width: 100px">Dentro del Programa</th>
+										<th class="tb-acc" style="width: 200px">Frecuencia</th>
+										<th class="tb-acc" style="width: 180px">Próxima Fecha</th>
+										<th class="tb-acc" style="width: 200px">Trabajadores Expuestos</th>
+										<th class="tb-acc" style="width: 200px">Organización Realizadora</th>
+										<th class="tb-acc" style="width: 200px">Resultado</th>
+										<th class="tb-acc" style="width: 200px">Observaciones</th>
+										<th class="tb-acc" style="width: 180px">Hallazgos</th>
+									</tr>
+
+								</thead>
+								<tbody >
+									
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="modal-body" id="modalPuestosMonitoreo">
+					<div id="jstreePuesto"></div>
+					</div>
+					<div class="modal-body" id="modalHallazgoMonitoreo">
+<fieldset>
+		
+		<button id="btnVolverHallMon" type="button" class="btn btn-success"
+			title="Cancelar">
+			<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		</button>
+		<button id="btnNuevoHallMon" type="button" class="btn btn-success"
+			title="Nuevo">
+			<i class="fa fa-file-o fa-2x"></i>
+		</button>
+	
+		<button id="btnGuardarHallMon" type="button" class="btn btn-success"
+			title="Guardar">
+			<i class="fa fa-floppy-o fa-2x"></i>
+		</button>
+	
+	
+		
+	<button id="btnEliminarHallMon" type="button" class="btn btn-danger"
+			 title="Eliminar">
+			<i class="fa fa-times fa-2x"></i>
+		</button>
+		
+	</fieldset>
+	<div class="wrapper" id="wrapper5"> 
+							<table class="table table-striped table-bordered table-hover fixed table-fixed"
+								id="tblHallazgoMonitoreo" style="min-width: 100%">
+								<thead>
+									
+									<tr>
+										<th class="tb-acc" style="width:200px">Descripción</th>
+										<th class="tb-acc" style="width:200px">Causa que origina el hallazgo</th>
+										<th class="tb-acc" style="width:200px">Lugar específico</th>
+										
+										<th class="tb-acc" style="width: 220px;">Partes interesadas área</th>
+										<th class="tb-acc" style="width: 220px;">Partes interesadas empresa</th>
+						
+										<th class="tb-acc" style="width:200px">Solicitud de mejora asociada</th>
+										<th class="tb-acc" style="width:250px">Evidencia</th>
+									</tr>
+
+								</thead>
+								<tbody >
+									
+								</tbody>
+							</table>
+						</div>
+					 
+				</div>
+				</div>
+
+			</div>
+		</div> 
+	<div class="container-fluid" id="divConfigImpacto" style="display:none;">
+		<h2></h2>
+	<!-- <div class="wrapper" id="wrapper2"> -->
+	    <div class="wrapper" id="wrapperConfigImpacto">
+			<table class="table table-striped table-bordered table-hover fixed table-fixed"
+				id="tblConfigImpacto">
+				<thead>
+					<tr>
+						<th class="tb-acc" style="width:200px">Lista</th>
+						<th class="tb-acc" style="width:200px"># de Diagnósticos Realizados</th>
+						<th class="tb-acc" style="width:200px"># Preguntas</th>
+						<th class="tb-acc" style="width:200px"># Excesivamente Alto</th>
+						<th class="tb-acc" style="width:200px"># Alto</th>
+						<th class="tb-acc" style="width:200px"># Medio</th>
+						<th class="tb-acc" style="width:200px">Bajo</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		 </div> 
+	  <!-- </div> -->
+	</div>
+	<div class="container-fluid" id="divListClasif" style="display:none;">
+		<h2></h2>
+		<button id="btnCancelarClasif" type="button"
+			class="btn btn-success" title="Cancelar acciones realizadas - Deshace todo lo hecho al editar los registros de la tabla actual.">
+			<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		</button>
+		<button id="btnGuardarClasif" type="button"
+					class="btn btn-success" title="Guardar cambios - Grabar los datos ingresados al editar los registros de la tabla actual.">
+					<i class="fa fa-floppy-o fa-2x"></i>
+				</button>
+	<!-- <div class="wrapper" id="wrapper2"> -->
+	     <div class="wrapper" id="wrapperListClasificaciones">
+			<table class="table table-striped table-bordered table-hover fixed table-fixed"
+				id="tblListClasif"  >
+				<thead>
+					<tr>
+						<th class="tb-acc" style="width:100px">Id</th>
+						<th class="tb-acc" style="width:200px">Pregunta</th>
+						<th class="tb-acc" style="width:200px">Clasificación</th>
+						<th class="tb-acc" style="width:150px">Peso</th>
+						<th class="tb-acc" style="width:200px">Fecha de Modificación</th>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
+	<!-- </div> -->
+	</div>
+	<!-- script references -->
+	<!-- script references highcharts -->
+	
+		<script src="../lib/HighCharts/highcharts.js"></script>
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	
+	<!-- script references highcharts -->
+	
+	<script src="../lib/jquery.min.js"></script>
+	
+	<script src="../lib/jquery-ui.min.js"></script>
+	
+	<script src="../lib/chosen.jquery.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../lib/jstree.min.js"></script>
+	<script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	<script src="../js/auditoria/auditoria.js"></script>
+	<script src="../js/auditoria/listadoverificaciones.js"></script>
+	
+	<script src="../js/auditoria/monitoreos.js"></script>
+		<script src="../js/auditoria/hallazgo_monitoreo.js"></script>
+	<script src="../js/auditoria/configurar_impacto.js"></script>
+	
+	<script src="../js/accionmejora/agregaraccionmejora.js"></script>
+		<script src="../js/auditoria/hallazgo.js"></script>
+    <script src="../js/auditoria/extintor.js"></script>
+    <script src="../js/auditoria/gabinete_incendio.js"></script>
+    <script src="../js/auditoria/trabajador_epp.js"></script>
+		<script src="../lib/clipboard.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+@charset "ISO-8859-1";
+
+
+
+
+/*   autor: (AntoniTito2)  Tema:  validar Terminos y condiciones.**/
+#cerrar {
+	color:  #ff6666 !important;
+
+	text-shadow: 1px 1px 2px black;
+
+
+	
+	cursor:pointer;
+
+	  opacity: 1;
+}
+
+.centerCheck{
+	display:flex;
+	align-content: center;
+	
+}
+.centerCheck div{
+	
+	margin: auto 0 auto -20px;
+}
+.label__checkbox {
+  display: none;
+ 
+  
+}
+
+.label__check {
+  display: inline-block;
+  border-radius: 15%;
+  border: 1px solid  rgba(0,0,0,.5);
+  background: #ffff;
+  vertical-align: middle;
+  margin-right: 20px;
+  /*width: 2.6em;*/
+  /*height: 2.6em;*/
+    width: 1.8em;
+  height: 1.8em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border .3s ease;
+  }
+  i.icon:hover {
+    opacity: 0.2;
+    font-size: 'calc(1rem + 1vw)';
+    color: #02d4c6;
+    
+    -webkit-text-stroke: 1px rgba(0,0,0,.5);
+  }
+  
+ 
+
+
+.label__checkbox:checked + .label__text .label__check {
+  animation: check .2s cubic-bezier(0.895, 0.030, 0.685, 0.220) forwards;
+}
+  i.icon  {
+ /* font-size: 18px;*/
+    font-size: 15px;
+    opacity: 1;
+    transform: scale(0);
+    color: #ffff;
+    
+    animation: icon .2s cubic-bezier(1.000, 0.008, 0.565, 1.650) .1s 1 forwards;
+  }
+
+
+
+
+@keyframes icon {
+  from {
+    opacity: 0;
+    -webkit-text-stroke: 1px rgba(0,0,0,.5);
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    
+    transform: scale(1)
+  }
+}
+
+@keyframes check {
+  0% {
+  /*width: 2.6em;*/
+  /*height: 2.6em;*/
+    width: 1.8em;
+  height: 1.8em;
+    border-width: 5px;
+  }
+  10% {
+  /*width: 2.6em;*/
+  /*height: 2.6em;*/
+    width: 1.8em;
+  height: 1.8em;
+    opacity: 0.1;
+    background: rgba(0,0,0,0.2);
+    border-width: 12px;
+  }
+  12% {
+  /*width: 2.6em;*/
+  /*height: 2.6em;*/
+    width: 1.8em;
+  height: 1.8em;
+    opacity: 0.4;
+    background: rgba(0,0,0,0.1);
+    border-width: 0;
+  }
+  50% {
+  /*width: 2.6em;*/
+  /*height: 2.6em;*/
+    width: 1.8em;
+  height: 1.8em;
+    background: #00d478;
+    border: 0;
+    opacity: 0.6;
+  }
+  100% {
+  /*width: 2.6em;*/
+  /*height: 2.6em;*/
+    width: 1.8em;
+  height: 1.8em;
+    background: #02d4c6;
+    border: 0;
+    opacity: 1;
+    
+    -webkit-text-stroke: 1px rgba(0,0,0,.5);
+  }
+}
+
+
+
+
+/* ESTILOS PARA EL TEXT AREA TERMINOS Y CONDICIONES */
+
+
+.contenedor1 {
+	line-height:25px;
+    margin: 1rem 1rem auto 0px !important;
+
+    width:100%;
+    max-width: 700px;
+
+    overflow:auto;
+    box-sizing: border-box;
+    padding:0 2rem;
+}
+
+.contenedor {
+	
+	line-height:25px;
+    margin: 1rem 1rem auto 0px !important;
+    border: 1px solid #aaa;
+    height: 200px;
+    width:100%;
+    max-width: 600px;
+    background: #ffffff;
+    overflow:auto;
+    box-sizing: border-box;
+    padding:0.5em 2rem;
+}
+.contenedor span{
+	text-align: justify;
+}
+/* Estilos para motores Webkit y blink (Chrome, Safari, Opera... )*/
+
+.contenedor::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+.contenedor::-webkit-scrollbar:vertical {
+    width:10px;
+}
+
+.contenedor::-webkit-scrollbar-button:increment,.contenedor::-webkit-scrollbar-button {
+    display: none;
+} 
+
+.contenedor::-webkit-scrollbar:horizontal {
+    height: 10px;
+}
+
+.contenedor::-webkit-scrollbar-thumb {
+    background-color: #797979;
+    border-radius: 20px;
+    border: 2px solid #f1f2f3;
+}
+
+.contenedor::-webkit-scrollbar-track {
+    border-radius: 10px;  
+}
+
+
+
+
+
+
+
+@media only screen and (max-width: 767px) {
+	
+	.fa1{
+	
+	visibility: hidden;
+	width: 0px;
+	height: 0px;
+	}
+	
+	
+	.col-sm-10 h1{
+	
+			font-size: 25px;
+			font-weight:bold;			
+			text-align:center;
+			
+	  
+	   display: flex;
+	   		flex-direction:column;
+
+		}
+	
+		
+	.contenedor-general{
+display:flex;
+flex-direction: column;
+flex-wrap: wrap;
+justify-content: center;
+align-content: center;
+align-items: center;
+
+
+
+	}
+	.contenedor{
+ margin: 3px auto !important;
+padding: 3px auto;
+	    height: 200px;
+    width:90%;
+    max-width: 700px;
+    overflow: scroll;
+
+	}
+	
+		.contenedor span{
+		 margin: 3px auto !important;
+padding: 3px auto;
+
+	}
+	
+	.contenedor1{
+	 margin: 0 auto !important;
+	}  
+	.centerCheck{
+	margin: auto auto auto -38px !important;
+	}
+}
+
+
+/* Fin2 de terminos y condiciones*/
+
+
+
+
+
+
+

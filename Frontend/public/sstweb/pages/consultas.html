@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Bienvenido a G O S S T | Online</title>
+
+    <!-- estilos, fuentes, y muchos colores  conflicto ??-->
+    <!-- linea 2-->
+    <link href="../css/chosen.css" rel="stylesheet">
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+          rel="stylesheet">
+    <link href="../lib/jstree/themes/default/style.min.css" rel="stylesheet">
+    <link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'>
+           
+ <script src="../js/generic/config.js"></script>
+
+ <script>
+    var version = typeof config !== 'undefined' && config.g_version ? config.g_version : '1.0';
+    
+    document.write('<link href="../css/bootstrap-s.css?v='+version+'" rel="stylesheet">');
+ </script>
+    
+    <!--[if lt IE 9]>
+    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<!--container-->
+<div class="container">
+    <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col-md-6 lo-central" id="containerWelcome">
+            <h4 id="tituloSaludo" style='font-weight:bold'>Gestor Online de Seguridad y Salud en el Trabajo</h4>
+            <div id="logoVistaConsulta"><img src="../imagenes/logoVertical.png" style="width:200px;heigth:210px"></div>
+            <br>
+
+            <form id="formBuscarEmpresa" class="form-signin" style="display: none"  accept-charset="utf-8">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <h2 class="form-signin-heading fo-head-lo">Ingrese RUC de la empresa a consultar</h2>
+                    <input type="text" id="inputEmpresaRucBuscar" class="form-control" placeholder="Ej: 0123456789"
+                           required="true" autofocus="true">
+                    <button class="btn btn-lg btn-primary btn-block" id="btnBuscarEmpresa" type="submit">Buscar</button>
+                </div>
+                <div class="col-md-12" id="msj" class="msgWarning"></div>
+            </form>
+
+            <form id="formNeutral" class="form-signin" accept-charset="utf-8">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <h2 class="form-signin-heading fo-head-lo">Accediendo a plataforma<i class="fa fa-spin"></i></h2>
+                </div>
+            </form>
+
+            <form id="formBuscarQR" class="form-signin" accept-charset="utf-8">
+            </form>
+        </div>
+    </div> <!-- /row -->
+</div> <!-- /container full -->
+
+<!-- script references -->
+<script src="../lib/jquery.min.js"></script>
+<script src="../lib/jquery-ui.min.js"></script>
+<script src="../lib/chosen.jquery.js"></script>
+<script src="../lib/jquery.blockUI.min.js"></script>
+<script src="../lib/bootstrap.min.js"></script>
+
+ <script>
+    var version = typeof config !== 'undefined' && config.g_version ? config.g_version : '1.0';
+   
+    document.write('<script src="../js/generic/util.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/constantes.js?v='+version+'"><\/script>');
+   
+    document.write('<script src="../js/consultas/consultas.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/consultas/contratista.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/consultas/trabajador_interno.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/consultas/trabajador_contratista.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/consultas/visitante.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/consultas/vehiculo_maquinaria.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/consultas/equipo_herramienta.js?v='+version+'"><\/script>');
+ </script>
+
+</body>
+</html>

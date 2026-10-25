@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>GOSST-Accidentes</title>
+    <meta name="generator" content="Bootply"/>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="../css/bootstrap-s.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+          rel="stylesheet">
+    <link href="../css/jquery-ui.css" rel="stylesheet">
+    <link href="../lib/jstree/themes/default/style.min.css" rel="stylesheet">
+    <link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'>
+    <link href="../css/chosen.css" rel="stylesheet">
+    <!--[if lt IE 9]>
+    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+
+    <![endif]-->
+    <style type="text/css">
+        .ui-autocomplete-input {
+            border: none;
+            font-size: 14px;
+            height: 30px;
+            margin-bottom: 5px;
+            padding-top: 2px;
+            border: 1px solid #DDD !important;
+            padding-top: 0px !important;
+            z-index: 1511;
+            position: relative;
+        }
+
+        .ui-menu .ui-menu-item a {
+            font-size: 12px;
+        }
+
+        .ui-autocomplete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1051 !important;
+            float: left;
+            display: none;
+            min-width: 160px;
+            _width: 160px;
+            padding: 4px 0;
+            margin: 2px 0 0 0;
+            list-style: none;
+            background-color: #ffffff;
+            border-color: #ccc;
+            border-color: rgba(0, 0, 0, 0.2);
+            border-style: solid;
+            border-width: 1px;
+            -webkit-border-radius: 2px;
+            -moz-border-radius: 2px;
+            border-radius: 2px;
+            -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            -webkit-background-clip: padding-box;
+            -moz-background-clip: padding;
+            background-clip: padding-box;
+            *border-right-width: 2px;
+            *border-bottom-width: 2px;
+        }
+
+        .ui-menu-item > a.ui-corner-all {
+            display: block;
+            padding: 3px 15px;
+            clear: both;
+            font-weight: normal;
+            line-height: 18px;
+            color: #555555;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .ui-state-hover, .ui-state-active {
+            color: #ffffff;
+            text-decoration: none;
+            background-color: #0088cc;
+            border-radius: 0px;
+            -webkit-border-radius: 0px;
+            -moz-border-radius: 0px;
+            background-image: none;
+        }
+    </style>
+    <link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+</head>
+<body>
+<div class="cargaPagina">
+    <img src="../imagenes/logoEspera.png" style="width:200px;height:210px">
+    <div id="barraCarga">
+        <div class="progress-label">Loading...</div>
+    </div>
+    <br>
+    <div id="mensajeGosst">
+        "".
+        <br> <br>
+        <strong>-.</strong>
+
+
+    </div>
+</div>
+<nav class="navbar navbar-default" id="barraMenu"></nav>
+
+
+<!--   <div id="fsBotones"></div> -->
+
+<div id="generalModuloAccidente">
+    <div id="TituloArriba">
+        <h2>Accidentes !!!! </h2>
+    </div>
+
+    <div class="container-fluid" id="mdInvestigacion">
+
+        <div class="table-responsive">
+            <div id="equipoInvestigacion">
+                <h4 style="color:navy"><strong>Fechas de investigación</strong></h4>
+                <div id="advFechaInv"></div>
+                <table class="table table-striped table-bordered table-hover table-fixed"
+                       id="tblFechaInve" style="width : 440px">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width : 220px">Fecha inicio investigación</th>
+                        <th class="tb-acc" style="width : 220px">Fecha fin investigación</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+
+                        <th><input class="form-control" type="date" id="invFechaInicio" class="form-control"></th>
+                        <th><input class="form-control" type="date" id="invFehcaFin" class="form-control"></th>
+
+
+                    </tr>
+                    </tbody>
+
+                </table>
+
+                <br>
+
+                <h4 style="color:navy"><strong>Equipo de investigación</strong>
+                    <button class="btn btn-success" onclick="cargarModalEditarInve()"><i
+                            class="fa fa-pencil-square-o"></i>Editar
+                    </button>
+                </h4>
+
+                <br>
+
+
+                <table class="table table-striped table-bordered table-hover table-fixed"
+                       id="tblInveTexto">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width : 220px">Nombre</th>
+                        <th class="tb-acc" style="width : 220px">Cargo</th>
+                        <th class="tb-acc" style="width : 220px">Proceso de investigación</th>
+
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <h4 style="color:navy"><strong>Circunstancias del momento</strong></h4>
+            <br>
+            <table class="table table-striped table-bordered table-hover"
+                   id="tblCircunsBas">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:280px">¿Cómo ocurrió? (How)</th>
+                    <th class="tb-acc" style="width:100px">Foto o diagrama de accidente</th>
+
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr>
+                    <th><textarea class="form-control" id="inveAccHow"></textarea></th>
+
+                    <th id="eviAccCondicion"></th>
+                </tr>
+                </tbody>
+
+            </table>
+
+            <table class="table table-striped table-bordered table-hover"
+                   id="tblCircunsObj">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:100px">Objeto causante del evento</th>
+                    <th class="tb-acc" style="width:100px">Tamaño, peso y altura del objeto</th>
+                    <th class="tb-acc" style="width:100px">Estado del equipo de protección, EPP, guardas</th>
+
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr>
+                    <th><input class="form-control" id="invObjAcc"></th>
+                    <th><input class="form-control" id="invDescObjAcc"></th>
+                    <th><input class="form-control" id="invEstadoEppAcc"></th>
+
+                </tr>
+                </tbody>
+
+            </table>
+            <div id="divDeclaAccidentado">
+                <br>
+
+                <br>
+                <h4 style="color:navy"><strong>Declaración del accidentado</strong></h4>
+
+                <table class="table table-striped table-bordered table-hover">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width:300px">Descripción general</th>
+                        <th class="tb-acc" style="width:200px">Evidencia de la declaración del accidentado</th>
+                    </tr>
+
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th><textarea id="invDeclaracionAccidentado" class="form-control"></textarea></th>
+                        <th id="eviDeclaracionAccidentado"></th>
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+            <div id="invTestigos">
+                <br>
+                <h4 style="color:navy"><strong>Entrevista Testigos</strong></h4>
+
+                <div id="testigoOpciones">
+
+                    <button id="btnCancelarTesti" type="button" class="btn btn-success"
+                            title="Cancelar">
+                        <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+                    </button>
+                    <button id='btnAgregarTesti' type='button' class='btn btn-success'
+                            title='Agregar Nueva Testiramacion'>
+                        <i class='fa fa-file-o fa-2x'></i>
+                    </button>
+                    <button id="btnGuardarTesti" type="button" class="btn btn-success"
+                            title="Guardar">
+                        <i class="fa fa-floppy-o fa-2x"></i>
+                    </button>
+                    <button id='btnEliminarTesti' type='button' class='btn btn-danger'
+                            title='Eliminar Testiramacion'>
+                        <i class='fa fa-times fa-2x'></i>
+                    </button>
+
+
+                </div>
+                <div class="wrapper">
+                    <table class="table table-striped table-bordered table-hover table-fixed"
+                           id="tblTesti">
+
+                        <thead>
+                        <tr>
+                            <th class="tb-acc" style="width:180px">Tipo de Testigo</th>
+                            <th class="tb-acc" style="width:200px">Nombre</th>
+                            <th class="tb-acc" style="width:350px">Declaración</th>
+                            <th class="tb-acc" style="width:180px">Fecha</th>
+                            <th class="tb-acc" style="width:280px">Lugar</th>
+                            <th class="tb-acc" style="width:200px">Investigador</th>
+                            <th class="tb-acc" style="width:140px">Hora inicio</th>
+                            <th class="tb-acc" style="width:140px">Hora Fin</th>
+                            <th class="tb-acc" style="width:300px">Evidencia</th>
+
+                        </tr>
+
+                        </thead>
+                        <tbody>
+                        <tr>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="analisisIncidente">
+                <br>
+
+                <br>
+                <h4 style="color:navy" id="tituloAnalisis"><strong>Causa del Accidente</strong></h4>
+
+                <table class="table table-striped table-bordered table-hover">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width:300px">Descripción general por la que ocurrió el accidente</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th><textarea id="invAnalisisRazones" class="form-control"></textarea></th>
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+            <div id="causasInmeditas">
+                <br>
+                <h4 style="color:navy" id="tituloAnalisis"><strong>
+                    Causas inmediatas (A/C subestándar)</strong>
+                    <button class="btn btn-success" onclick="cargarModalEditarEventoInseguro(1)"><i
+                            class="fa fa-pencil-square-o"></i>Editar
+                    </button>
+                </h4>
+
+
+                <table class="table table-striped table-bordered table-hover"
+                       id='tblEventAccTexto'>
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width:220px">Tipo</th>
+                        <th class="tb-acc" style="width:220px">Causa inmediata</th>
+                        <th class="tb-acc" style="width:220px">Detalle</th>
+                    </tr>
+
+                    </thead>
+                    <tbody>
+                    </tbody>
+
+                </table>
+
+                <br>
+
+                <h4 style="color:navy" id="tituloAnalisis"><strong>Causas básicas</strong>
+                    <button class="btn btn-success" onclick="cargarModalEditarEventoInseguro(2)"><i
+                            class="fa fa-pencil-square-o"></i>Editar
+                    </button>
+                </h4>
+                <br>
+
+                <table class="table table-striped table-bordered table-hover"
+                       id="tblCausaBasicaTexto">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width:220px">Tipo</th>
+                        <th class="tb-acc" style="width:220px">Categoría</th>
+                        <th class="tb-acc" style="width:220px">Subcategoría</th>
+                        <th class="tb-acc" style="width:220px">Detalle</th>
+                    </tr>
+
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+
+                </table>
+
+                <h4 style="color:navy"
+                    id="tituloAnalisis"><strong>Fallos en sistema de Gestión</strong>
+                    <button class="btn btn-success" onclick="cargarModalEditarEventoInseguro(3)"><i
+                            class="fa fa-pencil-square-o"></i>Editar
+                    </button>
+                </h4>
+
+                <table class="table table-striped table-bordered table-hover"
+                       id="tblFalloSSTTexto">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width: 50%">Fallo en el sistema de gestión</th>
+
+                        <th class="tb-acc" style="width: 50%">Descripción de fallos a nivel de Sistema de Gestión</th>
+                    </tr>
+
+                    </thead>
+                    <tbody>
+                    <tr>
+
+
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="agente">
+                <br>
+                <h4 style="color:navy" id="tituloAnalisis"><strong>Agente responsable</strong></h4>
+
+                <table class="table table-striped table-bordered table-hover" style="width:350px">
+                    <thead>
+                    <tr>
+                        <th class="tb-acc" style="width:200px">Tipo</th>
+                        <th class="tb-acc">Agente</th>
+                    </tr>
+
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th id="listTipoAgente"></th>
+                        <th id="invAgente"><input type='text' style='width:150px' id='inputAgente'></th>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+
+            </div>
+
+        </div>
+    </div>
+    <div class="container-fluid" id="divContainAccidenteCalificacionArea">
+        <form class="form-inline"></form>
+        <div class="wrapper" id="wrapAccidenteCalificacionArea">
+            <table class="table table-striped table-bordered table-hover table-fixed"
+                   id="tblAccidenteCalificacionArea">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:180px">Área</th>
+                    <th class="tb-acc" style="width:200px">Escenario</th>
+                    <th class="tb-acc" style="width:220px">Descripción de la acción</th>
+                    <th class="tb-acc" style="width:200px">Responsable</th>
+                    <th class="tb-acc" style="width:170px">Fecha Planificada</th>
+                    <th class="tb-acc" style="width:160px">Estado</th>
+                    <th class="tb-acc" style="width:220px">Evidencia</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container-fluid" id="divContainAccidenteCalificacion">
+        <div style="height: 5px;"></div>
+        <button id="btnCancelarCalifAcc" type="button" class="btn btn-success" title="Cancelar">
+            <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+        </button>
+        <button id="btnNuevoCalifAcc" type="button" class="btn btn-success" title="Nuevo">
+            <i class="fa fa-file-o fa-2x"></i>
+        </button>
+        <button id="btnGuardarCalifAcc" type="button" class="btn btn-success" title="Guardar">
+            <i class="fa fa-floppy-o fa-2x"></i>
+        </button>
+        <button id="btnEliminarCalifAcc" type="button" class="btn btn-danger" title="Eliminar">
+            <i class="fa fa-times fa-2x"></i>
+        </button>
+        <div class="wrapper" id="wrapAccidenteCalificacion">
+            <table class="table table-striped table-bordered table-hover table-fixed"
+                   id="tblAccidenteCalificacion">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:180px">Unidad</th>
+                    <th class="tb-acc" style="width:100px">Division</th>
+                    <th class="tb-acc" style="width:100px">Área</th>
+                    <th class="tb-acc" style="width:100px">Responsable del Área</th>
+                    <th class="tb-acc" style="width:100px">Fecha de Respuesta</th>
+                    <th class="tb-acc" style="width:100px">Días en Responder</th>
+                    <th class="tb-acc" style="width:100px">¿El accidente se puede reproducir en su área?</th>
+                    <th class="tb-acc" style="width:100px">Acciones de mejora propuesta</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container-fluid" id="divOrigenAccionesSolicitudIncidente">
+        <div class="wrapper">
+            <table class='table table-striped table-bordered table-hover table-fixed'
+                   id='tblItemAsoc' style="min-width : 100%">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:200px">Módulo</th>
+                    <th class="tb-acc" style="width:200px">Categoría</th>
+                    <th class="tb-acc" style="width:280px">Detalle</th>
+                    <th class="tb-acc" style="width:280px">Observación</th>
+                    <th class="tb-acc" style="width:120px">Fecha Observada</th>
+                    <th class="tb-acc" style="width:190px">...</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="container-fluid" id="divAccionesSolicitudIncidente">
+        <div class="wrapper">
+            <table class='table table-striped table-bordered table-hover table-fixed'
+                   id='tblAccSolIncidente' style="min-width : 100%">
+                <thead>
+                <tr>
+                    <td class="tb-acc" style="width:200px">Solicitud de mejora</td>
+                    <!--
+                    <td class="tb-acc" style="width:170px">Asociados</td>
+                     -->
+                    <td class="tb-acc" style="width:240px">Descripción de la acción correctiva</td>
+                    <td class="tb-acc" style="width:160px">Clasificación de la acción correctiva según tipo de
+                        Hallazgo
+                    </td>
+                    <td class="tb-acc" style="width:160px">Clasificación de la acción correctiva según tipo de Control
+                    </td>
+                    <td class="tb-acc" style="width:200px">Responsable de la acción correctiva</td>
+                    <td class="tb-acc" style="width:180px">Fecha planificada</td>
+                    <td class="tb-acc" style="width:180px">Fecha realizada</td>
+                    <!--
+                    <td class="tb-acc" style="width:160px">Inversión</td>
+                     -->
+                    <td class="tb-acc" style="width:160px">Estado de la acción correctiva</td>
+                    <td class="tb-acc" style="width:200px">Evidencia</td>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="divAreasAccidente" class="container-fluid">
+        <div class="wrapper" id="wrapAccArea">
+            <table class='table table-striped table-bordered table-hover table-fixed'
+                   id='tblAreaAccidente' style="min-width: 100%">
+                <thead></thead>
+                <tbody></tbody>
+
+            </table>
+        </div>
+    </div>
+
+
+    <div class="container-fluid" id="divSegAccionesAccidente">
+        <button class="btn btn-excel" id="btnExcelSeg">
+            <i class="fa fa-file-excel-o fa-2x" title="Descargar Excel"></i>
+        </button>
+        <button class="btn btn-success" id="btnNotificarSeg">
+            <i class="fa fa-envelope-o"></i>
+        </button>
+        <div class="wrapper" id="wrapSegAcc">
+            <table class='table table-striped table-bordered table-hover table-fixed'
+                   id='tblSegAccionAcc' style="min-width: 100%">
+                <thead>
+                <tr>
+                    <td class='tb-acc' style='width:150px' rowspan="3">Tipo</td>
+                    <td class='tb-acc' style='width:300px' rowspan="3">Descripción del accidente</td>
+                    <td class='tb-acc' style='width:150px' rowspan="3">Fecha de ocurrencia</td>
+                    <td class='tb-acc' style='width:190px' rowspan="3">Área responsable</td>
+                    <td class='tb-acc' style='width:190px' rowspan="3">Lugar donde ocurrió</td>
+                    <td class='tb-acc' style='width:200px' rowspan="3">Consecuencia de ocurrencia</td>
+                    <td class='tb-acc' style='width:200px' rowspan="3">Causa Principal</td>
+
+                    <td class='tb-acc' style='width:920px' colspan="4">Contramedidas</td>
+
+                    <td class='tb-acc' style='width:150px' rowspan="3">Fecha de implementación</td>
+                    <td class='tb-acc' style='width:220px' rowspan="3">Responsable</td>
+                    <td class='tb-acc' style='width:160px' rowspan="3">Conclusión</td>
+                    <td class='tb-acc' style='width:150px' rowspan="3">Fecha de cierre real</td>
+                    <td class='tb-acc' style='width:180px' rowspan="3">Evidencia</td>
+                </tr>
+                <tr>
+                    <td class='tb-acc' style='width:150px' colspan="2">Corrección</td>
+                    <td class='tb-acc' style='width:150px' colspan="2">Acción Correctiva</td>
+                </tr>
+                <tr>
+                    <td class='tb-acc' style='width:180px'>Hardware</td>
+                    <td class='tb-acc' style='width:180px'>Software</td>
+                    <td class='tb-acc' style='width:180px'>Hardware</td>
+                    <td class='tb-acc' style='width:180px'>Software</td>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container-fluid" id="divAccionesIncidente">
+        <div class="wrapper">
+            <table class='table table-striped table-bordered table-hover'
+                   id='tblAccIncidente' style="width:1900px">
+                <thead>
+                <tr>
+                    <td class='tb-acc' style='width:380px'>Descripción</td>
+                    <td class='tb-acc' style='width:180px'>Fecha Planificada</td>
+                    <td class='tb-acc' style='width:180px'>Fecha Subida</td>
+                    <td class='tb-acc' style='width:200px'>Comentarios de contratista</td>
+                    <td class='tb-acc' style='width:200px'>Respuesta de Cliente</td>
+                    <td class='tb-acc' style='width:300px'>Evidencia</td>
+                    <td class='tb-acc' style='width:150px'>Estado</td>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container-fluid" id="divContainAccidente">
+
+        <div id="fsBotones"></div>
+
+        <!-- <form class="form-inline">
+                            Desde:
+                            <input type="date" class="form-control" id="fechaInicioEvento"  onchange="cargarPrimerEstado()" >
+                            Hasta:
+                            <input type="date" class="form-control" id="fechaFinEvento"  onchange="cargarPrimerEstado()">
+
+            </form> -->
+        <div style="height: 5px;"></div>
+        <!-- <button class="btn btn-info" onclick="verFiltroAccidente()"><i class="fa fa-filter"></i> Ver Filtros</button> -->
+        <br>
+        <br>
+        <strong>Para visualizar reportes anteriores, modificar el rango de fechas</strong>
+
+        <div id="wrapper" class="wrapper">
+            <table class="table table-striped table-bordered table-hover table-fixed fixed"
+                   id="tblAcc" style="min-width: 100%">
+                <thead>
+                <tr>
+                    <th class="tb-acc" style="width:90px">Nro</th>
+                    <th class="tb-acc" style="width:140px">Informe</th>
+                    <th class="tb-acc" style="width:300px">Tipo de evento</th>
+                    <th class="tb-acc" style="width:120px"><label id="labelUnidadAcc"> </label></th>
+                    <th class="tb-acc" style="width:120px">E.Datos generales</th>
+                    <th class="tb-acc" style="width:550px">E.Descripción</th>
+
+                    <th class="tb-acc" style="width:120px">E.Características</th>
+                    <th class="tb-acc" style="width:400px">E.Accidentados</th>
+
+                    <th class="tb-acc" style="width:140px">E.Daños materiales</th>
+
+
+                    <th class="tb-acc" style="width:150px">E.Impacto ambiental ocasionado</th>
+
+                    <th class="tb-acc" style="width:300px">E.Investigación</th>
+                    <th class="tb-acc" style="width:250px">Evidencia</th>
+                    <th class="tb-acc" style="width:200px">Unidades Informadas</th>
+                    <th class="tb-acc" style="width:200px">E.I.Calificación del accidente por responsable de areas</th>
+                    <th class="tb-acc" style="width:200px">E.I.Plan de trabajo de los responsables de las áreas)</th>
+
+
+                    <th class="tb-acc" style="width:200px">E.Solicitud de mejora asociada</th>
+                    <th class="tb-acc" style="width:200px">E.I.Plan de trabajo asociado a la solicitud de mejora</th>
+                    <th class="tb-acc" style="width:200px">I.Ult. Reporte Flash Enviado</th>
+                </tr>
+                </thead>
+                <tbody id="tbodyC">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container-fluid" id="divContainQuicksightAccidente">
+    </div>
+
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdEspecificacion"
+     tabindex="-1" role="dialog" aria-labelledby="mdReporteLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdReporteLabel">Descripción</h4>
+            </div>
+            <div class="modal-body" id="modalRep">
+
+                <h5 id="espTitulo"></h5>
+                <div id="slcTipo">
+                    <label id="labelTipo"></label>
+                </div>
+                <br>
+                <div id="slcSubtipo">
+                    <label id="labelSubtipo"></label>
+                    <br>
+                </div>
+                <label id="labelOtrosDetalle">Detalle Tipo (Otros)</label>
+                <br>
+                <input class="form-control" id="accDetalleOtros" class="form-control"><br>
+
+                <label id="labelDetalle">Descripción del evento</label>
+                <br>
+                <textarea id="accDescr" class="form-control"></textarea><br>
+
+                <label id="labelClima">Clima</label>
+                <div id="slcClimaAcc">
+
+                    <br>
+                </div>
+                <label class="areaAlternativa">Área (opcional)</label>
+                <div id="slcAreaAcc">
+
+                    <br>
+                </div>
+
+                <label id="labelProyectoAcc"></label>
+                <div id="slcProyectoAcc">
+
+                    <br>
+                </div>
+                <div id="divclasifAcc">
+                    <br>
+                    <h3>Gravedad del accidente</h3>
+                    <br><label>Clasificación - Internacional</label>
+                    <br>
+                    <div id="clasificacionInternacionalAcc"><br></div>
+                    <br>
+                    <label>Clasificación - Perú</label>
+                    <select id="clasifAcc" class="form-control" onchange="modificarAcordeClasificacion()">
+                        <option value="3">Mortal</option>
+                        <option value="2">Incapacitante</option>
+                        <option value="1">Leve</option>
+                    </select>
+                    <br>
+                    <div id="nivelIncapacitante">
+                        <label id="labelSubclaf">Nivel Incapacitante</label>
+                        <select id="subClasiffAcc" class="form-control">
+                            <option value="1">Total Temporal</option>
+                            <option value="2">Parcial Temporal</option>
+                            <option value="3">Parcial Permanente</option>
+                            <option value="4">Total Permanente</option>
+                        </select>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal(1)">Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarModalAccidente(1)"
+                        id="btnOkCtrl">Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bs-example-modal-lg" id="mdCategorias" tabindex="-1" role="dialog"
+     aria-labelledby="mdCategoriasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdCategoriasLabel">Seleccionar categorías:</h4>
+            </div>
+            <div class="modal-body" id="modalRep">
+                <div class="table-responsive">
+                    <div class="table-responsive">
+                        <div id="selecCategorias">
+                            <br>
+
+                            <div id="especifAccidente" style="margin-left:40px">
+                                <p style="color:#0000ff;font-size:19px;">"De acuerdo a esta selección, se ocultarán
+                                    campos que no se deben completar"</p>
+                                <br>
+                                <input type="checkbox" onclick="mostrarCat()" id="accRpta1" checked>
+                                <label>1. ¿El evento afectó a personas fuera de la empresa?</label><br><br>
+                                <input type="checkbox" onclick="mostrarCat()" id="accRpta2" checked>
+                                <label>2. ¿El evento afectó a trabajadores de la empresa?</label><br><br>
+                                <div id="listaCategoria">
+                                    <input type="checkbox" onclick="mostrarCat()" id="accRpta3" checked>
+                                    <label>3. ¿Se necesitaron primeros auxilios?</label><br><br>
+                                    <input type="checkbox" onclick="mostrarCat()" id="accRpta5" checked>
+                                    <label>4. ¿Hubo daños vehiculares?</label><br><br>
+                                    <input type="checkbox" onclick="mostrarCat()" id="accRpta6" checked>
+                                    <label>5. ¿Afectó a procesos de la empresa?</label><br><br>
+                                    <input type="checkbox" onclick="mostrarCat()" id="accRpta7" checked>
+                                    <label>6. ¿Hubo daños al ambiente o sustancias derramadas?</label><br><br>
+                                    <input type="checkbox" onclick="mostrarCat()" id="accRpta8" checked>
+                                    <label>7. ¿Hubo testigos?</label><br><br>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal()">Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" id="btnOkCtrl">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdDatoGeneral"
+     tabindex="-1" role="dialog" aria-labelledby="mdDatoGeneralLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdDatoGeneralLabel">Datos generales</h4>
+            </div>
+            <div class="modal-body" id="modalRep">
+
+
+                <table class="table table-striped table-bordered table-hover"
+                       id="tblDG">
+
+                    <thead>
+                    <tr>
+                        <th class="tb-acc">Trabajador que reportó el evento</th>
+                        <th class="tb-acc">Jefe inmediato de quien reporta</th>
+                        <th class="tb-acc">Lugar específico del evento</th>
+                        <th class="tb-acc">Fecha de ocurrencia</th>
+                        <th class="tb-acc">Hora</th>
+                    </tr>
+                    </thead>
+
+                    <tbody id="tbodyRep">
+                    <tr>
+                        <th><input type="text" class="form-control" placeholder="Reporta" id="dgReporta"></th>
+                        <th><input type="text" class="form-control" placeholder="Jefe" id="dgJefe"></th>
+                        <th><input type="text" class="form-control" placeholder="Lugar" id="dgLugar"></th>
+                        <th><input type="date" class="form-control" id="dgFecha"></th>
+                        <th><input type="time" id="dgHora" class="form-control"></th>
+                    </tr>
+                    </tbody>
+
+
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal(2)">Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarModalAccidente(2)"
+                        id="btnOkCtrl">Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="modal fade bs-example-modal-lg" id="mdInvolucrados"
+     tabindex="-1" role="dialog" aria-labelledby="mdInvolucradosLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdInvolucradosLabel">Accidentados</h4>
+            </div>
+            <div class="modal-body" id="modalRep">
+
+                <div class="modal-footer" style="text-align: right;width:205px">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal(3)">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal"
+                            onclick="guardarModalAccidente(3)"
+                            id="btnOkCtrl">Guardar
+                    </button>
+                </div>
+
+                <div id="empresaPrincipal">
+                    <br>
+                    <h3 style="color:navy"><strong>Empresa Principal</strong></h3>
+                    <br>
+                    <table class="table table-striped table-bordered table-hover" style="width:400px">
+
+                        <thead>
+                        <tr>
+                            <th class="tb-acc">Razón Social</th>
+                            <th class="tb-acc">RUC</th>
+
+                        </tr>
+
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <th class="tb-acc" id="epNombre"></th>
+                            <th class="tb-acc" id="epRuc"></th>
+                        </tr>
+                        </tbody>
+
+                    </table>
+                    <table class="table table-striped table-bordered table-hover" style="width:500px">
+
+                        <thead>
+                        <tr>
+                            <th class="tb-acc"># Trabajadores en operaci&oacute;n:</th>
+                            <th class="tb-acc"># Trabajadores afiliados al SCRT:</th>
+                            <!--
+                            <th class="tb-acc"># Trabajadores asegurados</th>
+                            -->
+                            <th class="tb-acc">Aseguradora</th>
+
+                        </tr>
+
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <th><input class="form-control" type="number" id="epTrabOper"></th>
+                            <th><input class="form-control" type="number" id="epTrabScrt"></th>
+                            <!--
+                            <th ><input  class="form-control" type="number" id="epTrabSeguro"  ></th>
+                            -->
+                            <th><input class="form-control" type="text" id="epAseguradora"></th>
+
+
+                        </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div id="empresaTercera">
+                    <br>
+                    <h3 style="color:navy"><strong>Empresa Tercera</strong></h3>
+                    <br>
+
+                    <table class="table table-striped table-bordered table-hover">
+
+                        <thead>
+                        <tr>
+                            <th class="tb-acc">Razón Social</th>
+                            <th class="tb-acc">RUC</th>
+                            <th class="tb-acc">Dirección</th>
+                            <th class="tb-acc">Rubro</th>
+
+                        </tr>
+
+                        </thead>
+                        <tbody>
+                        <tr>
+
+                            <th><input class="form-control" type="text" id="etNombre"></th>
+                            <th><input class="form-control" type="text" id="etRuc" onkeydown='return IsNumeric(event);'
+                                       onkeyup='return IsNumericRestriccion(event);'></th>
+                            <th><input class="form-control" type="text" id="etDireccion"></th>
+                            <th><input class="form-control" type="text" id="etRubro"></th>
+
+                        </tr>
+                        </tbody>
+
+                    </table>
+                    <div id="detalleTercero">
+                        <table class="table table-striped table-bordered table-hover" style="width:500px">
+
+                            <thead>
+                            <tr>
+                                <th class="tb-acc"># Trabajadores en operaci&oacute;n:</th>
+                                <th class="tb-acc"># Trabajadores afiliados al SCRT:</th>
+                                <!--
+                                <th class="tb-acc"># Trabajadores asegurados</th>
+                                 -->
+                                <th class="tb-acc">Aseguradora</th>
+                            </tr>
+
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th><input class="form-control" type="number" id="etTrabOper"></th>
+                                <th><input class="form-control" type="number" id="etTrabScrt"></th>
+                                <!--
+                                <th><input class="form-control" type="number" id="etTrabSeguro"  ></th>
+                                -->
+                                <th><input class="form-control" id="etAseguradora"></th>
+                            </tr>
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                </div>
+
+                <div id="trabajadoresAfectados">
+
+                    <br>
+                    <h3 style="color:navy"><strong>Trabajadores afectados</strong></h3>
+                    <br>
+                    <div id="opcionesTrabInvo">
+                        <button id="btnCancelarInvo" type="button" class="btn btn-success"
+                                title="Cancelar">
+                            <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+                        </button>
+                        <button id='btnAgregarInvo' type='button' class='btn btn-success'
+                                title='Agregar Nuevo Involucrado'>
+                            <i class='fa fa-file-o fa-2x'></i>
+                        </button>
+                        <button id="btnGuardarInvo" type="button" class="btn btn-success"
+                                title="Guardar">
+                            <i class="fa fa-floppy-o fa-2x"></i>
+                        </button>
+                        <button id='btnEliminarInvo' type='button' class='btn btn-danger'
+                                title='Eliminar'>
+                            <i class='fa fa-times fa-2x'></i>
+                        </button>
+
+
+                    </div>
+                    <br>
+                    <div class="wrapper">
+                        <table class="table table-striped table-bordered table-hover table-fixed"
+                               id="tblInvo">
+
+                            <thead>
+                            <tr>
+
+                                <th class="tb-acc" style="width:150px">Tipo</th>
+                                <th class="tb-acc" style="width:180px">DNI</th>
+                                <th class="tb-acc" style="width:250px">Nombre</th>
+                                <th class="tb-acc" style="width:180px">Tipo de contrato</th>
+                                <th class="tb-acc" style="width:200px">Tiempo de antigüedad en la empresa (días)</th>
+                                <th class="tb-acc" style="width:200px">Tiempo de experiencia en el puesto (días)</th>
+                                <th class="tb-acc" style="width:200px">Turno</th>
+                                <th class="tb-acc" style="width:140px"> N° DE HORAS TRABAJADAS EN LA JORNADA LABORAL
+                                </th>
+                                <th class="tb-acc" style="width:140px">Tipo Lesión</th>
+                                <th class="tb-acc" style="width:240px">Parte Principal del cuerpo afectada</th>
+                                <th class="tb-acc" style="width:240px">Partes Secundarias del cuerpo afectadas</th>
+                                <th class="tb-acc" style="width:220px">Observaciones Médicas</th>
+                                <th class="tb-acc" style="width:220px">Detallar tipo de acción en primeros auxilios</th>
+                                <th class="tb-acc" style="width:170px">Datos Laborales</th>
+                                <th class="tb-acc" style="width:170px">Descanso Médico (días)</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="datosLaborales">
+                        <h4>Datos laborales</h4>
+                        <br>
+                        <table class="table table-striped table-bordered table-hover">
+
+                            <thead>
+                            <tr>
+                                <th class="tb-acc"><label id="tdlabelArea">Área</label></th>
+                                <th class="tb-acc">Puesto</th>
+                                <th class="tb-acc">Sexo</th>
+                                <th class="tb-acc">Edad</th>
+
+                            </tr>
+
+
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th id="thArea"><input type="text" id="invArea"></th>
+                                <th id="thPuesto"><input type="text" id="invPuesto"></th>
+                                <th id="thSexo"><select id="slcSexo" class="form-control">
+                                    <option value='1'>Masculino</option>
+                                    <option value='2'>Femenino</option>
+                                </select></th>
+                                <th id="thEdad"><input type="text" class="form-control" style="width:100px"
+                                                       id="invEdad"></th>
+
+                            </tr>
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div id="datosMedicos">
+                        <h4>Descanso Médico (días)</h4>
+                        <br>
+                        <table class="table table-striped table-bordered table-hover">
+
+                            <thead>
+                            <tr>
+
+                                <th class="tb-acc" style="width:170px">D&iacute;as de descanso</th>
+                                <th class="tb-acc" style="width:180px">Fecha inicio</th>
+                                <th class="tb-acc" style="width:180px">Fecha Fin</th>
+                                <th class="tb-acc" style="">Evidencia</th>
+                            </tr>
+
+
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th id="diasDescanso"></th>
+                                <th><input type="date" class="form-control" id="fechaDescanso"
+                                           onchange="javasript:cambiarFechaDesc()"></th>
+                                <th><input type="date" class="form-control" id="fechaFinDescanso"
+                                           onchange="javasript:cambiarFechaDesc()"></th>
+                                <th id="theviTrabInvo"></th>
+                            </tr>
+                            </tbody>
+
+                        </table>
+                        <div id="advFechaDesca"></div>
+                    </div>
+
+                </div>
+
+
+            </div>
+
+            <!-- <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal(3)">Cancelar</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarModalAccidente(3)"
+                            id="btnOkCtrl">Guardar</button>
+                 </div> -->
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdDanioMaterial"
+     tabindex="-1" role="dialog" aria-labelledby="mdDanioMaterialLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdDanioMaterialLabel">Da&ntilde;o Vehicular</h4>
+            </div>
+            <div class="modal-body" id="modalRep">
+                <div id="daniosVehiculares">
+                    <br>
+                    <h4 style="color:navy"><strong>Da&ntilde;os vehiculares</strong></h4>
+                    <br>
+                    <div id="opcionesDV">
+                        <button id="btnCancelarDV" type="button" class="btn btn-success"
+                                title="Cancelar">
+                            <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+                        </button>
+                        <button id='btnAgregarDV' type='button' class='btn btn-success'
+                                title='Agregar Nueva Danio Vehicular'>
+                            <i class='fa fa-file-o fa-2x'></i>
+                        </button>
+                        <button id="btnGuardarDV" type="button" class="btn btn-success"
+                                title="Guardar">
+                            <i class="fa fa-floppy-o fa-2x"></i>
+                        </button>
+                        <button id='btnEliminarDV' type='button' class='btn btn-danger'
+                                title='Eliminar'>
+                            <i class='fa fa-times fa-2x'></i>
+                        </button>
+
+                    </div>
+
+
+                    <div class="table-responsive">
+                        <div class="table-responsive">
+
+
+                            <table class="table table-striped table-bordered table-hover"
+                                   id="tblDV">
+
+                                <thead>
+                                <tr>
+                                    <th class="tb-acc">Tipo de vehiculo</th>
+                                    <th class="tb-acc">Placa</th>
+                                    <th class="tb-acc">Empresa Propietaria</th>
+                                    <th class="tb-acc">Veh&iacute;culo inutilizable</th>
+                                    <th class="tb-acc">Estacionado</th>
+
+                                </tr>
+
+                                </thead>
+                                <tbody>
+
+                                </tbody>
+
+                            </table>
+
+
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div id="daniosOperativos">
+                    <br>
+                    <h4 style="color:navy"><strong>Da&ntilde;os operativos</strong></h4>
+                    <br>
+
+                    <table class="table table-striped table-bordered table-hover"
+                    >
+
+                        <thead>
+                        <tr>
+                            <th class="tb-acc">Horas interrupci&oacute;n</th>
+                            <th class="tb-acc">Valorizaci&oacute;n del daño (S/.)</th>
+                            <th class="tb-acc">Observaci&oacute;n</th>
+                            <th class="tb-acc">¿Afectó a la propiedad de la empresa?</th>
+
+                        </tr>
+
+                        </thead>
+                        <tbody>
+                        <tr>
+
+                            <th><input class="form-control" type="number" id="doHorasInterr"></th>
+                            <th><input class="form-control" type="number" id="doValorizacion"></th>
+                            <th><input class="form-control" type="text" id="doObserv"></th>
+                            <th><input id='checkAfectaInfraestructuraDo' type='checkbox' class='form-control'></th>
+
+                        </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal(4)">Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarModalAccidente(4)"
+                        id="btnOkCtrl">Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdDanioAmbiental"
+     tabindex="-1" role="dialog" aria-labelledby="mdDanioAmbientalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width:80%">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdDanioAmbientalLabel">Impacto Ambiental Ocasionado</h4>
+            </div>
+            <div class="modal-body" id="modalIA">
+
+
+                <div id="IAOpciones">
+                    <button id="btnCancelarIA" type="button" class="btn btn-success"
+                            title="Cancelar">
+                        <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+                    </button>
+                    <button id='btnAgregarIA' type='button' class='btn btn-success'
+                            title='Agregar Nueva Iaramacion'>
+                        <i class='fa fa-file-o fa-2x'></i>
+                    </button>
+                    <button id="btnGuardarIA" type="button" class="btn btn-success"
+                            title="Guardar">
+                        <i class="fa fa-floppy-o fa-2x"></i>
+                    </button>
+                    <button id='btnEliminarIA' type='button' class='btn btn-danger'
+                            title='Eliminar Iaramacion'>
+                        <i class='fa fa-times fa-2x'></i>
+                    </button>
+
+                </div>
+                <div class="table-responsive">
+                    <div class="table-responsive">
+
+                        <table class="table table-striped table-bordered table-hover"
+                               id="tblIA">
+
+                            <thead>
+                            <tr>
+                                <th class="tb-acc">Producto derramado</th>
+                                <th class="tb-acc">Cantidad (kg)</th>
+                                <th class="tb-acc">Impacto ocasionado</th>
+                                <th class="tb-acc">Estado del contaminante</th>
+                                <th class="tb-acc">L&iacute;mite Permisible</th>
+                                <th class="tb-acc">Fecha maxima de soluci&oacute;n</th>
+                            </tr>
+
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal()">Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal"
+                        id="btnOkCtrl">Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bs-example-modal-lg" id="mdDeclaracion"
+     tabindex="-1" role="dialog" aria-labelledby="mdDeclaracionLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdDeclaracionLabel">Detalle de
+                    Declaraci&oacute;n</h4>
+            </div>
+            <div class="modal-body" id="modalRep">
+
+                <div class="table-responsive">
+                    <div class="table-responsive">
+
+                        <div id="declaracion">
+                            <br>
+                            <h4 style="color:navy"><strong>Declaraci&oacute;n</strong></h4>
+
+                            <table class="table table-striped table-bordered table-hover" style="width:400px">
+
+                                <thead>
+                                <tr>
+                                    <th class="tb-acc">Fecha</th>
+                                    <th class="tb-acc">Lugar</th>
+                                    <th class="tb-acc">Investigador</th>
+                                    <th class="tb-acc">Hora inicio</th>
+                                    <th class="tb-acc">Hora Fin</th>
+                                    <th class="tb-acc">Declaraci&oacute;n</th>
+
+                                </tr>
+
+                                </thead>
+                                <tbody>
+                                <tr>
+
+                                    <th><input type="date" style="width:110px" id="testigoFecha"></th>
+                                    <th><input type="text" id="testigoLugar"></th>
+                                    <th id="listInves"></th>
+                                    <th><input type="time" style="width:80px" id="testigoHoraInicio"></th>
+                                    <th><input type="time" id="testigoHoraFin"></th>
+                                    <th><textarea id="testigoDeclara"></textarea></th>
+
+
+                                </tr>
+                                </tbody>
+
+                            </table>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="cancelarModal()">Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal"
+                        id="btnOkCtrl">Ok
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade bs-example-modal-sm" id="mdUpload" tabindex="-1"
+     role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="mdUploadLabel">...</h4>
+            </div>
+            <button id='btnUploadEvidencia' type='button'
+                    class='btn btn-success' title='Subir imagen'>
+                <i class='fa fa-floppy-o fa-2x'></i>
+            </button>
+            <h4 class="modal-title">Subir evidencia</h4>
+            <input type="file" name="fileEvi" id="fileEvi"
+                   accept="image/jpg,image/png,image/jpeg,image/gif">
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="mdVerif" tabindex="-1"
+     role="dialog" aria-labelledby="mdEficLabel" aria-hidden="true">
+</div>
+
+<!-- script references -->
+<!-- script references highcharts -->
+
+<script src="../lib/HighCharts/highcharts.js"></script>
+<script src="../lib/HighCharts/highcharts-more.js"></script>
+<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+<script src="../lib/HighCharts/modules/exporting.js"></script>
+<script src="../lib/HighCharts/modules/funnel.js"></script>
+
+<!-- script references highcharts -->
+
+<script src="../lib/jquery-2.2.0.js"></script>
+<script src="../lib/jquery-ui.js"></script>
+<script src="../lib/jquery.blockUI.min.js"></script>
+<script src="../lib/bootstrap.min.js"></script>
+<script src="../lib/chosen.jquery.js"></script>
+
+<script src="../lib/jstree.min.js"></script>
+
+<script src="../js/generic/config.js"></script>
+
+<script>
+    var version = typeof config !== 'undefined' && config.g_version ? config.g_version : '1.0';
+
+    document.write('<script src="../js/generic/util.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/generic/constantes.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/generic/constantesApp.js?v=' + version + '"><\/script>');
+
+    document.write('<script src="../js/accionmejora/agregaraccionmejora.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/accidentes.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/DanioVehicular.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/investigador.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/Involucrados.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/SustanciasAmbientales.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/testigo.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/especificacion.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/insegurosaccidente.js?v=' + version + '"><\/script>');
+    document.write('<script src="../js/accidentes/calificacionAccidenteArea.js?v=' + version + '"><\/script>');
+</script>
+
+<!--		<script src="../js/accionmejora/agregaraccionmejora.js"></script>-->
+<!--	<script src="../js/generic/util.js"></script>-->
+<!--	<script src="../js/generic/constantes.js"></script>-->
+<!--	<script src="../js/generic/constantesApp.js"></script>-->
+<!--	<script src="../js/accidentes/accidentes.js"></script>-->
+<!--	<script src="../js/accidentes/DanioVehicular.js"></script>-->
+<!--	<script src="../js/accidentes/investigador.js"></script>-->
+<!--	<script src="../js/accidentes/Involucrados.js"></script>-->
+<!--	<script src="../js/accidentes/SustanciasAmbientales.js"></script>-->
+<!--	<script src="../js/accidentes/testigo.js"></script>-->
+<!--	<script src="../js/accidentes/especificacion.js"></script>-->
+<!--	<script src="../js/accidentes/insegurosaccidente.js"></script>-->
+<!--	<script src="../js/accidentes/calificacionAccidenteArea.js"></script>-->
+
+</body>
+</html>

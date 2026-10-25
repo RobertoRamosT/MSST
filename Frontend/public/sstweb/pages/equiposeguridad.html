@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Equipos de Seguridad</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href="../css/estilosIndicadores.css" rel="stylesheet">
+		<link href="../css/jquery-ui.css" rel="stylesheet">
+
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+<link href="../lib/jstree/themes/default/style.min.css" rel="stylesheet">
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+		<link href="../css/movilGosst.css" rel="stylesheet">
+		<link href="../css/chosen.css" rel="stylesheet">
+</head>
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	""
+	<br> 	<br> 
+	<strong>-</strong>
+		
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+<!-- <div id="fsBotones"></div> -->
+
+	<div class="container-fluid">
+	   
+	   <div id="TituloArriba">
+		 <h2>Información de Equipos de Seguridad</h2>
+	   </div>
+	   
+		<div id="fsBotones"></div>
+		
+		<div style="height: 5px;"></div>
+		
+		<div id="wrapper">
+			<table class="table table-striped table-bordered table-hover fixed"
+				id="tblEquSeg" style="width:100%;min-width:2400px">
+				<thead>
+				<tr>
+				<td class="tb-acc" colspan="6" style="width:1250px"> General</td>
+				<td class="tb-acc" colspan="4">EPP</td>
+					<td class="tb-acc" colspan="1">EPC. Señaletica y Eq. De Emergencia	</td>
+					<td class="tb-acc" rowspan="3">Estado</td>
+				<td class="tb-acc" rowspan="3" style="width:150px">Puestos asignados</td>
+						</tr>
+					<tr>
+						<td class="tb-acc" rowspan="2">Equipo de Seguridad</td>
+						<td class="tb-acc" rowspan="2"	>Tipo de Equipo de Seguridad</td>
+						<td class="tb-acc" rowspan="2">Proveedor</td>
+						<td class="tb-acc" rowspan="2" style="width:250px">Hoja Técnica</td>
+							<td class="tb-acc" rowspan="2">Especificaciones Técnicas</td>
+								<td class="tb-acc" rowspan="2">Costo Unitario</td>
+							<td class="tb-acc" rowspan="2">Frecuencia Renovación / Mantenimiento</td>
+					
+							
+							<td class="tb-acc" >Tallas</td>
+							
+							<td class="tb-acc">Trabajadores con EPP vigente</td>
+							<td class="tb-acc">Entregas realizadas</td>
+						
+
+						<td class="tb-acc" rowspan="2">Ubicacion</td>
+						
+					</tr>
+					 
+				</thead>
+				<tbody id="tbodyC">
+				</tbody>
+			</table>
+		</div></div>
+	
+
+	<div class="modal fade bs-example-modal-lg" id="mdProgFecha"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Entregas de
+						EPP's</h4>
+				</div>
+				<div class="modal-body" id="modalProg">
+					<button id="btnCancelarProg" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnAgregarProg' type='button' class='btn btn-success'
+						title='Agregar Nueva programacion'>
+						<i class='fa fa-file-o fa-2x'></i>
+					</button>
+					<button id="btnGuardarProg" type="button" class="btn btn-success"
+						title="Guardar">
+						<i class="fa fa-floppy-o fa-2x"></i>
+					</button>
+					<button id='btnGenReporte' type='button' class='btn btn-success'
+						title='Generar Reporte'>
+						<i class='fa fa-file-text fa-2x'></i>
+					</button>
+			<button id='btnVerCorreos' type='button' class='btn btn-success'
+						title='Ver Correos'>
+						<i class='fa fa fa-envelope fa-2x'></i>
+					</button>
+					<button id='btnRecomendacion' type='button' class='btn btn-success'
+						title='Ver Recomendacion'>
+						<i class='fa fa fa-usd fa-2x'></i>
+					</button>
+					<button id='btnClipTablaProgramacion' type='button' class='btn btn-success' title='Tabla Clipboard' >
+				<i class='fa fa-clipboard fa-2x'></i></button>
+					<button id='btnEliminarProg' type='button' class='btn btn-danger'
+						title='Eliminar programacion'>
+						<i class='fa fa-times fa-2x'></i>
+					</button>
+					<button id="btnUploadEntregas" type="button" class="btn btn-success" title="Subir datos" 
+					onclick="javascript:importarDatosEntregas();"><i class="fa fa-upload fa-2x"></i></button>
+					<div class="table-responsive">
+						<div class="table-responsive">
+		<input  type="text" id="buscadorTrabajadorInput" 
+					class="buscadorGosst">
+					<button id='resetBuscador' type='button' 
+						title='Reset' style="color:red">
+						<i class="fa fa-times " ></i>
+					</button>
+					
+							<table class="table table-striped table-bordered table-hover"
+								id="tblProg" style="min-width: 1590px">
+								<thead>
+								<tr>
+									<th class="tb-acc" style="width: 190px">Motivo</th>
+										<th class="tb-acc">Fecha Planificada</th>
+										<th class="tb-acc">Hora Planificada</th>
+										<th class="tb-acc">Fecha de Entrega</th>
+										<th class="tb-acc" style="width: 220px">Responsable de Entrega</th>
+										<th class="tb-acc" >EPP's</th>
+										<th class="tb-acc" >Trabajadores</th>
+										<th class="tb-acc" >Evidencia</th>
+											<th class="tb-acc" style='width:140px'>Estado Implementacion</th>
+								</tr>
+									
+								</thead>
+								<tbody id="tbodyProg">
+								</tbody>
+							</table>
+							 <a href="#" class="izquierda_flecha"><img src="../imagenes/flecha_01.png" /></a>
+			<em id='labelFlechas'></em>
+			 <a href="#" class="derecha_flecha"><img src="../imagenes/flecha_02.png" /></a>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal-body" id="modalTree">
+					<button id="btnCancelarTrabs" type="button" class="btn btn-success"
+						title="Volver y Guardar" onclick="javascript:cancelarSeleccionarTrabs();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<h4 class="modal-title">Seleccione a los trabajadores
+						planificados</h4>
+						<input id="buscarTrabJstree" 	style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+					<textarea id="listTrabBuscar" style="width:500px;height:200px;resize: none;"></textarea>
+					<div id="resultSearchTrab"> </div>
+					<button id='cambiarBuscador' type='button' 
+						title='cambiar' style="color:blue">
+						<i class="fa fa-arrow-circle-down	 " ></i>
+					</button>
+					
+					<div id="jstree"></div>
+				</div>
+
+				<div class="modal-body" id="modalListEpp">
+					<button id="btnCancelarListEpp" type="button"
+						class="btn btn-success" title="Volver"
+						onclick="javascript:cancelarListEpp();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id="btnNuevoEppEntregaEpp" type="button"
+						class="btn btn-success" title="Volver"
+						onclick="javascript:nuevoEppEntregaEpp();">
+						<i class="fa fa-file-o fa-2x"></i>
+					</button>
+					
+					<div class="wrapper" id="wrapperEppEntregaEpp">
+		
+							<table class="table table-striped table-bordered table-hover table-fixed"
+								id="tblEppEntregaEpp"  >
+								<thead>
+								<tr>
+									<td class="tb-acc" style="width:100px">...</td>
+									<td class="tb-acc" style="width:500px">EPP</td>
+									<td class="tb-acc" style="width:150px">Talla</td>
+									<td class="tb-acc" style="min-width:150px">Cantidad</td> 
+								</tr>
+									
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+							
+						</div>
+				</div>
+
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdProgCompra"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Compras</h4>
+				</div>
+				<div class="modal-body" id="modalCompraBody">
+					<button id="btnCancelarCompra" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnAgregarCompra' type='button' class='btn btn-success'
+						title='Agregar '>
+						<i class='fa fa-file-o fa-2x'></i>
+					</button>
+					<button id="btnGuardarCompra" type="button" class="btn btn-success"
+						title="Guardar">
+						<i class="fa fa-floppy-o fa-2x"></i>
+					</button>
+					
+					<button id='btnClipTablaCompra' type='button' class='btn btn-success' title='Tabla Clipboard' >
+				<i class='fa fa-clipboard fa-2x'></i></button>
+					<button id='btnEliminarCompra' type='button' class='btn btn-danger'
+						title='Eliminar programacion'>
+						<i class='fa fa-times fa-2x'></i>
+					</button>
+					
+					<div class="table-responsive">
+						<div class="table-responsive">
+		
+							<table class="table table-striped table-bordered table-hover table-fixed"
+								id="tblCompra" >
+								<thead>
+								<tr>
+									<td class="tb-acc" style="width:220px;">Responsable de gestión</td>
+									<td class="tb-acc" style="width:190px;">Motivo de adquisición</td>
+									<td class="tb-acc" style="width:190px;">Motivo de renovación</td>
+									<td class="tb-acc" style="width:250px;">Descripción</td>
+									<td class="tb-acc" style="width:180px;">Fecha planificada</td>
+									<td class="tb-acc" style="width:180px;">Hora planificada</td>
+									<td class="tb-acc" style="width:180px;">Fecha real</td>
+									<td class="tb-acc" style="width:180px;">Fecha del próximo mantenimiento</td>
+									<td class="tb-acc" style="width:100px;">Cantidad</td>
+									<td class="tb-acc" style="width:100px;">Cantidad tallas</td>
+									<td class="tb-acc" style='width:150px;'>Inversión</td>
+									<td class="tb-acc" style="width:300px;">Unidad</td>
+									<td class="tb-acc" style="width:300px;">División</td>
+									<td class="tb-acc" style="width:300px;">Área</td>
+									<td class="tb-acc" style="width:300px;">Evidencia</td>
+									<td class="tb-acc" style="width:120px;">Estado del equipo</td>
+									<td class="tb-acc" style="width:120px;">Estado programación</td>
+								</tr>
+									
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+				</div>
+
+				<div class="modal-body" id="modalTallaCompra">
+						<button id="btnCancelarCompraTalla" 
+						onclick="javascript:cancelarCargaTallasCompra()" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<div class="table-responsive">
+						<div class="table-responsive">
+		
+							<table class="table table-striped table-bordered table-hover"
+								id="tblTallaCompra">
+								<thead>
+								<tr>
+									<td class="tb-acc">Talla</td>
+									<td class="tb-acc">Cantidad</td>
+								</tr>
+									
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+				</div>
+
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdVigenciaEpp"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Vigencia EPP´s Trabajadores</h4>
+				</div>
+				 
+ 		
+				<div class="modal-body">
+					 <button id='btnClipTablaVigencia' type='button' 
+        class='clipGosst btn btn-success ' title='Tabla Clipboard' >
+		<i class='fa fa-clipboard fa-2x'></i></button>
+				 <button id='btnSmartEntrega' type='button' 
+        class='magicGosst btn btn-success ' title='Entrega Smart' >
+		<i class='fa fa-magic fa-2x'></i></button>
+					<div class="table-responsive">
+						<div class="table-responsive">
+		
+							<table class="table table-striped table-bordered table-hover"
+								id="tblVigenciaEpp">
+								<thead>
+								<tr>
+									<td class="tb-acc">Área</td>
+									<td class="tb-acc">Trabajador</td>
+									<td class="tb-acc">Vigente</td>
+								   <td class="tb-acc">Días Restantes</td>
+								</tr>
+									
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+				</div>
+
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdProgStock"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width:90%;height:90%">
+    
+      <!-- Modal content-->
+      <div class="modal-content" >
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Stock proyectados</h4>
+        </div>
+        <div class="modal-body" style="height:100%;width:95%">
+          <form class="form-inline"> 
+        	Fecha: <input type="date" 
+		class="form-control" 
+		id="fechaStock"
+		value="2016-12-31">
+		Hora: 
+		<input type="time"
+		 class="form-control" id="horaStock"
+		 value="00:00">
+		       
+	<strong>Tipo de eventos: </strong>
+ <div class="checkbox checkbox-warning checkbox-inline">
+                        <input id="tipoEvento1" type="checkbox" checked>
+                        <label for="tipoEvento1">
+                            En Proceso
+                        </label>
+                    </div>
+     <div class="checkbox checkbox-success checkbox-inline">
+                        <input id="tipoEvento2" type="checkbox" checked>
+                        <label for="tipoEvento2">
+                            Completado
+                        </label>
+                    </div>
+           <div class="checkbox checkbox-danger checkbox-inline">
+                        <input id="tipoEvento3" type="checkbox" checked>
+                        <label for="tipoEvento3">
+                           Retrasado
+                        </label>
+                    </div>    
+             
+		  <button id='btnTablaProyeccion' type='button' 
+        class='btn btn-success ' title='Generar tabla' onclick="generarTablaStock()">
+		<i class='fa fa-table fa-2x'></i></button>
+		 <button id='btnGraficoProyeccion' type='button' 
+        class='btn btn-success ' title='Generar gráfico' onclick="generarGraficoProyeccion()">
+		<i class='fa fa-pie-chart fa-2x'></i></button>
+		 <button id='btnInversionStock' type='button' 
+        class='btn btn-success ' title='Inversion Stock' onclick="generarGraficoInversionStock()" >
+		<i class='fa fa-money fa-2x'></i></button>
+		 <button id='btnClipTablaProyeccion' type='button' 
+        class='btn btn-success ' title='Tabla Clipboard' >
+		<i class='fa fa-clipboard fa-2x'></i></button>
+		
+		 </form>
+    
+       
+		 <div id="msgFecha"></div>
+          	<div class="table-responsive" id="divProyeccionStock">
+
+			<table class="table table-striped table-bordered table-hover"
+				id="tblStock">
+				<thead>
+					<tr>
+					<td rowspan="2" >EPP</td>
+					<td rowspan="2" >Talla</td>
+					<td rowspan="2" >Acumulado Compras</td>
+					<td rowspan="2" >Acumulado Entregas</td>
+					<td rowspan="2" >Acumulado Stock</td>
+					<td colspan="13">Proyección de cantidad requerida de EPP al finalizar </td>
+					</tr>
+					
+				</thead>
+				<tbody id="tbodyC">
+				</tbody>
+			</table>
+			
+			</div>
+		<div id="graficoProyeccionStock" style="min-height:600px">
+				
+        </div>
+       <div id="graficoProyeccionInversionStock" style="min-height:600px">
+		
+			</div>
+      </div>
+      
+    </div>
+    </div>
+    </div>
+    
+<div class="modal fade bs-example-modal-lg" id="mdTalla"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:90%">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Tallas de EPP</h4>
+				</div>
+				<div class="modal-body" id="modalBodyTalla">
+					<button id="btnCancelarTalla" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnAgregarTalla' type='button' class='btn btn-success'
+						title='Agregar Nueva Talla'>
+						<i class='fa fa-file-o fa-2x'></i>
+					</button>
+					<button id="btnGuardarTalla" type="button" class="btn btn-success"
+						title="Guardar Talla">
+						<i class="fa fa-floppy-o fa-2x"></i>
+					</button>
+			
+					<button id='btnClipTablaTalla' type='button' class='btn btn-success' title='Tabla Clipboard' >
+				<i class='fa fa-clipboard fa-2x'></i></button>
+					<button id='btnEliminarTalla' type='button' class='btn btn-danger'
+						title='Eliminar Talla'>
+						<i class='fa fa-times fa-2x'></i>
+					</button>
+					
+					<div class="table-responsive">
+						<div class="table-responsive">
+		
+							<table class="table table-striped table-bordered table-hover"
+								id="tblTalla">
+								<thead>
+								<tr>
+									<td class="tb-acc" style="width: 150px">Código de EPP</td>
+									<th class="tb-acc">Talla</th>
+										<th class="tb-acc">Trabajadores relacionados</th>
+								</tr>
+									
+								</thead>
+								<tbody id="tbodyProg">
+								</tbody>
+							</table>
+							
+
+						</div>
+					</div>
+				</div>
+
+				<div class="modal-body" id="modalTreeTalla">
+					<button id="btnCancelarAsigTalla" type="button" class="btn btn-success"
+						title="Volver y Guardar" onclick="javascript:cancelarSeleccionarTrabsTalla();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<h4 class="modal-title">Seleccione a los trabajadores
+						asignados</h4>
+						<input id="buscarTrabTallaJstree" 	style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+					<textarea id="listTrabTallaBuscar" style="width:500px;height:200px;resize: none;"></textarea>
+					<div id="resultSearchTrabTalla"> </div>
+					<button id='cambiarBuscadorTalla' type='button' 
+						title='cambiar' style="color:blue">
+						<i class="fa fa-arrow-circle-down	 " ></i>
+					</button>
+					
+					<div id="jstreeTalla"></div>
+				</div>
+
+				
+			</div>
+		</div>
+	</div>
+<div class="modal fade bs-example-modal-sm" id="mdUpload" tabindex="-1"
+		role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdUploadLabel">...</h4>
+				</div>
+				<button id='btnUploadArchivo' type='button'
+					class='btn btn-success' title='Subir archivo'>
+					<i class='fa fa-floppy-o fa-2x'></i>
+				</button>
+				<h4 class="modal-title">Subir archivo</h4>
+				<input type="file" name="fileEvi" id="fileEvi"
+					accept="image/jpg,image/png,image/jpeg,image/gif">
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="modalCorreos"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:1100px;">
+			<div class="modal-content" >
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="modalCorreosTitulo">Correos de Trabajadores</h4>
+				</div>
+				
+
+				
+
+				
+
+				<div class="modal-body" id="modalBodyCorreos">
+				
+				<p>
+				Hola Hola
+				</p>
+				
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+	
+	<div class="modal fade bs-example-modal-lg" id="modalRecomendacion"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:1100px;">
+			<div class="modal-content" >
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="modalRecomendacionTitulo">Inversión recomendada</h4>
+				</div>
+				
+
+				
+			<br>
+				
+
+				<div class="modal-body" id="modalBodyRecomendacion">
+				
+				<table class="table table-striped table-bordered table-hover"
+								id="tblRecomendacion">
+								<thead>
+								
+									<tr>
+										<th class="tb-acc"> Inversi&oacute;n / trabajador </th>
+										<th class="tb-acc"> N° Trabajadores </th>
+										<th class="tb-acc"> Inversi&oacute;n Total </th>
+									</tr>
+								</thead>
+								<tbody>
+								
+								</tbody>
+							</table>
+				
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdImpDatos" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Importar datos de Equipos</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<button id="btnGuardarNuevos" type="button"
+								class="btn btn-success" title="Guardar">
+								<i class="fa fa-floppy-o fa-lg"></i>
+							</button><br/>
+							
+							
+							<label for="message-text" class="control-label">Copie aquí desde un excel segun el formato:</label>
+							<textarea class="form-control" rows="10" id="txtListado" style="font-size:11px; width:840px;"
+								maxlength="10000" placeholder="   Equipo de Seguridad           Tipo              Proveedor     Precio    Especificaciones"></textarea>
+						</div>
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdImpDatosEntrega" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Importar datos de Entregas</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<button id="btnGuardarNuevosEntrega" type="button"
+								class="btn btn-success" title="Guardar">
+								<i class="fa fa-floppy-o fa-lg"></i>
+							</button><br/>
+							
+							
+							<label for="message-text" class="control-label">Copie aquí desde un excel segun el formato:</label>
+							<textarea class="form-control" rows="10" id="txtListadoEntrega" style="font-size:11px; width:840px;"
+								maxlength="100000" placeholder=" DNI Trabajador entregado  - Fecha Planificada   -   Hora Planificada   -  Feha de entrega    -   Responsable de entrega     -    EPP   -   Cantidad"></textarea>
+						</div>
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<!-- script references -->
+
+	<script src="../lib/jquery.min.js"></script>
+		<script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../lib/jstree.min.js"></script>
+	<script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	<script src="../js/recursos/equiposeguridad.js"></script>
+	<script src="../js/recursos/progequiposeguridad.js"></script>
+	<script src="../js/recursos/tallas.js"></script>
+
+	<script src="../js/recursos/compraEquipo.js"></script>
+	
+
+	<script src="../lib/chosen.jquery.js"></script>
+	<!-- script references highcharts -->
+	
+		<script src="../lib/HighCharts/highcharts.js"></script>
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	<script src="../js/recursos/asignacion.js"></script>
+</body>
+</html>

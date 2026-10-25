@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+	<meta charset="utf-8">
+	<title>GOSST-Solicitudes</title>
+	<meta name="generator" content="Bootply" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="../css/bootstrap-s.css" rel="stylesheet">
+				<link href="../css/estilosIndicadores.css" rel="stylesheet">
+				
+		<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+		
+	 
+	<script src="../lib/jquery-2.2.0.js"></script>
+		<script src="../lib/jquery-ui.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	
+	<!-- script references -->
+		
+		<script src="../lib/jquery.blockUI.min.js"></script>
+		<script src="../lib/chosen.jquery.js"></script>
+		<script src="../lib/bootstrap.min.js"></script>
+	
+	<!-- script grafico -->	
+	
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href="../css/chosen.css" rel="stylesheet">
+<link href="../css/estiloAutocomplete.css" rel="stylesheet">
+	<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+		
+</head>
+
+
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	"Para comprender la seguridad no hay 
+	que enfrentarse a ella, sino incorporarla a uno mismo"
+	<br> 	<br> 
+	<strong>-Allan Watts, filósofo británico</strong>
+		
+	</div>
+</div>
+ 
+ 
+ 
+<nav class="navbar navbar-default" id="barraMenu"></nav>
+ 
+ 
+   <div class="cuadroGeneral" id="divSugerenciasGosst">
+      <div id="TituloArriba">
+	     <h2>Sug  ST</h2>
+	  </div>
+	  
+	  <div class="container-fluid" id="divContainSugerencia">
+		 <button id="btnCancelarSugerencia" type="button" class="btn btn-success"
+			     onclick="javascript:cancelarNuevoSugerencia();" title="Cancelar">
+			<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		 </button>
+		 <button id="btnNuevoSugerencia" type="button" class="btn btn-success"
+			     onclick="javascript:nuevoSugerencia();" title="Nuevo">
+			<i class="fa fa-file-o fa-2x"></i>
+		 </button>
+		 <button id="btnGuardarSugerencia" type="button" class="btn btn-success"
+			     onclick='javascript:guardarSugerencia();' title="Guardar">
+		    <i class="fa fa-floppy-o fa-2x"></i>
+		 </button>
+		 <button id="btnEliminarSugerencia" type="button" class="btn btn-danger"
+			    onclick="javascript:eliminarSugerencia();" title="Eliminar">
+		    <i class="fa fa-times fa-2x"></i>
+		 </button>
+		 
+	   <div class="wrapper table-responsive" id="wrapperSug">
+		 <table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblSugerencia" >
+		    <thead>
+			   <tr>
+				  <td class="tb-acc" colspan="5" style="width:1480px">Cliente</td>
+				  <td class="tb-acc" style="width:1180px" colspan="4">GOSST</td>
+				  <td class="tb-acc"  style="width:180px" rowspan="2">Calificación de la solicitud</td>	 			
+			   </tr>
+			   <tr>
+				  <td class="tb-acc" style="width:180px">Fecha de solicitud</td>	 			
+				  <td class="tb-acc" style="width:180px">Motivo </td>	 			
+				  <td class="tb-acc" style="width:220px">Módulos involucrados</td>	 			
+				  <td class="tb-acc" style="width:270px">Solicitud</td>	 			
+				  <td class="tb-acc" style="width:310px">Evidencia</td>	 			
+				  <td class="tb-acc" style="width:180px">Fecha Planificada</td>	 			
+				  <td class="tb-acc" style="width:180px">Fecha Realizada</td>	 			
+			      <td class="tb-acc" style="width:170px">Estado  <i class="fa fa-search" aria-hidden="true" id="filtroEstadoSug"> </i> </td>
+				  <td class="tb-acc" style="width:220px">Observaciones</td>	 			
+			   </tr>
+			 </thead>
+			 <tbody  >
+			 </tbody>
+		 </table>
+	   </div>
+	 </div>
+	 
+	 <div class="container-fluid" id="divContainCalificacion">
+	    <button id="btnGuardarCalificacionSugerencia" type="button" class="btn btn-success"
+			    onclick='javascript:guardarSugerencia();' title="Guardar">
+		   <i class="fa fa-floppy-o fa-2x"></i>
+		</button>
+					
+		<div class="table-responsive">
+			<table class="table table-striped table-bordered table-hover"
+				   id="tblPeligrosResiduos" style="min-width:1800px">
+			   <thead>
+			      <tr>
+					 <td class="tb-acc" style="width:30%" >
+						 Estimado Usuario, su calificación para nosotros 
+						 es muy importante, favor de calificar los siguientes aspectos</td>  
+					 <td class="tb-acc" style="width:70%" ></td>  
+				  </tr>
+			   </thead>
+			   <tbody>
+				  <tr>
+					 <td>¿La solución resuelve su problema?</td>
+					 <td id="tdResuelveSug"></td>
+				  </tr>
+				  <tr>
+				     <td>El tiempo de solución fue adecuado</td>
+					 <td id="tdTiempoSug" style='color:rgba(6, 141, 133, 0.92)'></td>
+				  </tr>
+				  <tr>
+					 <td>Comentario </td>
+					 <td id="tdComentSug" ></td>
+				  </tr>
+				  <tr>
+				     <td colspan="2"> Nota: En caso exista alguna disconformidad, favor de anotarlo 
+									  en el cuadro de Comentario.
+								 	  Gracias por involucrarse con su software GOSST</td>
+				  </tr>
+				 </tbody>
+			  </table>
+		 </div>
+	   </div>
+    </div>
+  
+</body>
+
+<!-- script references highcharts -->
+	
+   <script src="../js/generic/util.js"></script> 
+   <script src="../js/main/sugerencia.js"></script>
+   <script src="../js/main/actualizacion.js"></script> 
+   <script src="../js/generic/constantes.js"></script>
+   <script src="../js/generic/constantesApp.js"></script>
+
+</html>

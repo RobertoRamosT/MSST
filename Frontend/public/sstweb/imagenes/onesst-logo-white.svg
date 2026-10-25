@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 88" width="320" height="88" fill="none">
+  <defs>
+    <linearGradient id="onesstShieldW" x1="8" y1="8" x2="76" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+  <path d="M44 8L14 20V42C14 61.5 26.8 77.8 44 83C61.2 77.8 74 61.5 74 42V20L44 8Z" fill="url(#onesstShieldW)"/>
+  <path d="M44 13L19 23V42C19 58.3 29.7 72.1 44 76.8C58.3 72.1 69 58.3 69 42V23L44 13Z" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+  <circle cx="44" cy="43" r="18" stroke="rgba(255,255,255,0.35)" stroke-width="2.2" stroke-dasharray="82 28" stroke-linecap="round"/>
+  <path d="M34 43.5L41 50.5L55.5 35.5" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="90" y="50" font-family="'Plus Jakarta Sans', 'Inter', 'Segoe UI', Arial, sans-serif" font-size="38" font-weight="800" letter-spacing="-0.8">
+    <tspan fill="#FFFFFF">One</tspan><tspan fill="#5EEAD4">SST</tspan>
+  </text>
+  <text x="92" y="68" font-family="'Inter', 'Segoe UI', Arial, sans-serif" font-size="10.5" font-weight="700" fill="#94A3B8" letter-spacing="1.8">
+    SEGURIDAD Y SALUD INTELIGENTE
+  </text>
+</svg>

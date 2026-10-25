@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<!-- test commits -->
+<title>GOSST-[Ficha Química]</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+	
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href="../css/estilosIndicadores.css" rel="stylesheet">
+			<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>	
+	 
+	<link href="../css/chosen.css" rel="stylesheet">
+	
+<!--	Solo para calendario
+	<link rel="stylesheet" href="../lib/codebase/calendario_glossy_blue/dhtmlxscheduler_blue.css" 
+	type="text/css" media="screen" title="no title" charset="utf-8">
+	-->
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+</head>
+<body>
+  
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	"" 
+		
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+	
+	<form style="text-align: center;width: 50%;float: right;" class="form-inline" id="divListaTabs"></form>
+	 
+		 
+	  <div class="tab-content" style="display : block;margin-top: -20px; " id="divFichaQuimicaFull">
+		 <div role="tabpanel"  id="tabFichaQuimica"  class="tab-pane" >
+			<h2> Ficha Química </h2>
+			<button id="btnCancelarFichaQuimica" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoFichaQuimica" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarFichaQuimica" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			<button id="btnExcelFicha" type="button" class="btn btn-excel" title="Excel" >
+				<i class="fa fa-file-excel-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarFichaQuimica" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+	   		<!--  <button id='opcionSubirImagenEpp' type='button' onclick="verSubirImagenEpp()"
+						title='Subir imagen Epp'   class="btn btn-info">
+						<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden='true'> </i>Epp
+			</button>
+			
+			<button id='opcionSubirImagenOb' type='button' onclick="verSubirImagenOb()"
+						title='Subir imagen Ob'   class="btn btn-info">
+						<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden='true'> </i>Ob
+			</button>
+			
+			<button id='opcionSubirImagenPp' type='button' onclick="verSubirImagenPp()"
+						title='Subir imagen Pp'   class="btn btn-info">
+						<i class="fa fa-arrow-circle-o-up fa-2x" aria-hidden='true'> </i>Pp
+			</button> -->
+			
+			<button id='btnSmartUploadRetiro' type='button' onclick="verSmartImportFichaQuimica()"
+			            title='Smart upload retiro' class='btn btn-info'>
+					<i class='fa fa-upload  fa-2x'></i><i class='fa fa-info'></i> 
+			</button>
+			
+			<button id='filtroAplicarBuscador' type='button' onclick="verFiltroFichaQuimica()"
+						title='Filtro'   class="btn btn-info">
+						<i class="fa fa-2x fa-filter" aria-hidden='true'> </i>
+			</button>
+		 	
+			 <!--  A nada -->
+			<div class="wrapper" id="wrapperFichaQuimica">
+			 
+			<table class="table table-bordered table-hover table-fixed"
+				id="tblFichaQuimica">
+				<thead>
+					<tr>
+						<th class="tb-acc" rowspan="2" style="width:120px">Código</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">¿Está validado en almacén?</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Nombre del producto</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Nombre comercial del producto</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Fuente de información</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Tipo de producto</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Medio de extinción</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Pictogramas SGA</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Órgano blanco afectado</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Otros órganos</th>
+						<th class="tb-acc" colspan="3" style="width:300px">Sistema HSMI</th>
+						<th class="tb-acc" colspan="4" style="width:400px">Rombo NFPA</th>
+						<th class="tb-acc" rowspan="2" style="width:250px">Equipo de protección personal (EPP)</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Otros EPP's</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Producto de combustión</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Composición</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Almacenamiento</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Advertencia</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Proveedor</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Áreas asociadas</th>
+						<th class="tb-acc" rowspan="2" style="width:180px">Enlace MSDS</th>
+				  </tr>
+				   <tr>
+					    <th class="tb-acc" style="width:220px">Salud</th>
+						<th class="tb-acc" style="width:220px">Inflamabilidad</th>
+						<th class="tb-acc" style="width:220px">Peligro físico</th>
+						<th class="tb-acc" style="width:220px">Salud</th>
+						<th class="tb-acc" style="width:220px">Inflamabilidad</th>
+						<th class="tb-acc" style="width:220px">Reactividad</th>
+						<th class="tb-acc" style="width:220px">Casos especiales</th>
+				  </tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			 </div>
+			 
+		</div> 	 
+	</div>
+	  
+	 <div id="divMsds">
+	  <h2 id="tituloMsds"> Enlace MSDS </h2>
+	     
+		 
+		    <button id="btnCancelarEnlaceMsds" type="button" class="btn btn-success" title="Cancelar"   >
+				<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			</button> 
+			<button id="btnNuevoEnlaceMsds" type="button" class="btn btn-success" title="Nuevo" >
+				<i class="fa fa-file-o fa-2x"></i>
+			</button>
+			<button id="btnGuardarEnlaceMsds" type="button" class="btn btn-success" title="Guardar" >
+				<i class="fa fa-floppy-o fa-2x"></i>
+			</button>
+			 <button id="btnEliminarEnlaceMsds" type="button" class="btn btn-danger" title="Eliminar"  >
+				<i class="fa fa-times fa-2x"></i>
+			</button>
+			
+		<strong id="mensajeEnlaceMsds"></strong>
+		
+		<div class="wrapper" id="wrapEnlaceMsds">
+	
+			<table class="table table-striped table-bordered table-hover table-fixed"
+				id="tblEnlaceMsds" style="min-width : 1300px">
+				<thead>
+					  <tr>
+						<th class="tb-acc" style="width:220px">Evidencia</th>
+						<th class="tb-acc" style="width:100px">Observación</th>
+					 </tr>
+				</thead>
+					<tbody>
+					</tbody>
+			</table>
+		
+		</div>
+	
+	</div>
+	<!-- script references -->
+	<!-- script references highcharts
+	
+	<script src="../lib/HighCharts/highcharts.js"></script>
+	<script src="../lib/HighCharts/modules/data.js"></script>
+<script src="../lib/HighCharts/modules/drilldown.js"></script>
+
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	 -->
+	 
+	<!-- script references highcharts -->
+	 
+	<script src="../lib/jquery.min.js"></script>
+    <script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/chosen.jquery.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	
+	<script src="../lib/bootstrap.min.js"></script>
+	
+	<script src="../js/generic/util.js"></script>
+
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	
+	<script src="../js/recursos/fichaquimica/fichaquimica.js"></script>
+	<script src="../js/recursos/fichaquimica/enlace_msds.js"></script>
+	
+	<!-- Si hay calendario
+		<script src="../lib/codebase/sources/dhtmlxscheduler.js" type="text/javascript" charset="utf-8"></script>
+ 
+	<script src="../lib/codebase/locale/locale_es.js" type="text/javascript" charset="utf-8"></script>
+
+ -->
+
+</body>
+</html>

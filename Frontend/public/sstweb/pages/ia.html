@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Inteligencia Artificial</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'>
+<link href="../css/jquery-ui.css" rel="stylesheet">
+<link href="../css/estilosIndicadores.css" rel="stylesheet">
+<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+<link href="../css/chosen.css" rel="stylesheet">
+<link href="../lib/toastr.min.css" rel="stylesheet">
+<style>
+	/* Aire lateral del contenido del módulo IA (la barra superior queda full-width). */
+	.tab-content { padding-left: 25px; padding-right: 25px; }
+	#divListaTabs { box-sizing: border-box; padding-right: 25px; }
+</style>
+</head>
+<body>
+
+<div class="cargaPagina">
+	<img src="../imagenes/logo3.png" style="width:200px;height:210px">
+	<div id="barraCarga"><div class="progress-label">Loading...</div></div>
+	<br>
+	<div id="mensajeGosst"></div>
+</div>
+
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+
+	<form style="text-align: center;width: 50%;float: right;" class="form-inline" id="divListaTabs"></form>
+
+	<div class="tab-content" style="display: block;margin-top: -20px;">
+
+		<!-- ============ Dashboard de uso (sección por defecto) ============ -->
+		<div role="tabpanel" id="tabDashboardIa" class="tab-pane">
+			<h2>Dashboard de uso de IA
+				<button type="button" class="btn btn-link" style="font-size:16px;padding:0 8px;" title="¿Cómo leer este dashboard?" onclick="verAyudaDashboardIa()">
+					<i class="fa fa-question-circle"></i> Ayuda
+				</button>
+			</h2>
+			<p style="color:#666;">Uso, trazabilidad y consumo de las capacidades de IA de tu empresa.</p>
+
+			<div class="form-inline" style="margin-bottom:12px;">
+				<label>Desde</label> <input type="date" id="fechaIniDashIa" class="form-control input-sm">
+				<label style="margin-left:8px;">Hasta</label> <input type="date" id="fechaFinDashIa" class="form-control input-sm">
+				<button type="button" class="btn btn-primary btn-sm" style="margin-left:8px;" onclick="cargarDashboardIa()">
+					<i class="fa fa-refresh"></i> Aplicar
+				</button>
+			</div>
+
+			<div id="kpisIa" style="margin-bottom:12px;"></div>
+
+			<div id="tiposIa" style="margin-bottom:18px;"></div>
+
+			<div id="chartIaUso" style="min-height:300px;margin-bottom:18px;"></div>
+
+			<div class="form-inline" style="margin-bottom:8px;">
+				<label>Ver detalle de:</label>
+				<select id="selDetalleIa" class="form-control input-sm" onchange="cambiarDetalleIa()">
+					<option value="evaluaciones">Evaluaciones</option>
+					<!-- A futuro: <option value="inspecciones">Inspecciones</option>, etc. -->
+				</select>
+			</div>
+			<div class="wrapper" id="wrapperDetalleIa">
+				<div id="filtrosDetalleIa" style="margin-bottom:8px;">
+					<select id="fDashDocIa" class="form-control input-sm" style="display:inline-block;width:auto;max-width:230px;" onchange="renderDetalleIa()"></select>
+					<select id="fDashEstadoIa" class="form-control input-sm" style="display:inline-block;width:auto;" onchange="renderDetalleIa()"></select>
+					<select id="fDashContraIa" class="form-control input-sm" style="display:inline-block;width:auto;max-width:200px;" onchange="renderDetalleIa()"></select>
+					<input id="fDashTrabIa" class="form-control input-sm" placeholder="Buscar trabajador..." style="display:inline-block;width:170px;" oninput="renderDetalleIa()">
+					<span id="fDashContadorIa" class="text-muted" style="margin-left:6px;"></span>
+					<button type="button" class="btn btn-success btn-sm pull-right" title="Exportar el detalle filtrado a Excel" onclick="exportarDetalleIa()"><i class="fa fa-file-excel-o"></i> Exportar</button>
+				</div>
+				<table class="table table-bordered table-hover" id="tblDetalleIa">
+					<thead>
+						<tr>
+							<th>Fecha</th>
+							<th>Documento</th>
+							<th>Trabajador</th>
+							<th>Contratista</th>
+							<th>Proyecto</th>
+							<th>Usuario</th>
+							<th>Estado</th>
+							<th style="text-align:right;">Tokens</th>
+							<th>Obs.</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- ============ Capacidad: Evaluación de documentos ============ -->
+		<div role="tabpanel" id="tabEvaluacionIa" class="tab-pane">
+			<h2>Evaluación de documentos con IA
+				<button type="button" class="btn btn-link" style="font-size:16px;padding:0 8px;" title="¿Cómo usar la evaluación?" onclick="verAyudaEvaluacionIa()">
+					<i class="fa fa-question-circle"></i> Ayuda
+				</button>
+			</h2>
+			<p style="color:#666;">Configura cómo la IA debe evaluar cada tipo de documento (por empresa). La IA asiste; el revisor confirma el estado.</p>
+
+			<button id="btnAgregarConfigIa" type="button" class="btn btn-success" title="Agregar configuración" style="margin-bottom:10px;">
+				<i class="fa fa-plus"></i> Agregar configuración
+			</button>
+
+			<div class="wrapper" id="wrapperConfigIa">
+				<table class="table table-bordered table-hover" id="tblConfigIa">
+					<thead>
+						<tr>
+							<th>Tipo de documento</th>
+							<th>Procedimiento</th>
+							<th>Activo</th>
+							<th>Última actualización</th>
+							<th style="width:140px;">Acciones</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- ============ Modal: agregar / editar configuración ============ -->
+	<div class="modal fade" id="modalConfigIa" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="tituloModalConfigIa">Agregar configuración</h4>
+				</div>
+				<div class="modal-body">
+					<input type="hidden" id="configIaId" value="0">
+
+					<div class="form-group" style="display:block;margin-bottom:10px;">
+						<label>Tipo de documento</label>
+						<select id="selTipoDocIa" class="form-control" onchange="actualizarPlantillaIa()">
+							<option value="0">Hojas de vida</option>
+							<option value="8">Equipos de Protección Personal (EPP)</option>
+							<option value="79">Habilitación médica por clínica</option>
+							<option value="15">Certificado de capacitación para trabajo de alto riesgo</option>
+						</select>
+					</div>
+
+					<div class="form-group" style="display:block;margin-bottom:10px;">
+						<label>Perfil de la IA (cómo debe comportarse / qué rol asume)</label>
+						<textarea id="textPerfilIa" class="form-control" rows="3" maxlength="2000"
+							oninput="contarCarsIa('textPerfilIa','contPerfilIa',2000)"
+							placeholder="Ej.: Actúa como un especialista en SST que evalúa hojas de vida de trabajadores de contratistas..."></textarea>
+						<small id="contPerfilIa" class="text-muted">0 / 2000</small>
+					</div>
+
+					<div class="form-group" style="display:block;margin-bottom:10px;">
+						<label>Prompt de instrucciones (criterios de evaluación)</label>
+						<textarea id="textPromptIa" class="form-control" rows="6" maxlength="4000"
+							oninput="contarCarsIa('textPromptIa','contPromptIa',4000)"
+							placeholder="Instrucciones que debe cumplir la IA al evaluar este tipo de documento..."></textarea>
+						<small id="contPromptIa" class="text-muted">0 / 4000</small>
+					</div>
+
+					<div class="form-group" style="display:block;margin-bottom:10px;">
+						<label>Procedimiento (documento con los criterios)</label>
+						<div style="margin-bottom:6px;font-size:12px;color:#555;">
+							¿No tienes tu formato?
+							<a id="linkPlantillaIa" href="../documentos/Plantilla_Criterios_Evaluacion_HojaVida.xlsx" download>
+								<i class="fa fa-download"></i> Descargar plantilla
+							</a>, complétala y súbela. Si ya tienes tu propia matriz o procedimiento, súbelo directamente.
+							<br>Formatos: PDF, Word o Excel. <strong>Si subes un Excel</strong> y los criterios están en una hoja específica, indícalo en el <em>Prompt de instrucciones</em> (ej.: «los criterios están en la hoja "Trabajador"»).
+						</div>
+						<div id="divProcedimientoActual" style="margin-bottom:5px;"></div>
+						<input type="file" id="fileProcedimientoIa" accept=".pdf,.doc,.docx,.xls,.xlsx">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+					<button id="btnGuardarConfigIa" type="button" class="btn btn-success">
+						<i class="fa fa-floppy-o"></i> Guardar
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ============ Modal: confirmación de eliminación ============ -->
+	<div class="modal fade" id="modalConfirmIa" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Confirmación</h4>
+				</div>
+				<div class="modal-body" id="confirmModalIaBody">¿Estás seguro de realizar esta acción?</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+					<button type="button" class="btn btn-danger" id="btnConfirmarEliminarIa">Eliminar</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ============ Modal: detalle de una evaluación (observaciones) ============ -->
+	<div class="modal fade" id="modalDetalleIa" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">✨ Evaluación — Observaciones</h4>
+				</div>
+				<div class="modal-body">
+					<style>
+						.cuerpoIaDash{max-height:55vh;overflow:auto;font-size:13px;line-height:1.5;}
+						.cuerpoIaDash table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px;}
+						.cuerpoIaDash th,.cuerpoIaDash td{border:1px solid #ccc;padding:5px 8px;text-align:left;vertical-align:top;}
+						.cuerpoIaDash th{background:#f0f4f8;}
+						.cuerpoIaDash .hIa{font-weight:bold;margin:10px 0 4px;color:#2E5496;}
+						.cuerpoIaDash .hIa1,.cuerpoIaDash .hIa2{font-size:15px;}.cuerpoIaDash .hIa3{font-size:14px;}.cuerpoIaDash .hIa4{font-size:13px;color:#444;}
+						.cuerpoIaDash p{margin:3px 0;}.cuerpoIaDash ul{margin:4px 0 8px 18px;}.cuerpoIaDash hr{margin:8px 0;border:0;border-top:1px solid #ddd;}
+					</style>
+					<div id="modalDetalleIaMeta" style="margin-bottom:8px;"></div>
+					<div id="modalDetalleIaTexto" class="cuerpoIaDash"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ============ Modal: ayuda de uso de la funcionalidad (mantenida con IA) ============ -->
+	<div class="modal fade" id="modalAyudaIa" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title"><i class="fa fa-question-circle"></i> <span id="modalAyudaIaTitulo">Ayuda</span></h4>
+				</div>
+				<div class="modal-body" id="modalAyudaIaBody" style="max-height:65vh;overflow:auto;font-size:13.5px;line-height:1.6;"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Entendido</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- script references -->
+	<script src="../lib/jquery.min.js"></script>
+	<script src="../lib/jquery-ui.min.js"></script>
+	<script src="../lib/chosen.jquery.js"></script>
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../lib/toastr.min.js"></script>
+
+	<script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+
+	<!-- gráficos (mismo include que main.html; iaDashboard.js degrada con gracia si no está) -->
+	<script src="../lib/HighCharts/highcharts.js"></script>
+
+	<script src="../js/ia/ia.js"></script>
+	<script src="../js/ia/iaDashboard.js"></script>
+
+</body>
+</html>

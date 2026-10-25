@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluación de documentos con IA · Ayuda · GOSST</title>
+<!-- P122: ayuda de la evaluación con IA para quien la usa (revisor y administrador del módulo). Se abre con el icono de ayuda
+     junto al botón «Evaluar» y desde la página de IA. Página estática, sin scripts (CSP). Si el módulo cambia lo que evalúa, los
+     datos que envía, a quién o cuánto tiempo se guardan, se actualiza con una versión nueva (y la ficha también). -->
+<style>
+  body { margin: 0; background: #fff; color: #1f2937; font-family: "Segoe UI", Arial, sans-serif; font-size: 15px; line-height: 1.55; }
+  .hoja { max-width: 760px; margin: 0 auto; padding: 24px 20px 40px; }
+  h1 { font-size: 21px; margin: 0 0 4px; color: #0f4c5c; }
+  .sub { color: #4b5563; font-size: 13.5px; margin-bottom: 18px; }
+  h2 { font-size: 16px; margin: 22px 0 6px; color: #0f4c5c; }
+  p { margin: 6px 0; }
+  ul { margin: 6px 0 6px 20px; padding: 0; }
+  li { margin: 3px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+  th, td { border: 1px solid #d1d5db; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; }
+  .destacado { border-left: 4px solid #0f766e; background: #f0fdfa; padding: 10px 14px; margin: 12px 0; font-weight: 600; }
+  .estado { display: inline-block; padding: 1px 7px; border-radius: 3px; color: #fff; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .cumple { background: #5cb85c; }
+  .nocumple { background: #d9534f; }
+  .sincriterios { background: #777; }
+  .error, .aviso { background: #f0ad4e; }
+  .nota { color: #4b5563; font-size: 13.5px; }
+</style>
+</head>
+<body>
+<main class="hoja">
+  <h1>Evaluación de documentos con IA · Ayuda</h1>
+  <div class="sub">Plataforma GOSST · Versión 1.0 · 19 de octubre de 2026</div>
+
+  <p class="destacado">La IA sugiere un resultado; el revisor lo verifica contra los documentos y decide.</p>
+
+  <h2>Qué hace</h2>
+  <ul>
+    <li>Lee la hoja de vida de un trabajador (CV y constancias) o un documento de examen (EPP, habilitación, trabajos de alto
+      riesgo) y lo contrasta con los criterios que la empresa configuró en la página de IA, sección «Evaluación de documentos».</li>
+    <li>Sugiere un resultado, con observaciones que citan el documento y la página donde encontró cada requisito, e indica qué
+      tan legibles fueron los documentos.</li>
+    <li>Puede tardar uno o dos minutos. Se puede volver a evaluar cuando cambian los documentos o los criterios; el reloj
+      &#128344; que aparece junto al resultado desde la segunda evaluación muestra cuántas hubo y su historial.</li>
+  </ul>
+
+  <h2>Qué no hace</h2>
+  <ul>
+    <li>No aprueba ni desaprueba el documento: su estado no cambia con el resultado de la IA.</li>
+    <li>No decide si el trabajador queda habilitado: esa decisión es de la empresa cliente.</li>
+    <li>No define los criterios: los define la empresa cliente.</li>
+    <li>No verifica la autenticidad de los documentos ni consulta fuentes externas.</li>
+    <li>No aprende de las evaluaciones: los documentos no se usan para entrenar ni mejorar los modelos.</li>
+  </ul>
+
+  <h2>Antes de evaluar: el aviso al trabajador</h2>
+  <p>La plataforma no inicia la evaluación hasta que conste que el trabajador recibió el aviso sobre la revisión de su
+    documentación. Si falta, la fila muestra <span class="estado aviso">&#10024; Aviso pendiente</span> y el mensaje nombra a
+    quien falta. El aviso se entrega de una de estas dos formas:</p>
+  <ul>
+    <li>el trabajador lo lee al entrar a la plataforma y pulsa «He leído el aviso»;</li>
+    <li>la contratista carga la constancia firmada desde su lista de trabajadores, opción «Aviso de la revisión con IA».</li>
+  </ul>
+  <p>Después de un resultado <strong>NO CUMPLE</strong>, el trabajador vuelve a ver el aviso y la contratista ve «Volver a
+    entregar». Eso no impide volver a evaluar.</p>
+
+  <h2>Cómo leer el resultado</h2>
+  <table>
+    <tr><th style="width:26%">Resultado</th><th>Qué significa y qué hacer</th></tr>
+    <tr><td><span class="estado cumple">&#10024; CUMPLE</span></td>
+      <td>La IA encontró acreditados los requisitos. Revise las observaciones y compárelas con los documentos antes de dar el
+        visto bueno.</td></tr>
+    <tr><td><span class="estado nocumple">&#10024; NO CUMPLE</span></td>
+      <td>La IA no encontró acreditado al menos un requisito; las observaciones dicen cuál y por qué. Puede deberse a un
+        documento mal escaneado o a una denominación distinta: verifíquelo en el documento original.</td></tr>
+    <tr><td><span class="estado sincriterios">&#10024; Sin criterios</span></td>
+      <td>El tipo de documento o el puesto del trabajador no está contemplado en los criterios de la empresa. La IA no inventa
+        criterios: corresponde completar la configuración o revisar sin la IA.</td></tr>
+    <tr><td><span class="estado error">&#10024; Error</span></td>
+      <td>La evaluación no se completó por una falla técnica. No es un resultado: vuelva a evaluar.</td></tr>
+  </table>
+  <p>Al hacer clic en el resultado se abren las observaciones.</p>
+
+  <h2>Quién decide</h2>
+  <ul>
+    <li>El revisor verifica el resultado contra los documentos originales y pone el estado del documento con el desplegable
+      que ya existe: «Visto bueno», «Desaprobado», «Pendiente» o «Por re-evaluar».</li>
+    <li>La empresa cliente valida ese resultado y decide sobre la habilitación del trabajador. Esa decisión siempre es un acto
+      suyo.</li>
+  </ul>
+
+  <h2>Qué datos se envían y a dónde</h2>
+  <ul>
+    <li>Se envían los documentos del trabajador, con su nombre y número de documento de identidad, y los criterios de la
+      empresa.</li>
+    <li>Los procesa Amazon Bedrock, dentro de la cuenta de ASWAN, con el modelo Claude Haiku 4.5. La información viaja cifrada y
+      se procesa solo en los Estados Unidos (Oregón, Virginia del Norte y Ohio).</li>
+    <li>No se conserva lo que se envía al modelo ni sus respuestas, y no se usa para entrenar modelos.</li>
+    <li>GOSST guarda el resultado y las observaciones de cada evaluación durante dos años. Después se eliminan solos y queda
+      constancia de la eliminación.</li>
+  </ul>
+
+  <h2>Para el administrador del módulo: configurar los criterios</h2>
+  <p>En la página de IA, sección «Evaluación de documentos», se configura por empresa y por tipo de documento:</p>
+  <ul>
+    <li><strong>Perfil de la IA:</strong> el rol que debe asumir (por ejemplo, «especialista en SST que evalúa hojas de
+      vida»).</li>
+    <li><strong>Prompt de instrucciones:</strong> los criterios de evaluación (experiencia, capacitaciones, vigencias). Deben ser
+      específicos y medibles.</li>
+    <li><strong>Procedimiento:</strong> la matriz de criterios de la empresa (PDF, Word o Excel) o la plantilla descargable. Si es
+      un Excel con varias hojas, el prompt debe indicar en qué hoja están los criterios.</li>
+  </ul>
+  <p>Criterios concretos y medibles producen evaluaciones más precisas. Un tipo de documento o un puesto que no figura en el
+    procedimiento da como resultado «Sin criterios».</p>
+
+  <h2>Documentos relacionados</h2>
+  <ul>
+    <li><a href="ia-ficha-transparencia-v1.1.html" target="_blank" rel="noopener">Ficha de transparencia algorítmica</a>: el
+      detalle del sistema, sus riesgos y los derechos de la persona evaluada.</li>
+    <li><a href="ia-aviso-trabajador-v1.1.html" target="_blank" rel="noopener">Aviso sobre la revisión de su documentación</a>:
+      lo que recibe el trabajador antes de ser evaluado.</li>
+    <li><a href="ia-versiones.html" target="_blank" rel="noopener">Documentos y versiones</a>.</li>
+  </ul>
+
+  <p class="nota">Esta ayuda se actualiza, con una versión nueva, cuando cambia lo que evalúa la IA, los datos que se envían, a
+    quién o cuánto tiempo se guardan.</p>
+</main>
+</body>
+</html>

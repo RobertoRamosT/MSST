@@ -1,0 +1,57 @@
+import { SeccionContratista } from './gosst-menu.catalog';
+
+/**
+ * Snapshot del menú real del Portal Contratista del GOSST original
+ * (POST https://www.gosst.io/sst/contratista/perfiles — usuario holcim.contratista, empresa 773, contratista 3234).
+ * Capturado el 2026-10-24 13:17. Se usa solo como respaldo si /sst/contratista/perfiles no responde;
+ * la fuente oficial es dbo.Seg_SeccionContratista (script 11 en MSST_Info/04_SQL_Server_Scripts).
+ */
+export const SECCIONES_CONTRATISTA_SNAPSHOT: SeccionContratista[] = [
+  { id: 15, nombre: 'Perfil GRUPO ELIAS-29 S.A.C', icono: 'fa-user', seccionPadreId: null, numAlerta: 0, orden: 1, esDestacado: false },
+  { id: 62, nombre: 'Ver indicadores de la contratista', icono: 'fa-list-alt', seccionPadreId: null, numAlerta: 0, orden: 2, esDestacado: false },
+  { id: 3, nombre: 'Cargar documentos asociados a proyectos en curso', icono: 'fa-book', seccionPadreId: null, numAlerta: 1, orden: 3, esDestacado: true },
+  { id: 28, nombre: 'Cargar documentos asociados a los trabajadores', icono: 'fa-list', seccionPadreId: null, numAlerta: 0, orden: 4, esDestacado: true },
+  { id: 29, nombre: 'Cargar documentos a nivel empresa contratista (generales)', icono: 'fa-list', seccionPadreId: null, numAlerta: 0, orden: 5, esDestacado: true },
+  { id: 163, nombre: 'Registro de capacitación de IPERC de la contratista', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 6, esDestacado: false },
+  { id: 162, nombre: 'Registro de capacitación por puesto de trabajo', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 7, esDestacado: false },
+  { id: 159, nombre: 'Capacitación en reporte de accidentes e incidentes (flujograma)', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 8, esDestacado: false },
+  { id: 157, nombre: 'Registro de difusión de política de seguridad del cliente', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 9, esDestacado: false },
+  { id: 156, nombre: 'Registro de capacitación en procedimiento de trabajo', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 10, esDestacado: false },
+  { id: 155, nombre: 'Inducción SSOMA del cliente', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 11, esDestacado: false },
+  { id: 142, nombre: 'Documento de identidad', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 12, esDestacado: false },
+  { id: 133, nombre: 'Seguro vida ley', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 13, esDestacado: false },
+  { id: 129, nombre: 'Habilitación médica por clínica', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 14, esDestacado: false },
+  { id: 122, nombre: 'Certificado único laboral', icono: 'fa-file-text-o', seccionPadreId: 28, numAlerta: 0, orden: 15, esDestacado: false },
+  { id: 21, nombre: 'Prevencionista', icono: 'fa-files-o', seccionPadreId: 28, numAlerta: 0, orden: 16, esDestacado: false },
+  { id: 19, nombre: 'Certificado de capacitación para trabajo de alto riesgo', icono: 'fa-exclamation-triangle', seccionPadreId: 28, numAlerta: 0, orden: 17, esDestacado: false },
+  { id: 45, nombre: 'Inducciones SST de la contratista', icono: 'fa-list', seccionPadreId: 28, numAlerta: 0, orden: 18, esDestacado: false },
+  { id: 78, nombre: 'Cargar documentos asociados a los conductores', icono: 'fa-list', seccionPadreId: null, numAlerta: 0, orden: 19, esDestacado: true },
+  { id: 104, nombre: 'Certificado de operador de maquinaria', icono: 'fa-file-text-o', seccionPadreId: 78, numAlerta: 0, orden: 20, esDestacado: false },
+  { id: 83, nombre: 'Historial de manejo o récord del conductor', icono: 'fa-file-text-o', seccionPadreId: 78, numAlerta: 0, orden: 21, esDestacado: false },
+  { id: 81, nombre: 'Certificado de capacitación en normas de tránsito y manejo defensivo', icono: 'fa-file-text-o', seccionPadreId: 78, numAlerta: 0, orden: 22, esDestacado: false },
+  { id: 80, nombre: 'Licencia de conducir', icono: 'fa-file-text-o', seccionPadreId: 78, numAlerta: 0, orden: 23, esDestacado: false },
+  { id: 79, nombre: 'Conductores', icono: 'fa-users', seccionPadreId: 78, numAlerta: 0, orden: 24, esDestacado: false },
+  { id: 85, nombre: 'Cargar documentos asociados a los vehículos/maquinarias', icono: 'fa-list', seccionPadreId: null, numAlerta: 0, orden: 25, esDestacado: true },
+  { id: 114, nombre: 'Tarjeta de circulación emitida por el MTC', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 26, esDestacado: false },
+  { id: 96, nombre: 'Póliza TREC', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 27, esDestacado: false },
+  { id: 95, nombre: 'Permiso especial para el transporte de mercancía', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 28, esDestacado: false },
+  { id: 94, nombre: 'Certificado de mantenimiento preventivo', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 29, esDestacado: false },
+  { id: 93, nombre: 'Programa de mantenimiento preventivo', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 30, esDestacado: false },
+  { id: 92, nombre: 'Certificado de operatividad', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 31, esDestacado: false },
+  { id: 91, nombre: 'Tarjeta/Constancia de propiedad del equipo', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 32, esDestacado: false },
+  { id: 90, nombre: 'SOAT', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 33, esDestacado: false },
+  { id: 89, nombre: 'Póliza contra todo riesgo', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 34, esDestacado: false },
+  { id: 88, nombre: 'Inspección técnica', icono: 'fa-file-text-o', seccionPadreId: 85, numAlerta: 0, orden: 35, esDestacado: false },
+  { id: 86, nombre: 'Vehículos/Maquinarias', icono: 'fa-car', seccionPadreId: 85, numAlerta: 0, orden: 36, esDestacado: false },
+  { id: 105, nombre: 'Cargar documentos asociados a los equipos/herramientas', icono: 'fa-list', seccionPadreId: null, numAlerta: 0, orden: 37, esDestacado: true },
+  { id: 108, nombre: 'Inspección', icono: 'fa-file-text-o', seccionPadreId: 105, numAlerta: 0, orden: 38, esDestacado: false },
+  { id: 107, nombre: 'Certificado de operatividad', icono: 'fa-file-text-o', seccionPadreId: 105, numAlerta: 0, orden: 39, esDestacado: false },
+  { id: 106, nombre: 'Equipos/Herramientas', icono: 'fa-wrench', seccionPadreId: 105, numAlerta: 0, orden: 40, esDestacado: false },
+  { id: 128, nombre: 'Clínica (Certificación DIGESA)', icono: 'fa-file-text-o', seccionPadreId: 29, numAlerta: 0, orden: 41, esDestacado: false },
+  { id: 8, nombre: 'Equipos de Protección Personal', icono: 'fa-fire-extinguisher', seccionPadreId: 28, numAlerta: 0, orden: 42, esDestacado: false },
+  { id: 11, nombre: 'Cargo reglamento Cliente', icono: 'fa-inbox', seccionPadreId: 28, numAlerta: 0, orden: 43, esDestacado: false },
+  { id: 7, nombre: 'SCTR', icono: 'fa-folder-open-o', seccionPadreId: 28, numAlerta: 0, orden: 44, esDestacado: false },
+  { id: 44, nombre: 'Hoja de vida', icono: 'fa-book', seccionPadreId: 28, numAlerta: 0, orden: 45, esDestacado: false },
+  { id: 5, nombre: 'Trabajadores', icono: 'fa-users', seccionPadreId: 28, numAlerta: 0, orden: 46, esDestacado: false },
+  { id: 13, nombre: 'Comunicación con el Cliente', icono: 'fa-bullhorn', seccionPadreId: null, numAlerta: 0, orden: 47, esDestacado: false },
+];

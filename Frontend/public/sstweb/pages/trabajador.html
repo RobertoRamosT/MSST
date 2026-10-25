@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Trabajador</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+	<link href="../lib/jstree/themes/default/style.min.css" rel="stylesheet">
+		<link href="../css/jquery-ui.css" rel="stylesheet">
+				<link href="../css/estiloAutocomplete.css" rel="stylesheet">
+		<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+		<link href="../css/chosen.css" rel="stylesheet">
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+		
+<style type="text/css">
+
+
+html, body {
+	height: 100%;
+	min-height: 100%;
+	overflow: auto;
+}
+
+#wrapper {
+	height: 100%;
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: auto;
+}
+.desempleado{
+ background-color:grey;
+ }
+</style>
+</head>
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logoEspera.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst">
+	"."
+	<br> 	<br> 
+	<strong>- </strong>
+			<input id="inputClaveTrabajador" type="password" style="display:none"  autofocus class="form-control">
+			<div id="warningClaveTrabajador"></div>
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+		<div id="trabajadoresGosstMovil">
+	
+			<div id="divTrabajadorGosst">
+				<div class="textoMuestra">
+					No Registrado
+				</div>
+	
+			</div> 
+	
+		</div> 
+	
+	
+	<div id="trabajadoresGosstDesktop">
+<!-- <div id="fsBotones"></div> -->
+
+<div class="modal fade bs-example-modal-sm" id="modalAsociarNuevoPuesto" tabindex="-1"
+		role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdUploadLabel">Asociar Nuevo</h4>
+				</div>
+				<div class="modal-body">
+					Cambiar a:
+					
+
+
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+   <div class="container-fluid">
+    <div id="TituloArriba"><h2><label>Información de Trabajadores / Grupos de Trabajo</label></h2></div>
+	
+<!--	<div id="fsBotones"></div>-->
+	<form class="form-inline" style="margin-top:10px;">
+		<button id="btnCancelarTrabajador" type="button" class="btn btn-success" title="Cancelar acciones realizadas - Deshace todo lo
+	            hecho al añadir/editar los datos de un trabajador" onclick="cancelarTrabajador()">
+			<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		</button>
+
+		<button id="btnNuevoTrabajador" type="button" class="btn btn-success" title="Nuevo trabajador - Añade una nueva fila para
+                ingresar los datos de un trabajador (algunos campos se completan automáticamente)" onclick="nuevoTrabajador()">
+			<i class="fa fa-file-o fa-2x"></i>
+		</button>
+
+		<button id="btnGuardarTrabajador" type="button" class="btn btn-success" title="Guardar registro - Grabar los datos ingresados
+	            al añadir/editar los datos de un trabajador" onclick="guardarTrabajador()">
+		    <i class="fa fa-floppy-o fa-2x"></i>
+		</button>
+
+		<button id="btnEliminarTrabajador" type="button" class="btn btn-danger" title="Eliminar registro seleccionado - Borra la
+                información del trabajador asociada a la fila seleccionada" onclick="eliminarTrabajador()">
+		    <i class="fa fa-times fa-2x"></i>
+		</button>
+
+		<button id="btnVistaEventos" type="button" class="btn btn-success" title="Ver eventos asociados - Muestra un informe resumen
+	            de actividades relacionadas a la seguridad y salud en el trabajo del trabajador seleccionado." onclick="verVistaEventos()">
+			<i class="fa fa-table fa-2x"></i>
+		</button>
+
+		<button id="btnFiltroTrabajador" type="button" class="btn btn-success" title="Filtro" onclick="verFiltroTrabajador()">
+			<i class="fa fa-filter fa-2x"></i>
+		</button>
+
+		<button id="btnGrupoTrabajador" type="button" class="btn btn-success" title="Agrupar trabajadores - Permite crear grupos de
+                trabajos para alcanzar una determinada meta (dejando evidencia y observaciones del mismo)." onclick="programarFecha()">
+		    <i class="fa fa-users fa-2x"></i>
+		</button>
+
+		<button id="btnClipTablaTotal" type="button" class="clipGosst btn btn-success" title="Copiar los elementos de la tabla - Permite
+                copiar las filas de la tabla Información de Trabajadores/Grupos de Trabajo para pegarlos en otro archivo (por ejemplo, en
+                un excel)." onclick="obtenerTablaClipboardTotal()">
+		    <i class="fa fa-clipboard fa-2x"></i>
+		</button>
+
+		<button id="btnSmartUploadRetiro" type="button" class="btn btn-info" title="Importar registro(s) de trabajador(es) por medio de
+                una plantilla - Involucra dos pasos a seguir. En el primero, descargamos una plantilla (del enlace Descargar) en excel
+                para ingresar/copiar los datos en las celdas respectivas. Acto seguido, se debe subir el archivo excel antes mencionado
+	            (con sus respectivas modificaciones)." onclick="verSmartImportTrabajador()">
+		    <i class="fa fa-upload fa-2x"></i> <i class="fa fa-info"></i>
+		</button>
+
+		<button id="btnAutoSmartPlanilla" type="button" class="btn btn-info" title="Importar registro(s) de trabajador(es) de forma automática."
+				onclick="autoSmartImportTrabajadores()">
+			<i class="fa fa-upload fa-2x"></i> <i class="fa fa-link"></i>
+		</button>
+
+		<button id="btnAgregarSite" type="button" class="btn btn-success" title="Ver la lista actual de Sites (con la posibilidad de
+                modificarla)." onclick="configuracionSite()">
+		    <i class="fa fa-building-o fa-2x"></i>
+		</button>
+
+		<button id="btnRegistroHoras" type="button" class="btn btn-warning" title="Registrar Horas trabajadas por colaboradores para
+                el cálculo de probabilidad de accidentes" onclick="verRegistroHoras()">
+		    <i class="fa fa-hourglass-half fa-2x"></i>
+		</button>
+
+		<button id="btnTrabajadoresDestinatarios" type="button" class="btn btn-info" title="Ver la lista de trabajadores destinatarios en
+		        el envío automática - según el criterio." onclick="verTrabajadoresDestinatarios()">
+		    <i class="fa fa-2x fa-envelope-o"></i> <i class="fa fa-user"></i>
+		</button>
+
+	    <span id="indicadorPaginaParcialTrabPrincipal" style="margin:5px;margin-top:10px;">
+	        <a id="flechaIzquierdaTrabPrincipal"><img src="../imagenes/flecha_01.png" /></a>
+			<em id="labelFlechas"></em>
+	        <a id="flechaDerechaTrabPrincipal"><img src="../imagenes/flecha_02.png" /></a>
+	    </span>
+	 
+	    <button id="btnResetBuscadorTrabajador" type="button" class="btn btn-success" title="Refresh" onclick="reiniciarBuscadorTrabajador()" style="float:right;">
+	    	<i class="fa fa-refresh fa-2x"></i>
+	 	</button>
+			          
+	 	<button id="btnAplicarBuscadorTrabajador" type="button" class="btn btn-success" onclick="aplicarBuscadorTrabajador()" style="float:right;margin-right:5px;" title="Buscar los registros
+	 	        cuyo DNI o nombre del trabajador coincidan con las palabras ingresadas.">
+        	<i class="fa fa-search fa-2x"></i>
+     	</button>
+		       
+	 	<input id="valBuscarValorTrabajador" placeholder="DNI o nombre trabajador" class="form-control" onkeypress="bloquearBotonEnter(this)" style="float:right;margin-right:5px;">
+    </form>
+	
+    <div class="camposFiltroTabla"></div>	
+					
+    <div id="wrapper">
+	 <table class="table table-striped table-bordered table-hover fixed" id="tblTrab" style="width:2430px">
+	  <thead>
+       <tr>
+	    <th class="tb-acc" rowspan="2" style="width:100px">Nro</th> 
+<!--		<th class="tb-acc" rowspan="2" style="width:120px;">I.E.Cumplimiento de metas-->
+<!--		 <a id='btnSelect1' href='#' onclick='obtenerAyudaIndicador();'>-->
+<!--		  <i class='fa fa-question-circle' style='color:white'></i></a></th>-->
+		<th class="tb-acc" rowspan="2" style="width:150px;">Documento de Identidad</th>
+		<th class="tb-acc" rowspan="2" style="width:350px;">Nombre del trabajador
+<!--		 <a id='btnSelect' href='#' onclick='obtenerListaNombresTrabajador();'>-->
+<!--		  <i class='fa fa-external-link-square' style='color:white'></i></a>-->
+		</th>
+	    <th class="tb-acc" rowspan="2" style="width:150px;">Género</th>
+		<th class="tb-acc" rowspan="2" style="width:200px;">Fecha de nacimiento</th>
+		<th class="tb-acc" rowspan="2" style="width:100px;">Edad</th>
+		<th id="columnaTipoSangreTrab" class="tb-acc" rowspan="2" style="width:150px;">Tipo de Sangre</th>
+		<th class="tb-acc" rowspan="2" style="width:190px;">División</th>
+		<th class="tb-acc" rowspan="2" style="width:190px;"><span id="idCambioNomArea">Área</span></th>
+		<th class="tb-acc" rowspan="2" style="width:290px;"> <span id="idCambioNomPueTra">Puesto de trabajo</span>  
+<!--		 <a id='btnSelectPuesto' href='#' onclick='obtenerListaTrabajadorActivo();'>-->
+<!--		  <i class='fa fa-external-link-square' style='color:white'></i></a>-->
+		</th>
+		<th id="columnaSiteTrab" class="tb-acc" rowspan="2" style="width:250px;">Site</th>
+		<th class="tb-acc" rowspan="2" style="width:330px;">Correo</th>
+		<th class="tb-acc" rowspan="2" style="width:220px;"><span id="idCambioNomJorLab">Jornada laboral</span></th>
+		<th class="tb-acc" rowspan="2" style="width:180px;">Fecha de ingreso a la empresa</th>
+		<th class="tb-acc" rowspan="2" style="width:180px;">Fecha de desvinculación de la empresa</th>
+<!--		<th id="columnaUltimoExamenTrab" class="tb-acc" rowspan="2" style="width:200px;">Último resultado de examen médico (la fecha del examen médico) </th>-->
+<!--		<th id="columnaRestriccionsMedicasTrab" class="tb-acc" rowspan="2" style="width:150px;">Restricciones médicas</th>-->
+		<th id="columnaDiscapacidadLaboralTrab" class="tb-acc" rowspan="2" style="width:200px;">Discapacidad laboral</th>
+		<th id="columnaObsGeneralesTrab" class="tb-acc" rowspan="2" style="width:200px;">Observaciones generales</th>
+		<th id="columnaDeclaracionCovidTrab" class="tb-acc" rowspan="2" style="width:300px;">Declaración jurada - COVID-19</th>
+   <!-- <th id="columnaValidacionDniTrab" class="tb-acc" colspan="2" style="width:400px;">Validación DNI</th> -->
+		<th id="columnaContraseniaTrab" class="tb-acc" colspan="2" style="width:400px;">Contraseña</th>
+		<th class="tb-acc" rowspan="2" style="width:200px;">Fecha del último acceso</th>
+	   </tr>
+<!--   <tr>
+	    <th id="columnaValidado" class="tb-acc" style="width:200px">¿Validado?</th>
+		<th id="columnaFechaValidado" class="tb-acc" style="width:200px">Fecha de validación</th>
+	   </tr> -->
+	   <tr>
+	    <th id="columnaClaveAccesoTrab" class="tb-acc" style="width:200px">Clave de acceso a cuenta colaborador</th>
+		<th id="columnaFechaUltActTrab" class="tb-acc" style="width:200px">Fecha de la última actualización</th>
+	   </tr>
+	  </thead>
+	  <tbody id="tbodyC"></tbody>
+	 </table>
+    </div>
+   </div>
+
+	<div class="modal fade bs-example-modal-lg" id="mdEvent" tabindex="-1"
+		role="dialog" aria-labelledby="mdEventLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:95%;height:90%">
+			<div class="modal-content" style="height:90%">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdEventLabel">Eventos</h4>
+				</div>
+				<div class="modal-body" id="modalProg">
+
+	
+					<div class="table-responsive" >
+						<div class="table-responsive">
+						
+						
+						
+			<ul class="nav nav-tabs nav-justified" role="tablist" style="width:100%">
+					
+				<li role="presentation" class="active"><a href="#tabCapa"
+					aria-controls="home" role="tab" data-toggle="tab">Formaciones</a></li>
+				<li role="presentation" ><a href="#tabExamen"
+					aria-controls="home" role="tab" data-toggle="tab">Exámenes</a></li>
+						<li role="presentation" ><a href="#tabEntrega"
+					aria-controls="profile" role="tab" data-toggle="tab">Entregas EPP</a></li>
+					<li role="presentation" ><a href="#tabActos"
+					aria-controls="home" role="tab" data-toggle="tab">Incidentes + A/C Subestándar</a></li>
+						<li role="presentation" ><a href="#tabSancion"
+					aria-controls="profile" role="tab" data-toggle="tab">Sanciones</a></li>
+						<li role="presentation" ><a href="#tabParticipacion"
+					aria-controls="profile" role="tab" data-toggle="tab">Participación</a></li>
+					<li role="presentation" ><a href="#tabGrupos"
+					aria-controls="profile" role="tab" data-toggle="tab">Grupo de trabajo</a></li>
+			</ul>
+				<div class="tab-content">
+				
+				<div role="tabpanel"  id="tabCapa"  class="tab-pane fade in  active" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Evento</th>
+										<th class="tb-acc">Estado</th>
+										<th class="tb-acc">Fecha realizada</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabExamen"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Evento</th>
+										<th class="tb-acc">Estado</th>
+										<th class="tb-acc">Fecha realizado</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabEntrega"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Evento</th>
+										<th class="tb-acc">Estado</th>
+										<th class="tb-acc">Fecha realizada</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabActos"  class="tab-pane fade"  >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Tipo de Evento</th>
+										<th class="tb-acc">Descripci&oacute;n</th>
+										<th class="tb-acc">Fecha del evento</th>
+										<th class="tb-acc">D&iacute;as de descanso</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabSancion"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Evento</th>
+										<th class="tb-acc">Estado</th>
+										<th class="tb-acc">Fecha realizada</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabParticipacion"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Tipo de Participaci&oacute;n</th>
+										<th class="tb-acc">Detalle</th>
+										<th class="tb-acc">Fecha del evento</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabGrupos"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Grupos de Trabajo</th>
+										<th class="tb-acc">Fecha Inicio</th>
+										<th class="tb-acc">Fecha Fin</th>
+											<th class="tb-acc">Reuniones asistidas</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody>
+								</tbody>
+				</table>
+				
+				</div>
+				</div>
+							
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdEventNeg" tabindex="-1"
+		role="dialog" aria-labelledby="mdEventLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdEventLabel">Eventos Negativos</h4>
+				</div>
+				<div class="modal-body" id="modalProg">
+
+					<div class="table-responsive">
+						<div class="table-responsive">
+
+							<table class="table table-striped table-bordered table-hover"
+								id="tblEventNeg">
+								<thead>
+									<tr>
+										<th class="tb-acc">Evento</th>
+										<th class="tb-acc">Estado</th>
+										<th class="tb-acc">Fecha</th>
+										<th class="tb-acc">Evidencia</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEventNeg">
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+	
+	<div class="modal fade bs-example-modal-lg" id="modalRadial" tabindex="-1"
+		role="dialog" aria-labelledby="mdEventLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg"  style="width:95%;height:90%">
+			<div class="modal-content"  style="height:100%">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdEventLabel">Grafico Radial</h4>
+				</div>
+				<div class="modal-body"  style="width:95%;height:100%">
+						<div id="containerModal" style="width:45%;height:75%;float:left">
+						
+						
+						</div>
+						<div id="sidesModal" style="width:45%;float:right">
+						
+							<ul class="nav nav-tabs nav-justified" role="tablist" style="width:100%">
+					            
+								<li role="presentation" class="active"><a href="#tabFormSum"
+								aria-controls="home" role="tab" data-toggle="tab">
+								<i class="fa fa-graduation-cap fa-2x" aria-hidden="true"></i>
+								</a></li>
+								<li role="presentation"><a href="#tabEntregaSum"
+								aria-controls="home" role="tab" data-toggle="tab">
+								<i class="fa fa-fire-extinguisher fa-2x" aria-hidden="true"></i>
+								</a></li>
+								<li role="presentation"><a href="#tabExamSum"
+								aria-controls="home" role="tab" data-toggle="tab">
+								<i class="fa fa-medkit fa-2x" aria-hidden="true"></i>
+								</a></li>
+								<li role="presentation"><a href="#tabPartSum"
+								aria-controls="home" role="tab" data-toggle="tab">
+								<i class="fa fa-exclamation-triangle fa-2x" aria-hidden="true"></i>
+								</a></li>
+								<li role="presentation"><a href="#tabDispSum"
+								aria-controls="home" role="tab" data-toggle="tab">
+								<i class="fa fa-font fa-2x" aria-hidden="true"></i>
+								</a></li>
+					
+							</ul>
+						</div>
+						
+						
+						<div class="tab-content" style="width:45%;float:right">
+				
+				<div role="tabpanel"  id="tabFormSum"  class="tab-pane fade in  active" >
+				<table class="table table-striped table-bordered table-hover fixed" id="tblFormInd"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Formación</th>
+										<th class="tb-acc">Fecha Vigencia</th>
+										<th class="tb-acc">Fecha Pendiente</th>
+										<th class="tb-acc">Veces Aprobadas</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabEntregaSum"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+						id="tblEppSum"		>
+								<thead>
+									<tr>
+										<th class="tb-acc">EPP</th>
+										<th class="tb-acc"># Entregado</th>
+										<th class="tb-acc">Fecha vigencia</th>
+										<th class="tb-acc">Fechas Programadas</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabExamSum"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+						id="tblExamSum"		>
+								<thead>
+									<tr>
+										<th class="tb-acc">Examen</th>
+										<th class="tb-acc">Resultado </th>
+										<th class="tb-acc">Vigencia </th>
+										<th class="tb-acc">Fecha Vigente</th>
+										<th class="tb-acc">Fecha Pendiente</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabPartSum"  class="tab-pane fade"  >
+				<table class="table table-striped table-bordered table-hover"
+					id="tblPartSum"					>
+								<thead>
+									<tr>
+										<th class="tb-acc"># de participaciones</th>
+										<th class="tb-acc">Objetivo propuesto</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								<tr>
+										<td >0</td>
+										<td >0</td>
+									</tr>
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabDispSum"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+						id="tblDispSum"		>
+								<thead>
+									<tr>
+										<th class="tb-acc">Días Perdidos</th>
+										<th class="tb-acc">Disponibilidad Laboral</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								<tr>
+										<td >0</td>
+										<td >0</td>
+									</tr>
+								</tbody>
+				</table>
+				
+				</div>
+				<div role="tabpanel"  id="tabParticipacion"  class="tab-pane fade" >
+				<table class="table table-striped table-bordered table-hover"
+								>
+								<thead>
+									<tr>
+										<th class="tb-acc">Tipo de Participación</th>
+										<th class="tb-acc">Detalle</th>
+										<th class="tb-acc">Fecha del evento</th>
+									</tr>
+								</thead>
+								<tbody id="tbodyEvent">
+								</tbody>
+				</table>
+				
+				</div>
+				</div>
+						
+						
+						
+						
+						
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="modalAyudaIndicador" tabindex="-1"
+		role="dialog" aria-labelledby="mdEventLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg"  style="width:65%;height:70%">
+			<div class="modal-content"  style="height:70%">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdEventLabel">Ayuda Indicadores</h4>
+				</div>
+				<div class="modal-body" id="ayudaBody" >
+					<div id="ayudaForm" class="formulaAyuda">
+					</div>
+					<div id="ayudaEpp" class="formulaAyuda">
+					</div>
+					<div id="ayudaExam" class="formulaAyuda">
+					</div>
+					<div id="ayudaDisp" class="formulaAyuda">
+					</div>
+					<div id="ayudaPart" class="formulaAyuda">
+					</div>
+					
+				</div>
+
+			</div>
+		</div>
+	</div>
+<div class="modal fade bs-example-modal-lg" id="mdTrabSelect" tabindex="-1"
+		role="dialog" aria-labelledby="mdEventLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdEventLabel">Trabajadores seleccionados</h4>
+				</div>
+				<div class="modal-body" id="modalProg">
+
+					<div class="table-responsive">
+						<div class="table-responsive">
+
+							<table class="table table-striped table-bordered table-hover"
+								id="tblTrabSelect">
+								<thead>
+									<tr>
+										<th class="tb-acc">Nombre</th>
+									
+									</tr>
+								</thead>
+								<tbody id="tbodyEventNeg">
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdImpDatos" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Importar datos</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<button id="btnGuardarNuevos" type="button"
+								class="btn btn-success" title="Guardar">
+								<i class="fa fa-floppy-o fa-lg"></i>
+							</button><br/>
+							
+							<label for="message-text" class="control-label">Seleccione el puesto de trabajo al que se importar&aacute;n:<br>
+							</label>
+							<div id="divSelPuesto"></div>
+							<br>
+							<label for="message-text" class="control-label">Copie aqu&iacute; desde un excel segun el formato: <br/> (Formato Fecha : DD/MM/YYYY)</label>
+							<textarea class="form-control" rows="10" id="txtListado" style="font-size:11px; width:840px;"
+								maxlength="1000000" placeholder="DNI  -  Nombre -  Genero   -  Fecha_Nacimiento    Correo   Fecha_Ingreso  Jornada_Laboral "></textarea>
+						</div>
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdImpSmartDatos" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Importar smart de datos</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<button id="btnGuardarSmartNuevos" type="button"
+								class="btn btn-success" title="Guardar">
+								<i class="fa fa-floppy-o fa-lg"></i>
+							</button><br/>
+							
+							 
+							<label for="message-text" class="control-label">Copie aqu&iacute; desde un excel segun el formato: <br/> (Formato Fecha : DD/MM/YYYY)</label>
+							<textarea class="form-control" rows="10" id="txtListadoSmart" style="font-size:11px; width:100%;"
+								maxlength="100000" placeholder="DNI  -  Nombre -  Genero   -  Fecha_Nacimiento    Correo -  División  -  Área  -  Puesto de trabajo  -    Fecha_Ingreso  Jornada_Laboral "></textarea>
+						</div>
+					</form>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	
+<div class="modal fade bs-example-modal-lg" id="modalUpdateTrabajador" tabindex="-1"
+		role="dialog" aria-labelledby="mdImpDatosLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdImpDatosLabel">Retiro de Trabajadores</h4>
+				</div>
+				
+					
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+						<label for="fechaRetiroMasivo">Fecha de retiro:</label>
+						
+						<input style="width:180px" type="date" id="fechaRetiroMasivo" class="form-control">
+						</div>
+						</form>
+						<input  type="text" id="buscadorRetiroInput" 
+					style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+					<button id='resetBuscadorRetiro' type='button' 
+						title='Reset' style="color:red">
+						<i class="fa fa-times " ></i>
+					</button>
+					<button id="retiroImportarDniTrab" type='button' class="btn btn-success" title='Importar retiro por DNI' style="margin-left: 650px;">
+						<i class="fa fa-upload fa-2x" ></i> Retiro por DNI
+					</button>
+						<br/>
+						 <div class="wrapper">
+						 <table id="trabajadoresList" class="table table-striped table-bordered table-hover ">
+						 <thead>
+						 <tr>
+						 <td class="tb-acc"><i aria-hidden='true' class='fa fa-check '></i></td>
+						 <td class="tb-acc">Trabajador</td>
+						 </tr>
+						 </thead>
+						 <tbody></tbody>
+						 </table>
+						 </div>
+						 <button id="btnGuardarRetiros" type="button" style="margin-left: 50%"
+							class="btn btn-success" title="Guardar"  >
+							<i class="fa fa-floppy-o fa-2x"></i>Guardar
+						</button>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bs-example-modal-lg" id="mdImportDniRetiro"
+				tabindex="-1" role="dialog" aria-labelledby="mdImpDatosLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-lg" style="width: 60%; top: 20%;">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">&times;</button>
+							<h4 class="modal-title" id="mdImpDatosLabel">Retiro Masivo por Dni</h4>
+						</div>
+						<div class="modal-body">
+							<form>
+								<div class="form-group"> 
+									<label for="message-text" class="control-label">
+										Copie aqu&iacute; desde un excel segun el formato: 
+									</label>
+									<textarea class="form-control" rows="10"
+										id="txtListadoDNIs" style="font-size: 11px;"
+										maxlength="1000000"
+										placeholder="DNI"></textarea>
+								</div>
+							</form>
+						</div>
+						<div class='modal-footer'>
+							<button id="btnGuardarRetiroDni" type="button"
+								class="btn btn-success" title="Guardar" data-dismiss='modal'>
+								<i class="fa fa-save fa-2x"></i> Guardar Retiro
+							</button>
+							<button type="button"
+								class="btn btn-default" title="Cancelar" data-dismiss='modal'> 
+								Cancelar
+							</button>
+						</div>
+					</div>
+				</div>
+			</div> 
+
+   <div class="modal fade bs-example-modal-lg" id="mdProgFecha"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg"  style="width:90%">
+	     <div class="modal-content">
+		    <div class="modal-header">
+			   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			      <span aria-hidden="true">&times;</span>
+			   </button>
+			   <h4 class="modal-title" id="mdProgFechaLabel">Grupos de trabajadores</h4>
+			</div>
+			<div class="modal-body" id="modalGrupo">
+			   <button id="btnCancelarProg" type="button" class="btn btn-success" title="Cancelar">
+				  <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+			   </button>
+			   <button id='btnAgregarProg' type='button' class='btn btn-success'
+					   title='Agregar Nueva programacion'>
+			      <i class='fa fa-file-o fa-2x'></i>
+			   </button>
+			   <button id="btnGuardarProg" type="button" class="btn btn-success" title="Guardar">
+			      <i class="fa fa-floppy-o fa-2x"></i>
+			   </button>
+			   <button id="btnReportExcelGrupo" type="button" class="btn btn-success btn-excel" 
+			           title="Exportar cuadro de participación">	 
+			      <i class="fa fa-file-excel-o fa-2x"></i>
+			   </button>
+			   <button id='btnClipTablaProgramacion' type='button' class='btn btn-success' title='Tabla Clipboard' >
+			      <i class='fa fa-clipboard fa-2x'></i>
+			   </button>
+			   <button id='btnEliminarProg' type='button' class='btn btn-danger' title='Eliminar programacion'>
+				  <i class='fa fa-times fa-2x'></i>
+			   </button>
+					
+			      <div class="table-responsive">
+					 <table class="table table-striped table-bordered table-hover"
+							id="tblProg" style="width:100%;min-width:1800px">
+					    <thead>
+						   <tr>
+						      <th class="tb-acc" rowspan="2" style="width:12%">Grupo de Trabajo</th>
+							  <th class="tb-acc" rowspan="2" style="width:140px">Propósito del grupo de trabajo</th>
+							  <th class="tb-acc" rowspan="2" style="width:140px">I.E. Formaciones asignadas al grupo</th>
+							  <th class="tb-acc" rowspan="2" style="width:140px">I.E. Trabajadores de grupo</th>
+							  <th class="tb-acc" rowspan="2" style="width:140px">I.E. Reuniones realizadas / planificadas</th>
+							  <th class="tb-acc" colspan="2" style="width:140px">Periodo de funcionamiento</th>
+							  <th class="tb-acc" rowspan="2" style="width:140px">Estado del grupo</th>
+							  <th class="tb-acc" rowspan="2" style="width:200px">Evidencia de constitución del grupo</th>
+							  <th class="tb-acc" rowspan="2" style="width:340px">Observaciones generales</th>
+						   </tr>
+						   <tr>
+						      <th class="tb-acc"  style="width:140px"> Inicio </th>
+							  <th class="tb-acc"  style="width:140px"> Fin </th>
+						   </tr>
+						</thead>
+						<tbody id="tbodyProg">
+						</tbody>
+					 </table>
+					<a href="#" class="izquierda_flecha_grupoSeguridad"><img src="../imagenes/flecha_01.png" /></a>
+				    <em id='labelFlechasGrupoSeguridad'></em>
+			 		<a href="#" class="derecha_flecha_grupoSeguridad"><img src="../imagenes/flecha_02.png" /></a>
+				 </div>
+           </div>
+
+				<div class="modal-body" id="modalTree">
+					<button id="btnCancelarTrabs" type="button" class="btn btn-success"
+						title="Volver y Guardar" onclick="javascript:cancelarSeleccionarTrabs();">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<h4 class="modal-title">Seleccione a los trabajadores
+						</h4>
+						<input id="buscarTrabJstree" 	style="background:url('../imagenes/gif/Buscar.png') no-repeat scroll 0 0 transparent; padding: 2px 4px 2px 30px;">
+				
+					<textarea id="listTrabBuscar" style="width:500px;height:200px;resize: none;"></textarea>
+					<div id="resultSearchTrab"> </div>
+					<button id='cambiarBuscador' type='button' 
+						title='cambiar' style="color:blue">
+						<i class="fa fa-arrow-circle-down	 " ></i>
+					</button>
+					
+					<div id="jstree"></div>
+				</div>
+
+				<div class="modal-body" id="modalFormacion">
+					<button id="btnCancelarForms" type="button" class="btn btn-success"
+						title="Volver y Guardar" >
+						<i class="fa fa-save fa-2x"></i>
+					</button>
+		<table class="table table-striped table-bordered table-hover"
+								id="tblFormGroup">
+								<thead>
+								<tr>
+									<td class="tb-acc"  >Formación</td>
+									<td class="tb-acc"  >  Asignado</td>	
+									<td class="tb-acc"  >T. Aprobados / T. Asignados</td>	
+									</tr>
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+				</div>
+		<div class="modal-body" id="modalEvaluacionGrupo">
+				<button id="btnClipboardSmart" type="button" class="btn btn-success"
+						title="Copiar Clipboard">
+						<i class="fa fa-clipboard fa-2x"></i>
+					</button>
+			
+					
+					<div >
+						<div class="table-responsive" style="height:400px">
+
+							<table class="table table-striped table-bordered table-hover"
+								id="tblTrabFormacion">
+								<thead>
+									<tr>
+										<th class="tb-acc">Trabajador</th>
+										<th class="tb-acc">Fecha Próxima </th>
+										<th class="tb-acc" style="width:140px">Días restantes</th>
+								
+									</tr>
+								</thead>
+								<tbody >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+				</div>
+		<div class="modal-body" id="modalReunion">
+           <button id="btnCancelarReu" type="button" class="btn btn-success" title="Cancelar">
+	          <i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+		   </button>
+		   <button id='btnAgregarReu' type='button' class='btn btn-success' title='Agregar Reunión'>
+			  <i class='fa fa-file-o fa-2x'></i>
+		   </button>
+		   <button id="btnGuardarReu" type="button" class="btn btn-success" title="Guardar">
+		      <i class="fa fa-floppy-o fa-2x"></i>
+		   </button>	
+		   <button id='btnGenReporte' type='button' class='btn btn-success' title='Generar Reporte'>
+		      <i class='fa fa-file-text fa-2x'></i>
+		   </button>
+		   <button id='btnEliminarReu' type='button' class='btn btn-danger' title='Eliminar Reunion'>
+		      <i class='fa fa-times fa-2x'></i>
+		   </button>
+		   <button id='btnClipTablaReunion' type='button' class='btn btn-success' title='Tabla Clipboard' >
+		      <i class='fa fa-clipboard fa-2x'></i>
+		   </button>
+		   <button id="btnConsolidadoAcuTotalGruTrabReu" type="button" class="btn btn-excel" 
+				   title="Consolidado Acuerdos - Reuniones realizadas del grupo de trabajo" 
+				   onclick="valoresPreviosConsolidadoAcuTotalGruTrabReu()">
+		      <i class="fa fa-file-excel-o fa-2x"></i>
+		   </button> 
+					
+		   <div class="wrapper" id="wrapperReunion"> 
+			  <table class="table table-striped table-bordered table-hover table-fixed" id="tblReu" style=" ">
+			     <thead>
+				    <tr>
+					   <th class="tb-acc" rowspan="2" style="width:150px">Tipo de reunión</th>
+					   <th class="tb-acc" rowspan="2" style="width:220px">Coordinador de la reunión</th>
+					   <th class="tb-acc" rowspan="2" style="width:180px">Fecha Planificada</th>
+					   <th class="tb-acc" rowspan="2" style="width:150px">Hora Planificada</th>
+					   <th class="tb-acc" rowspan="2" style="width:140px">I.E Agenda previa</th>
+					   <th class="tb-acc" rowspan="2" style="width:180px">Fecha Realizada</th>
+					   <th class="tb-acc" rowspan="2" style="width:140px">I.E Desarrollo de la reunión</th>
+					   <th class="tb-acc" rowspan="2" style="width:100px">I.E Participantes</th>
+					   <th class="tb-acc" rowspan="2" style="width:100px">I.E Acuerdos</th>
+					   <th class="tb-acc" rowspan="2" style="width:340px">Observaciones generales</th>
+					   <th class="tb-acc" rowspan="2" style="width:220px">Evidencia de la reunión</th>
+					   <th class="tb-acc" rowspan="2" style="width:140px">Estado </th>
+				    </tr>
+				 </thead>
+			     <tbody id="tbodyProg">
+				 </tbody>
+			 </table>
+		   </div>
+		</div>
+		<div class="modal-body" id="modalAgenda">
+					<button id="btnCancelarAgenda" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnAgregarAgenda' type='button' class='btn btn-success'
+						title='Agregar Agenda'>
+						<i class='fa fa-file-o fa-2x'></i>
+					</button>
+					<button id="btnGuardarAgenda" type="button" class="btn btn-success"
+						title="Guardar">
+						<i class="fa fa-floppy-o fa-2x"></i>
+					</button> 
+					<button id='btnEliminarAgenda' type='button' class='btn btn-danger'
+						title='Eliminar Agenda'>
+						<i class='fa fa-times fa-2x'></i>
+					</button> 
+						<div class="table-responsive" style="width:100% ">
+		
+							<table class="table table-striped table-bordered table-hover"
+								id="tblAgeReunion">
+								<thead>
+								<tr>
+								<th class="tb-acc" style="width:10%">Nro</th>
+									<th class="tb-acc" style="width:30%">Punto a tratar</th>
+									<th class="tb-acc" style="width:40%">Responsable del punto a tratar</th>
+								<th class="tb-acc"  style="width:20%">Tiempo Asignado (minutos)</th>
+								 	
+								</tr>
+									
+								</thead>
+								<tbody  >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+					<div class="modal-body" id="modalDesarrollo">
+					<button id="btnCancelarDesarrollo" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnAgregarDesarrollo' type='button' class='btn btn-success'
+						title='Agregar Desarrollo'>
+						<i class='fa fa-file-o fa-2x'></i>
+					</button>
+					<button id="btnGuardarDesarrollo" type="button" class="btn btn-success"
+						title="Guardar">
+						<i class="fa fa-floppy-o fa-2x"></i>
+					</button> 
+					<button id='btnEliminarDesarrollo' type='button' class='btn btn-danger'
+						title='Eliminar Desarrollo'>
+						<i class='fa fa-times fa-2x'></i>
+					</button> 
+						<div class="table-responsive" style="width:100% ">
+		
+							<table class="table table-striped table-bordered table-hover"
+								id="tblDesaReunion">
+								<thead>
+								<tr>
+								<th class="tb-acc" style="width:10%">Nro</th>
+								<th class="tb-acc" style="width:90%">Descripción</th>
+								 	
+								</tr>
+									
+								</thead>
+								<tbody  >
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+					<div class="modal-body" id="modalAcuerdo">
+			 
+					<button id="btnCancelarAcuerdo" type="button" class="btn btn-success"
+						title="Cancelar">
+						<i class="fa fa-sign-out fa-rotate-180 fa-2x"></i>
+					</button>
+					<button id='btnAgregarAcuerdo' type='button' class='btn btn-success'
+						title='Agregar Nueva programacion'>
+						<i class='fa fa-file-o fa-2x'></i>
+					</button>
+					<button id="btnGuardarAcuerdo" type="button" class="btn btn-success"
+						title="Guardar">
+						<i class="fa fa-floppy-o fa-2x"></i>
+					</button>
+					
+			
+					<button id='btnEliminarAcuerdo' type='button' class='btn btn-danger'
+						title='Eliminar Acuerdo'>
+						<i class='fa fa-times fa-2x'></i>
+					</button>
+						<button id='btnClipTablaAcuerdo' type='button' class='btn btn-success' title='Tabla Clipboard' >
+				<i class='fa fa-clipboard fa-2x'></i></button>
+					 
+						<div id="wrapper3" class="wrapper">
+		
+							<table class="table table-striped table-bordered table-hover table-fixed"
+								id="tblAcu" >
+								<thead >
+								<tr>
+									<td class="tb-acc"   style="width: 253px">Tipo de acuerdo</td>
+								<td class="tb-acc"   style="width:340px">Descripción del acuerdo / Solicitud de mejora asociada</td>
+								
+									<td class="tb-acc"   style="width:240px">Hallazgo</td>
+							<td class="tb-acc"   style="width:240px">Responsable del acuerdo / Acción de mejora</td>
+								<td class="tb-acc"   style="width:200px">Fecha Planificada</td>
+								<td class="tb-acc"   style="width:200px">Hora Planificada</td>
+								<td class="tb-acc"   style="width:200px">Fecha Realizada</td>
+								<td class="tb-acc"   style="width:120px">Inversión </td>
+									<td class="tb-acc"   style="width:240px">Observaciones</td>
+								<td class="tb-acc"   style="width:250px">Evidencia</td>
+										<td class="tb-acc"   style="width:140px">Estado </td>
+										
+										
+								</tr>
+									
+								</thead>
+								<tbody id="tbodyProg">
+								</tbody>
+							</table>
+							
+						</div>
+					 
+				</div>
+				<div class="modal-body" id="modalTrabsReu">
+					
+					<button id='btnGuardarListTrabs' type='button' class='btn btn-success'
+						title='Guardar '>
+						<i class='fa fa-save fa-2x'></i>
+					</button>
+					<button id='btnShowImport' type='button' class='btn btn-success'
+						title='Mostrar Import'>
+						<i class='fa fa-upload fa-2x'></i>
+					</button>
+					<textarea class="form-control" id="importTrabReunion"></textarea>
+					
+						<ul class="list-group-item" id="list-trabs">
+						</ul>
+				</div>
+				</div>
+				
+
+			
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdReuniones"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:90%">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdProgFechaLabel">Reuniones del grupo</h4>
+				</div>
+				
+
+
+			</div>
+		</div>
+	</div>
+<div class="modal fade bs-example-modal-lg" id="mdUpload" tabindex="-1"
+		role="dialog" aria-labelledby="mdUploadLabel" aria-hidden="true">
+		<div class="modal-dialog modal-sm">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="mdUploadLabel">...</h4>
+				</div>
+				<button id='btnUploadArchivo' type='button'
+					class='btn btn-success' title='Subir archivo'>
+					<i class='fa fa-floppy-o fa-2x'></i>
+				</button>
+				<h4 class="modal-title">Subir archivo</h4>
+				<input type="file" name="fileEvi" id="fileEvi" >
+
+			</div>
+		</div>
+	</div>
+	
+	<div class="modal fade bs-example-modal-lg" id="mdVerif" tabindex="-1"
+		role="dialog" aria-labelledby="mdEficLabel" aria-hidden="true">
+	</div>
+	
+	
+	<div class="modal fade bs-example-modal-lg" id="modalEvaluacion"
+		tabindex="-1" role="dialog" aria-labelledby="mdProgFechaLabel"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg" style="width:1100px;max-height:1500px">
+			<div class="modal-content" >
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="modalCorreosTitulo">Registro Cargo de Trabajadores</h4>
+				</div>
+				
+
+				
+
+				
+
+				<div class="modal-body" id="modalEvaluacionBody">
+				<div  id="divEvalNormal">
+				
+					
+					<button id='btnGuardarEval' type='button' class='btn btn-success'
+						title='Guardar Cargos y volver'>
+						<i class='fa fa-save fa-2x'></i>
+					</button>
+					
+				
+					
+					
+						<div class="table-responsive" style="height:400px">
+
+							<table class="table table-striped table-bordered table-hover"
+								id="tblGroup">
+								<thead>
+									<tr>
+										<th class="tb-acc">Trabajador</th>
+										<th class="tb-acc" style="width:140px">Cargo</th>
+								
+									</tr>
+								</thead>
+								<tbody id="tbodyProg">
+								</tbody>
+							</table>
+							
+						</div>
+					</div>
+					
+					
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<!-- script references -->
+
+ <script src="../lib/jquery.min.js"></script>
+ <script src="../lib/jquery-ui.min.js"></script>
+ <script src="../lib/jstree.min.js"></script>
+ <script src="../lib/jquery.blockUI.min.js"></script>
+ <script src="../lib/bootstrap.min.js"></script>
+ <script src="../lib/clipboard.min.js"></script>	
+	
+ <script src="../js/generic/config.js"></script>
+ 
+ <script>
+    var version = typeof config !== 'undefined' && config.g_version ? config.g_version : '1.0';
+    
+    document.write('<script src="../js/generic/util.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/constantes.js?v='+version+'"><\/script>');
+    document.write('<script src="../js/generic/constantesApp.js?v='+version+'"><\/script>');
+    
+    document.write('<script src="../js/trabajador/trabajador.js?v='+version+'"><\/script>');
+ </script>
+		
+		<!-- <script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script> -->
+	
+	<!-- <script src="../js/trabajador/trabajador.js"></script> -->
+	
+<script src="../js/trabajador/gruposeguridad.js"></script>
+<script src="../js/trabajador/reuniones.js"></script>
+<script src="../js/trabajador/agenda.js"></script>
+<script src="../js/trabajador/desarrollo.js"></script>
+<script src="../js/trabajador/acuerdos.js"></script>
+		<script src="../js/accionmejora/agregaraccionmejora.js"></script>
+	
+		<script src="../js/trabajador/movil.js"></script>
+	
+		<script src="../lib/HighCharts/highcharts.js"></script>
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+		<script src="../lib/chosen.jquery.js"></script>
+				<!-- ////////////autor: (AntoniTito5)  Tema:  Registro de horas   -->
+		
+<!-- 	<script src="../js/trabajador/horas_trabajador.js"></script>
+////////////Fin5 Registro de horas   -->
+</body>
+</html>	

@@ -1,0 +1,432 @@
+/* ==========================================================================
+   OneSST — Sistema de Diseño Corporativo Internacional
+   Plataforma Corporativa de Seguridad y Salud en el Trabajo
+   ========================================================================== */
+
+:root {
+  --onesst-navy: #0a2540;
+  --onesst-primary: #004b87;
+  --onesst-primary-hover: #003968;
+  --onesst-teal: #0d9488;
+  --onesst-teal-light: #14b8a6;
+  --onesst-bg: #f1f5f9;
+  --onesst-surface: #ffffff;
+  --onesst-border: #e2e8f0;
+  --onesst-text: #0f172a;
+  --onesst-text-muted: #475569;
+  --onesst-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --onesst-shadow-md: 0 6px 20px -3px rgba(15, 23, 42, 0.07), 0 3px 8px -2px rgba(15, 23, 42, 0.04);
+  --onesst-shadow-lg: 0 20px 35px -8px rgba(15, 23, 42, 0.14), 0 8px 14px -6px rgba(15, 23, 42, 0.06);
+  --onesst-radius: 12px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--onesst-bg);
+  color: var(--onesst-text);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6, .panel-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  letter-spacing: -0.015em;
+}
+
+.efectoLink {
+  cursor: pointer;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+/* ==========================================================================
+   Tarjetas y Paneles Enterprise (Elevación de .panel Bootstrap a SaaS Moderno)
+   ========================================================================== */
+.panel {
+  border-radius: var(--onesst-radius) !important;
+  border: 1px solid var(--onesst-border) !important;
+  box-shadow: var(--onesst-shadow-md) !important;
+  background: var(--onesst-surface) !important;
+  overflow: hidden;
+  margin-bottom: 20px !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.panel-heading {
+  padding: 14px 20px !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7) !important;
+  border-top-left-radius: calc(var(--onesst-radius) - 1px) !important;
+  border-top-right-radius: calc(var(--onesst-radius) - 1px) !important;
+}
+
+.panel-primary > .panel-heading {
+  background: linear-gradient(135deg, #0a2540 0%, #004b87 65%, #0d7490 100%) !important;
+  color: #ffffff !important;
+  border-bottom: none !important;
+}
+
+.panel-default > .panel-heading {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  color: var(--onesst-text) !important;
+  font-weight: 700;
+}
+
+.panel-info > .panel-heading {
+  background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  border-bottom: none !important;
+}
+
+.panel-success > .panel-heading {
+  background: linear-gradient(135deg, #047857 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
+  border-bottom: none !important;
+}
+
+.panel-warning > .panel-heading {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;
+  color: #ffffff !important;
+  border-bottom: none !important;
+}
+
+.panel-body {
+  padding: 18px 20px !important;
+}
+
+/* ==========================================================================
+   Tablas de Datos Ejecutivas (.table)
+   ========================================================================== */
+.table-responsive {
+  border-radius: 10px;
+  border: 1px solid var(--onesst-border);
+  background: #ffffff;
+  overflow-x: auto;
+}
+
+.table {
+  margin-bottom: 0 !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100%;
+}
+
+.table > thead > tr > th {
+  background: #f8fafc !important;
+  color: #334155 !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 11px 14px !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  border-top: none !important;
+  vertical-align: middle !important;
+}
+
+.table > tbody > tr > td {
+  padding: 11px 14px !important;
+  vertical-align: middle !important;
+  border-top: 1px solid #f1f5f9 !important;
+  color: #1e293b;
+  font-size: 13px;
+  transition: background-color 0.12s ease;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: #fcfdfe;
+}
+
+.table-hover > tbody > tr:hover > td {
+  background-color: #f0f7ff !important;
+}
+
+.table-bordered {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > td {
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* ==========================================================================
+   Botones Modernos (.btn)
+   ========================================================================== */
+.btn {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.005em;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #004b87 0%, #0264b0 100%) !important;
+  border-color: #004b87 !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #003b6b 0%, #004b87 100%) !important;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;
+  border-color: #d97706 !important;
+  color: #ffffff !important;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.btn-default {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+.btn-default:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+.btn-group > .btn {
+  border-radius: 8px !important;
+  margin-right: 4px;
+}
+
+/* ==========================================================================
+   Etiquetas y Badges Semánticos (.label, .badge)
+   ========================================================================== */
+.label, .badge {
+  border-radius: 9999px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.2 !important;
+}
+
+.label-success {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border: 1px solid #bbf7d0;
+}
+
+.label-warning {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a;
+}
+
+.label-danger {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca;
+}
+
+.label-info {
+  background-color: #e0f2fe !important;
+  color: #075985 !important;
+  border: 1px solid #bae6fd;
+}
+
+.label-primary {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  border: 1px solid #bfdbfe;
+}
+
+.label-default {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0;
+}
+
+/* ==========================================================================
+   Controles de Formulario (.form-control)
+   ========================================================================== */
+.form-control {
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 7px 12px !important;
+  font-size: 13px !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  height: auto !important;
+  min-height: 36px;
+}
+
+.form-control:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16) !important;
+  outline: none !important;
+}
+
+.input-sm {
+  min-height: 32px !important;
+  padding: 5px 10px !important;
+}
+
+/* ==========================================================================
+   Alertas y Barras de Progreso
+   ========================================================================== */
+.alert {
+  border-radius: 10px !important;
+  border-width: 1px !important;
+  box-shadow: var(--onesst-shadow-sm);
+}
+
+.progress {
+  border-radius: 9999px !important;
+  background-color: #e2e8f0 !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  overflow: hidden;
+}
+
+.progress-bar {
+  border-radius: 9999px !important;
+}
+
+
+/* ==========================================================================
+   Simplificación Visual de Nueva Generación (OneSST Next-Gen UI)
+   ========================================================================== */
+
+/* Unifica márgenes de todos los módulos eliminando el padding redundante de .container-fluid */
+.msst-area .container-fluid {
+  padding: 0 !important;
+}
+
+/* Oculta únicamente la botonera repetida de sub-pestañas (.btn-group) dentro de la cabecera del módulo,
+   conservando los KPIs, frases motivacionales y alertas de confirmación */
+.msst-area .panel-primary:first-of-type > .panel-body > .btn-group,
+msst-modulo01-seguridad > .panel-primary:first-child > .panel-body > .btn-group,
+msst-modulo02-organizacion > .panel-primary:first-child > .panel-body > .btn-group,
+msst-modulo03-contratistas > .panel-primary:first-child > .panel-body > .btn-group {
+  display: none !important;
+}
+.msst-area .panel-primary:first-of-type > .panel-body[style*="justify-content: space-between"] {
+  padding: 7px 18px !important;
+  justify-content: flex-end !important;
+  background: #f8fafc !important;
+}
+
+/* Eleva todas las tarjetas de KPIs con borde izquierdo a tarjetas Bento modernas */
+.msst-area div[style*="border-left: 4px solid"],
+.msst-area div[style*="border-left:4px solid"] {
+  border-radius: 14px !important;
+  padding: 15px 18px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-top: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 6px 18px -4px rgba(15, 23, 42, 0.07) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.msst-area div[style*="border-left: 4px solid"]:hover,
+.msst-area div[style*="border-left:4px solid"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.13) !important;
+}
+
+/* Filas de tabla interactivas (clic abre Ficha Ejecutiva 360°) */
+.msst-area .table > tbody > tr {
+  cursor: pointer;
+}
+
+/* Modales de todos los módulos con efecto cristal y bordes redondeados modernos */
+.msst-area div[style*="position:fixed"],
+.msst-area div[style*="position: fixed"] {
+  backdrop-filter: blur(5px) !important;
+  background: rgba(7, 20, 38, 0.62) !important;
+}
+
+.msst-area div[style*="position:fixed"] > .panel,
+.msst-area div[style*="position: fixed"] > .panel {
+  border-radius: 18px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 28px 60px -12px rgba(2, 8, 20, 0.55) !important;
+}
+
+/* Filas ocultas por el buscador instantáneo de vista */
+tr.onesst-row-hidden {
+  display: none !important;
+}
+
+/* Filas interactivas para inspección en Ficha 360° y resaltado sutil de registros críticos */
+.msst-area .table > tbody > tr {
+  cursor: pointer;
+}
+.msst-area .table > tbody > tr.onesst-fila-critica {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+/* Modo de lectura ejecutiva compacta */
+body.onesst-modo-compacto .table > tbody > tr > td {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+/* Impresión ejecutiva limpia */
+@media print {
+  .msst-topbar,
+  msst-sidebar,
+  .onesst-pulse-strip,
+  .onesst-view-toolbar,
+  .onesst-visual-analytics,
+  .msst-titulo-acciones,
+  .btn {
+    display: none !important;
+  }
+  .msst-contenido {
+    padding: 0 !important;
+  }
+}

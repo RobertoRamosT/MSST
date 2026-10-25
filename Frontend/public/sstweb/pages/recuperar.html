@@ -1,0 +1,107 @@
+	<!DOCTYPE html>
+	<html lang="es">
+	  <head>
+	    <meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>Recuperar Contraseña GOSST</title>
+
+
+		<!-- estilos, fuentes -->
+		<link href="../css/bootstrap-s.css" rel="stylesheet">
+		<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+		<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+		rel="stylesheet">
+		<link href="../lib/jstree/themes/default/style.min.css" rel="stylesheet">
+		<link href='../imagenes/logoIcono.ico' rel='shortcut icon' type='image/x-icon'> 
+	<!--[if lt IE 9]>
+				<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+				<![endif]-->
+		</head>
+
+		<body>
+
+	<!--container-->
+	<div class="container">
+	    <div class="row">
+	       
+	       <div class="col-md-3"></div>
+
+	        <div class="col-md-6 lo-central">
+	          
+	         <br>
+	         <br>
+	          <br>
+	         <br>
+	          <h4  style='font-weight:bold'>Gestor Online de Seguridad y Salud en el Trabajo</h4>
+	          <img src="../imagenes/logo3.png" style="width:200px;heigth:210px">
+	          <br><br>
+	      <form class="form-signin" accept-charset="utf-8" >
+
+	      	<div class="col-md-2"></div>
+
+	      	<div class="col-md-8">
+		        <h2 class="form-signin-heading fo-head-lo">Correo Electrónico</h2>
+
+		        <label for="inputEmail" class="sr-only">Correo Electronico</label>
+		        <input type="text" id="inputEmail" class="form-control" placeholder="" required="true" autofocus="true">
+
+		        
+		        <button class="btn btn-lg btn-primary btn-block" id="btnRecuperar"  type="button">Enviar correo </button>
+				 
+		        <div class="well-lo">
+		      <!-- 
+		      
+		      <a>Olvidé mi contrase&ntilde;a</a> |
+		        	<a>Usuario de prueba</a>
+		        	
+		        	
+		        	-->
+		        </div>
+
+	        </div>
+	        <div id="msj" style="color:red;"></div>
+	      </form>
+	        </div>
+	        
+	      </div> <!-- /row -->
+	  
+
+	  
+	  	<br><br><br><br><br>
+
+	</div> <!-- /container full -->
+<div class="modal fade" id="modalFechaLimite" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Fecha L&iacute;mite Superada</h4>
+        </div>
+        <div class="modal-body">
+         
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+    </div>
+
+		<!-- script references -->
+			<script src="../lib/jquery.min.js"></script>
+						<script src="../lib/jquery-ui.min.js"></script>
+			
+			<script src="../lib/jquery.blockUI.min.js"></script>
+			<script src="../lib/bootstrap.min.js"></script>
+			<script src="../js/generic/constantes.js"></script>
+			<script src="../js/generic/util.js"></script>
+			<script src="../js/login/recuperar.js"></script>
+			
+	 
+		</body>
+	</html>

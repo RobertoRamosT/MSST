@@ -1,0 +1,67 @@
+# =============================================================================
+# OneSST Enterprise — Archivo de Exclusión de Git (.gitignore)
+# Configuración Unificada Monorepo (.NET 10 Native AOT + Angular v22+)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. FRONTEND: Node.js, Angular CLI y Dependencias Web
+# -----------------------------------------------------------------------------
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.angular/
+Frontend/.cache/
+node_modules/
+dist/
+.angular/
+.cache/
+
+# Logs de gestores de paquetes npm / yarn / pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -----------------------------------------------------------------------------
+# 2. BACKEND: .NET 10 SDK, Native AOT y Compilación C#
+# -----------------------------------------------------------------------------
+Backend/bin/
+Backend/obj/
+Backend/publish/
+bin/
+obj/
+publish/
+
+# Archivos de depuración y símbolos
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# Archivos de usuario y configuración local de Visual Studio / JetBrains
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+.vs/
+.idea/
+*.rsuser
+
+# -----------------------------------------------------------------------------
+# 3. SISTEMA OPERATIVO Y ARCHIVOS TEMPORALES
+# -----------------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*~
+
+# Directorio de reportes de cobertura / pruebas
+coverage/
+TestResults/

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<title>GOSST-Asignación Recursos</title>
+<meta name="generator" content="Bootply" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="../css/bootstrap-s.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href="../lib/font-awesome-4.3.0/css/font-awesome.min.css"
+	rel="stylesheet">
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<!--[if lt IE 9]>
+			<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+	<link href="../css/movilGosst.css" rel="stylesheet" type='text/css'>
+<style>
+
+.ui-selectmenu-menu .ui-menu.customicons .ui-menu-item {
+      padding: 0.5em 0 0.5em 3em;
+    }
+    .ui-selectmenu-menu .ui-menu.customicons .ui-menu-item .ui-icon {
+      height: 24px;
+      width: 24px;
+      top: 0.1em;
+    }
+    .ui-selectmenu-menu{
+    z-index:10000
+    }
+    .ui-icon.marcaCheck {
+      background: url("../imagenes/checkGreen.png") 0 0 no-repeat;
+    }
+
+</style>
+
+</head>
+<body>
+<div class="cargaPagina">
+  <img src="../imagenes/logo3.png" style="width:200px;height:210px">
+  	<div id="barraCarga">
+ 		 <div class="progress-label">Loading...</div>
+	</div>
+	<br>
+	<div id="mensajeGosst"> 
+		
+	</div>
+</div>
+	<nav class="navbar navbar-default" id="barraMenu"></nav>
+<!-- <div id="fsBotones"></div> -->
+
+	<div class="container-fluid">
+	    <div id="TituloArriba">
+		   <h2>Asignación de Recursos de Seguridad</h2>
+	    </div>	
+	  
+	    <div id="fsBotones"></div>
+	    <br>
+	    <br>
+	  
+		<div style="height: 5px;"></div>
+		
+		<div class="table-responsive">
+		<div id="divPuestos"></div>
+		<div style="height: 5px;"></div>
+		<div class="wrapper" id="wrapper4">
+			<table class="table table-striped table-bordered table-hover"
+				id="tblPuesto">
+				<thead>
+					<tr>
+					<th class="tb-acc" rowspan="2" style="text-align:center; vertical-align:middle;">Puestos Relacionados
+					<a id='btnClipPuesto' href='#'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a>
+		       <a id='btnTogglePuesto' onclick="cambiarCheckRecurso(0)" href='#'>
+		       <i class='fa fa-times-circle' style='color:white'></i></a>
+		       
+		       <a id='btnImportRecursoPuesto' onclick="importGeneralRecurso(0)" href='#'>
+		       <i class='fa  fa-arrow-circle-o-down' style='color:white'></i></a>
+		       </th>
+						<th class="tb-acc" colspan="3" style="text-align:center; vertical-align:middle;">
+						Exámenes Médicos
+						<a id='btnClipExam' href='#'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a>
+		       <a id='btnToggleExam' onclick="cambiarCheckRecurso(1)" href='#'>
+		       <i class='fa fa-check-square' style='color:white'></i></a></th>
+						<th class="tb-acc" colspan="3" style="text-align:center; vertical-align:middle;">
+						Formaciones
+						<a id='btnClipFormacion' href='#'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a>
+		        <a id='btnToggleExam' onclick="cambiarCheckRecurso(2)" href='#'>
+		       <i class='fa fa-check-square' style='color:white'></i></a></th>
+						<th class="tb-acc" rowspan="2" style="text-align:center; vertical-align:middle;">EPPs<a id='btnClipEpp' href='#'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a>
+		        <a id='btnToggleExam' onclick="cambiarCheckRecurso(3)" href='#'>
+		       <i class='fa fa-check-square' style='color:white'></i></a></th>
+						<th class="tb-acc" rowspan="2" style="text-align:center; vertical-align:middle;">Procedimientos
+						<a id='btnClipProce' href='#'>
+		       <i class='fa fa-external-link-square' style='color:white'></i></a>
+		        <a id='btnToggleExam' onclick="cambiarCheckRecurso(4)" href='#'>
+		       <i class='fa fa-check-square' style='color:white'></i></a></th>
+					</tr>
+					<tr>
+						<th class="tb-acc" style="text-align:center; vertical-align:middle;">Ex&aacute;menes Ingreso</th>
+						<th class="tb-acc" style="text-align:center; vertical-align:middle;">Ex&aacute;menes Rutina</th>
+						<th class="tb-acc" style="text-align:center; vertical-align:middle;">Ex&aacute;menes Salida</th>
+
+						<th class="tb-acc" style="text-align:center; vertical-align:middle;"> Inicial</th>
+						<th class="tb-acc" style="text-align:center; vertical-align:middle;"> Rutina</th>
+						<th class="tb-acc" style="text-align:center; vertical-align:middle;"> Espec&iacute;fica</th>
+					</tr>
+				</thead>
+				<tbody id="tbodyC">
+					<tr>
+					<td id="tdpto">
+						<ul class="list-group-item" id="list-tdrelacion">
+						</ul>
+					</td>
+					<td id="tdemingreso">
+						<ul class="list-group-item" id="list-tdemingreso">
+						</ul>
+					</td>
+					<td id="tdemrutina">
+						<ul class="list-group-item" id="list-tdemrutina">
+						</ul>
+					</td>
+					<td id="tdemsalida">
+						<ul class="list-group-item" id="list-tdemsalida">
+						</ul>
+					</td>
+					<td id="tdcapinicial">
+						<ul class="list-group-item" id="list-tdcapinicial">
+						</ul>
+					</td>
+					<td id="tdcaprutina">
+						<ul class="list-group-item" id="list-tdcaprutina">
+						</ul>					
+					</td>
+					<td id="tdcapespecifica">
+						<ul class="list-group-item" id="list-tdcapespecifica">
+						</ul>
+					</td>
+					<td id="tdepp">
+						<ul class="list-group-item" id="list-tdepp">
+						</ul>
+					</td>
+					<td id="tdproc">
+						<ul class="list-group-item" id="list-tdproc">
+						</ul>
+					</td>
+					</tr>
+				</tbody>
+			</table>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="modalImportRelacional" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%">
+    
+      <!-- Modal content-->
+      <div class="modal-content" >
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Import puestos relacionados</h4>
+        </div>
+        <div class="modal-body">
+        
+		 <button id='btnGuardarImport' type='button' 
+        class='btn btn-success' title='Guardar'>
+		<i class='fa fa-save fa-2x'></i></button>
+		<br>
+		<strong>No incluir puestos perfiles, ni puestos que sean dependientes, ni el mismo puesto</strong>
+		<br>
+		<textarea id="textPuestoRelacion"
+		maxlength="100000"  class="form-control" rows="10"
+		style="resize: vertical" placeholder="División   -  Área   - Puesto"></textarea>
+		
+         
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+      
+    </div>
+    </div>
+    
+<div class="modal fade" id="modalRelacional" role="dialog">
+    <div class="modal-dialog modal-lg" style="width:90%">
+    
+      <!-- Modal content-->
+      <div class="modal-content" >
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title"></h4>
+        </div>
+        <div class="modal-body">
+        <button id='btnClipTabla' type='button' 
+        class='btn btn-success' title='Tabla Clipboard'>
+		<i class='fa fa-clipboard fa-2x'></i></button>
+		 <button id='btnEdicionAsig' type='button' 
+        class='btn btn-success' title='Editar Asignaciones'>
+		<i class='fa fa-pencil-square-o fa-2x'></i></button>
+		 <button id='btnCancelarAsig' type='button' 
+        class='btn btn-success' title='Cancelar'>
+		<i class='fa fa-sign-out fa-rotate-180 fa-2x'></i></button>
+		
+		  
+		<label id="labelEditarPuesto">Se guarda al hacer click en el 'checkbox'</label>
+		
+		
+          	<div class="wrapper" id="wrapper2">
+
+			<table class="table table-striped table-bordered table-hover"
+				id="tblRelacion">
+				<thead>
+				
+				</thead>
+				<tbody id="tbodyC">
+				</tbody>
+			</table>
+		</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+      
+    </div>
+    </div>
+	<!-- script references -->
+		<!-- script references highcharts -->
+	
+		<script src="../lib/HighCharts/highcharts.js"></script>
+		<script src="../lib/HighCharts/highcharts-more.js"></script>
+		<script src="../lib/HighCharts/modules/solid-gauge.js"></script>
+		<script src="../lib/HighCharts/modules/exporting.js"></script>
+		<script src="../lib/HighCharts/modules/funnel.js"></script>
+	
+	<!-- script references highcharts -->
+	
+	<script src="../lib/jquery-2.2.0.js"></script>
+
+	<script src="../lib/jquery.blockUI.min.js"></script>
+	<script src="../lib/bootstrap.min.js"></script>
+	<script src="../js/generic/util.js"></script>
+	<script src="../js/generic/constantes.js"></script>
+	<script src="../js/generic/constantesApp.js"></script>
+	<script src="../js/puestotrabajo/puestotrabajo.js"></script>
+	<script src="../lib/jquery-ui.js"></script>
+	
+
+</body>
+</html>
