@@ -1,4 +1,5 @@
 import '@angular/compiler';
+import {ClinicalWorkflowService} from './clinical-workflow.service';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createEnvironmentInjector,runInInjectionContext} from '@angular/core';
@@ -6,7 +7,7 @@ import {HttpClient,HttpErrorResponse,HttpHeaders,HttpRequest,HttpResponse} from 
 import {ActivatedRoute,Router} from '@angular/router';
 import {firstValueFrom,of,throwError,Subject,Observable} from 'rxjs';
 import {WorkflowApiService,EvidenceApiService,WorkflowSnapshot,WorkflowTransition,WorkflowContractError,
- readWorkflowEnvelope,readWorkflowSnapshot,workflowFailure} from './workflow-api.service';
+ readWorkflowEnvelope,readWorkflowSnapshot,workflowFailure,IntentKeys} from './workflow-api.service';
 import {GosstApiService,validateLegacyResponse,confirmedList} from './gosst-api.service';
 import {readProfilePermissions} from './security-profiles.service';
 import {readCommitteeEnvelope,CommitteeApiService} from './committee-api.service';
@@ -35,8 +36,8 @@ function screen(plan:Plan){
  const http={post:(url:string,body:Record<string,unknown>)=>{captured.push({url,body});return plan(url,body);},
  get:()=>of(envelope('WF_DETAIL_READY',updated))};
  const injector=createEnvironmentInjector([{provide:HttpClient,useValue:http},{provide:WorkflowApiService,useFactory:()=>new WorkflowApiService()},
- {provide:EvidenceApiService,useFactory:()=>new EvidenceApiService()},{provide:GosstApiService,useValue:{}},{provide:GosstSessionService,useValue:{}},
- {provide:Router,useValue:{navigate:()=>Promise.resolve(true)}},{provide:ActivatedRoute,useValue:{snapshot:{queryParamMap:{get:()=>null}}}}],null as never);
+ {provide:EvidenceApiService,useFactory:()=>new EvidenceApiService()},{provide:GosstApiService,useValue:{}},{provide:GosstSessionService,useValue:{snapshot:()=>null}},
+ {provide:ClinicalWorkflowService,useValue:{}},{provide:Router,useValue:{navigate:()=>Promise.resolve(true)}},{provide:ActivatedRoute,useValue:{snapshot:{queryParamMap:{get:()=>null}}}}],null as never);
  Object.defineProperty(globalThis,'location',{value:new URL('https://qa.invalid/#/workflow'),configurable:true});
  const component=runInInjectionContext(injector,()=>new WorkflowInteractivoComponent());
  component.current.set(structuredClone(initial));component.action.set(action);component.actionOpen.set(true);
@@ -160,7 +161,7 @@ const keyA='11111111-1111-4111-8111-111111111111',keyB='22222222-2222-4222-8222-
 const accessBase={succeeded:true,code:'ACCESS_EVALUATED',message:'Evaluación confirmada.',correlationId:'fixture-access',httpStatus:200};
 const accessDecision={decisionId:keyA,habilitado:true,motivos:[],expiresAt:'2026-10-26T10:00:00Z',version:'AAAAAAAAAAE=',subjectLabel:'Sujeto fixture',empresaNombre:'Empresa fixture',subjectType:'PERSONA',subjectId:8,projectId:10,zoneId:12,direction:'INGRESO'};
 const accessPolicy={enabled:true,ttlSeconds:60,requireProject:true,requireZone:true,version:'AAAAAAAAAAE=',rules:[{subjectType:'PERSONA',factCode:'FACT_FIXTURE',operator:'EQ',expectedValues:['VALUE_FIXTURE'],message:'Falta condición configurada.'}],workflowRules:[{subjectType:'PERSONA',codigoCaso:'CASE_TEST',subtipo:'TYPE_TEST',requiredState:'STATE_B',message:'Falta proceso.'}],zones:[{zoneId:12,label:'Punto fixture',enabled:true}]};
-function service<T>(type:new()=>T,http:object){const injector=createEnvironmentInjector([{provide:HttpClient,useValue:http},{provide:GosstSessionService,useValue:{}}],null as never);return{api:runInInjectionContext(injector,()=>new type()),destroy:()=>injector.destroy()};}
+function service<T>(type:new()=>T,http:object){const injector=createEnvironmentInjector([{provide:HttpClient,useValue:http},{provide:GosstSessionService,useValue:{snapshot:()=>null}}],null as never);return{api:runInInjectionContext(injector,()=>new type()),destroy:()=>injector.destroy()};}
 test('legado: contenido arbitrario no confirma una respuesta',()=>{assert.throws(()=>validateLegacyResponse({otro:true}));});
 test('legado: fila sin versión no admite modificaciones posteriores',()=>{assert.throws(()=>confirmedList({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[{id:8}]}));});
 test('legado: actualización sin versión se rechaza antes de enviar',async()=>{
@@ -233,4 +234,76 @@ test('legado: NULL opcional se conserva; propiedad ausente o tipo falso se recha
  const rows=confirmedList<{campo:string|null}>(response,[{name:'campo',kind:'string',nullable:true}]);assert.equal(rows[0].campo,null);
  assert.throws(()=>confirmedList({...response,list:[{id:8,version:'AAAAAAAAAAE='}]},[{name:'campo',kind:'string',nullable:true}]));
  assert.throws(()=>confirmedList({...response,list:[{id:8,version:'AAAAAAAAAAE=',campo:100}]},[{name:'campo',kind:'string',nullable:true}]));
+});
+
+
+test('intenciones: confirmación retira solo su clave; error conserva la misma intención',()=>{
+ const keys=new IntentKeys(),a={nombre:'Igual'},b={nombre:'Otro'};
+ const ka=keys.key('crear',a),kb=keys.key('crear',b);
+ assert.equal(keys.key('crear',a),ka);keys.confirmed('crear',a,kb);assert.equal(keys.key('crear',a),ka);
+ keys.confirmed('crear',a,ka);assert.notEqual(keys.key('crear',a),ka);assert.equal(keys.key('crear',b),kb);
+});
+test('legado: dos altas iguales confirmadas representan dos intenciones distintas',async()=>{
+ const sent:string[]=[];const s=service(GosstApiService,{post:(_u:string,p:Record<string,unknown>)=>{
+  sent.push(String(p['idempotencyKey']));return of({CODE_RESPONSE:'05',STATUS_CODE:'01',requestId:p['idempotencyKey'],snapshot:{version:initial.version,record:{id:8,version:initial.version}}});
+ }});
+ await firstValueFrom(s.api.callAjaxPost('/unidad/insert',{nombre:'Igual'}));await firstValueFrom(s.api.callAjaxPost('/unidad/insert',{nombre:'Igual'}));
+ assert.equal(sent.length,2);assert.notEqual(sent[0],sent[1]);s.destroy();
+});
+test('interceptor: 401 de seguridad administrativa invalida sesión; login y sesión conservan su manejo propio',async()=>{
+ for(const path of ['/sst/security/accounts/8','/sst/security/password','/sst/security/profiles/8','/sst/security/login','/sst/security/session?refresh=true']){
+  let removed=0;const injector=createEnvironmentInjector([{provide:GosstSessionService,useValue:{csrfToken:()=>null,removeAllSession:()=>removed++}},{provide:Router,useValue:{navigate:()=>Promise.resolve(true)}}],null as never);
+  const response=runInInjectionContext(injector,()=>gosstAuthInterceptor(new HttpRequest('GET',path),()=>throwError(()=>new HttpErrorResponse({status:401}))));
+  await assert.rejects(firstValueFrom(response));assert.equal(removed,path.includes('/login')||path.includes('/session?')?0:1,path);injector.destroy();
+ }
+});
+test('paginación: cursor, búsqueda y tamaño se envían al servidor sin duplicar lista',async()=>{
+ let body:Record<string,unknown>={};const s=service(GosstApiService,{post:(_u:string,b:Record<string,unknown>)=>{
+  body=b;return of({CODE_RESPONSE:'05',STATUS_CODE:'01',contractVersion:3,list:[],page:{pageSize:20,maximumPageSize:200,returned:0,hasMore:false,nextCursor:null,sort:'id:asc',label:'Registros'}});
+ }});
+ await firstValueFrom(s.api.callAjaxPost('/unidad/lista'));assert.equal(s.api.pages()['/unidad/lista'].label,'Registros');
+ s.api.searchPage('/unidad/lista','  buscar  ');s.api.resizePage('/unidad/lista',20);await firstValueFrom(s.api.callAjaxPost('/unidad/lista'));
+ assert.equal(body['search'],'buscar');assert.equal(body['pageSize'],20);assert.equal(body['cursor'],null);s.destroy();
+});
+test('paginación: metadatos incoherentes se rechazan antes de mostrar registros',async()=>{
+ const s=service(GosstApiService,{post:()=>of({CODE_RESPONSE:'05',STATUS_CODE:'01',contractVersion:3,list:[],page:{pageSize:20,maximumPageSize:200,returned:1,hasMore:true,nextCursor:null,sort:'id:asc',label:'Registros'}})});
+ await assert.rejects(firstValueFrom(s.api.callAjaxPost('/unidad/lista')),/página válida/);s.destroy();
+});
+test('workflow: la respuesta tardía de otro expediente no reemplaza la selección vigente',()=>{
+ const s=screen(()=>of({})),a=new Subject<any>(),b=new Subject<any>();
+ const api=(s.component as unknown as {api:{detail:(id:number)=>Observable<any>}}).api;
+ api.detail=id=>id===1?a:b;s.component.load(1);s.component.load(2);
+ b.next(envelope('WF_DETAIL_READY',{...updated,expedienteId:2}));a.next(envelope('WF_DETAIL_READY',{...initial,expedienteId:1}));
+ assert.equal(s.component.current()?.expedienteId,2);s.component.ngOnDestroy();s.destroy();
+});
+test('workflow: cambiar caso cancela detalle pendiente',()=>{
+ const s=screen(()=>of({})),pending=new Subject<any>();
+ const api=(s.component as unknown as {api:{detail:()=>Observable<any>;list:()=>Observable<any>}}).api;
+ api.detail=()=>pending;api.list=()=>of(envelope('WF_LIST_READY'));s.component.load(1);s.component.selectCase('OTRO');
+ pending.next(envelope('WF_DETAIL_READY',initial));assert.equal(s.component.current(),null);s.component.ngOnDestroy();s.destroy();
+});
+test('clínica: no enviar aprobación sin una evaluación confirmada del trabajador',()=>{
+ const s=screen(()=>of({}));s.component.proofRequirement.set({...initial.requirements[0],requiresClinicalReview:true});
+ s.component.proofDecision='APPROVED';s.component.validUntil='2026-10-30T10:00';s.component.recordProof();
+ assert.equal(s.captured.length,0);assert.match(s.component.dialogError(),/evaluación médica/);s.destroy();
+});
+
+test('workflow: una escritura cancela el detalle anterior y conserva el resultado confirmado',()=>{
+ const s=screen((_url,body)=>of(envelope('WF_ACTION_CONFIRMED',updated,String(body['idempotencyKey'])))),pending=new Subject<any>();
+ const api=(s.component as unknown as {api:{detail:()=>Observable<any>}}).api;
+ api.detail=()=>pending;s.component.load(1);s.component.execute();
+ pending.next(envelope('WF_DETAIL_READY',initial));assert.equal(s.component.current()?.version,updated.version);s.component.ngOnDestroy();s.destroy();
+});
+
+test('workflow: una operación pendiente impide cambiar el caso y el sujeto',()=>{
+ const s=screen(()=>new Subject<unknown>());s.component.caseCode.set('ACTUAL');s.component.execute();
+ s.component.selectCase('OTRO');s.component.selectDefinition(99);
+ assert.equal(s.component.caseCode(),'ACTUAL');assert.equal(s.component.current()?.expedienteId,42);assert.equal(s.component.busy(),true);s.component.ngOnDestroy();s.destroy();
+});
+test('workflow: listados tardíos no reemplazan el caso actual',()=>{
+ const s=screen(()=>of({})),a=new Subject<any>(),b=new Subject<any>();
+ const api=(s.component as unknown as {api:{list:(code?:string)=>Observable<any>}}).api;
+ api.list=code=>code==='A'?a:b;s.component.selectCase('A');s.component.selectCase('B');
+ b.next({...envelope('WF_LIST_READY'),expedientes:[{...updated,expedienteId:2}]});a.next({...envelope('WF_LIST_READY'),expedientes:[initial]});
+ assert.equal(s.component.rows()[0].expedienteId,2);s.component.ngOnDestroy();s.destroy();
 });

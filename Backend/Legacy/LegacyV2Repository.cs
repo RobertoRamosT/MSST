@@ -6,7 +6,7 @@ using Msst.Backend.Database;
 using Msst.Backend.Evidence;
 namespace Msst.Backend.Legacy;
 
-public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpContextAccessor contexts, IEvidenceReader evidenceReader)
+public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpContextAccessor contexts, IEvidenceReader evidenceReader,LegacyPaging paging)
 {
  public async Task<LegacyV2Envelope> ExecuteAsync(string route, string json, CancellationToken ct)
  {
@@ -19,6 +19,9 @@ public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpCon
   var mutation=!string.IsNullOrEmpty(action);
   if(action is "APROBAR" or "RECHAZAR" or "VOTAR")
    throw new ApiDomainException(422,"WORKFLOW_ACTION_REQUIRED","Realice esta decisión desde su expediente y acción autorizada.");
+  if(mutation&&module=="contratista"&&document.RootElement.TryGetProperty("tipoContratistaId",out var contractorType)
+   &&(contractorType.ValueKind!=JsonValueKind.Number||!contractorType.TryGetInt32(out var typeId)||typeId<=0))
+   throw new ApiDomainException(422,"CONTRACTOR_TYPE_INVALID","Ingrese un código de tipo de contratista válido.");
   RequestScope.Permission(contexts.HttpContext,module=="contratista_garita"&&!mutation?"access:read":"legacy:"+module+(mutation ? ":write" : ":read"));
   await using var verifiedEvidence=await VerifyEvidenceAsync(document.RootElement,actor,module,action,evidenceReader,ct);
   await using var connection=database.CreateConnection(); await connection.OpenAsync(ct);
@@ -37,18 +40,27 @@ public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpCon
    if(response.CodeResponse!="05" || response.StatusCode!="01") return response;
    if(response.Snapshot is null || response.Snapshot.Record.Count==0 || response.Snapshot.Version.Length==0 || response.RequestId is null)
     throw new InvalidDataException("Falta la instantánea persistida.");
+   return response; // El recibo no necesita volver a consultar todo el módulo.
   }
   else response=new(){CodeResponse="05",StatusCode="01",Message="Consulta confirmada."};
   var query=LegacyProjection.ObtenerConsultaPorRuta(route,module);
   if(string.IsNullOrEmpty(query)) throw new ApiDomainException(404,"ENDPOINT_NOT_IMPLEMENTED","El módulo no tiene una consulta implementada.");
   query=await ScopeAsync(connection,query,actor,ct);
+  var selection=paging.Parse(document.RootElement,contexts.HttpContext!,actor,route);
+  var order=Regex.Match(query,@"\bORDER\s+BY\b",RegexOptions.IgnoreCase);
+  var inner=(order.Success?query[..order.Index]:query).Trim().TrimEnd(';');
+  query="WITH scoped_rows AS ("+inner+") SELECT TOP(@PageTake) q.* FROM scoped_rows q WHERE q.id>@PageAfter AND "+
+    "(@PageSearch=N'' OR EXISTS(SELECT 1 FROM OPENJSON((SELECT q.* FOR JSON PATH,WITHOUT_ARRAY_WRAPPER,INCLUDE_NULL_VALUES)) f WHERE f.type IN(1,2) AND CHARINDEX(@PageSearch,f.value)>0)) ORDER BY q.id;";
+  var hasMore=false;
   await using(var command=new SqlCommand(query,connection))
   {
+   command.Parameters.AddWithValue("@PageTake",selection.Size+1);command.Parameters.AddWithValue("@PageAfter",selection.AfterId);command.Parameters.AddWithValue("@PageSearch",selection.Search);
    command.Parameters.AddWithValue("@ActorEmpresa",actor.EmpresaId);
    if(query.Contains("@ActorContractor",StringComparison.Ordinal))command.Parameters.AddWithValue("@ActorContractor",actor.ContratistaId ?? 0);
    await using var reader=await command.ExecuteReaderAsync(ct);
    while(await reader.ReadAsync(ct))
    {
+    if(response.List.Count==selection.Size){hasMore=true;break;}
     var row=new Dictionary<string,object?>(StringComparer.Ordinal);
     for(var i=0;i<reader.FieldCount;i++){
      var value=reader.IsDBNull(i)?null:reader.GetValue(i);
@@ -59,9 +71,17 @@ public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpCon
     }response.List.Add(row);
    }
   }
-  response.Lista=response.List;response.Total=response.List.Count;
-  if(response.List.Count>0)response.Data=response.List[0];
-  if(route.Contains("conductor",StringComparison.OrdinalIgnoreCase))response.DriverDocuments=response.List;
+  response.Total=response.List.Count;
+  var next=hasMore&&response.List.Count>0?paging.Next(actor,route,selection,Convert.ToInt64(response.List[^1]["id"])):null;
+  string label=module;
+  await using(var title=new SqlCommand("SELECT Label FROM dbo.ApiV2_ListLabel WHERE ModuleCode=@Module;",connection))
+  {title.Parameters.AddWithValue("@Module",module);label=Convert.ToString(await title.ExecuteScalarAsync(ct))??"Registros";}
+  response.Page=new(selection.Size,response.List.Count,paging.MaximumSize,hasMore,next,"id:asc",label);
+  if(!selection.Compact){
+   response.Lista=response.List;
+   if(response.List.Count>0)response.Data=response.List[0];
+   if(route.Contains("conductor",StringComparison.OrdinalIgnoreCase))response.DriverDocuments=response.List;
+  }
   // El recibo conserva exactamente el registro/version de su transacción, también en replay.
   // La lista actual se devuelve aparte: no mezclar un registro posterior con la versión del recibo.
   return response;

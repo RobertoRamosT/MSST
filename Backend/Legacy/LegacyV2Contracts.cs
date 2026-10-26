@@ -11,9 +11,11 @@ public sealed class LegacyV2Envelope
  [JsonPropertyName("nuevoId")] public long NewId {get;set;}
  [JsonPropertyName("snapshot")] public LegacyV2Snapshot? Snapshot {get;set;}
  [JsonPropertyName("list")] public List<Dictionary<string,object?>> List {get;set;} = [];
- [JsonPropertyName("lista")] public List<Dictionary<string,object?>> Lista {get;set;} = [];
- [JsonPropertyName("data")] public Dictionary<string,object?> Data {get;set;} = [];
- [JsonPropertyName("listDocumentosNivelConductor")] public List<Dictionary<string,object?>> DriverDocuments {get;set;} = [];
+ [JsonPropertyName("lista"),JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<Dictionary<string,object?>>? Lista {get;set;}
+ [JsonPropertyName("data"),JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public Dictionary<string,object?>? Data {get;set;}
+ [JsonPropertyName("listDocumentosNivelConductor"),JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public List<Dictionary<string,object?>>? DriverDocuments {get;set;}
+ [JsonPropertyName("page"),JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public LegacyPage? Page {get;set;}
+ [JsonPropertyName("contractVersion")] public int ContractVersion {get;set;}=3;
  [JsonPropertyName("totalRegistros")] public int Total {get;set;}
 }
 public sealed class LegacyV2Snapshot
@@ -21,7 +23,7 @@ public sealed class LegacyV2Snapshot
  [JsonPropertyName("record")] public Dictionary<string,object?> Record {get;set;} = [];
  [JsonPropertyName("version")] public string Version {get;set;} = "";
 }
-[JsonSourceGenerationOptions]
+[JsonSourceGenerationOptions(PropertyNamingPolicy=JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(LegacyV2Envelope))]
 [JsonSerializable(typeof(JsonElement))]
 [JsonSerializable(typeof(string))]

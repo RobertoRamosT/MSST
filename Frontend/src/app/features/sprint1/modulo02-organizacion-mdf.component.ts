@@ -1,3 +1,5 @@
+import {QueryPagesComponent} from '../../core/components/query-pages.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
 import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
@@ -9,7 +11,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 @Component({
   selector: 'msst-modulo02-organizacion',
   standalone: true,
-  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
+  imports: [QueryPagesComponent,WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
 @if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
 <msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
@@ -579,7 +581,9 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
         </div>
       </div>
     }
-  `
+
+<msst-query-pages [routes]="pageRoutes" />
+`
 })
 export class Modulo02OrganizacionMdfComponent implements OnInit {
   readonly mensajeOperacion=signal('');
@@ -651,6 +655,8 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
 
   // Visor 1:1
 
+  readonly pageRoutes=['/area/lista', '/division/lista', '/mdf/lista', '/puesto/lista', '/unidad/lista'];
+  private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarEstructuraOrganizacional();
   }

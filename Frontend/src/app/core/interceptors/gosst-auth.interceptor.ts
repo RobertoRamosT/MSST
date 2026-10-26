@@ -22,7 +22,7 @@ export const gosstAuthInterceptor:HttpInterceptorFn=(req,next)=>{
       }
     },
     error:(error:unknown)=>{
-      if(error instanceof HttpErrorResponse&&error.status===401&&!req.url.startsWith('/sst/security/')){
+      if(error instanceof HttpErrorResponse&&error.status===401&&!['/sst/security/login','/sst/security/session'].includes(req.url.split('?')[0])){
         session.removeAllSession();void router.navigate(['/login']);
       }
       // HTTP403 conserva identidad y llega al componente. No existe empresa de respaldo.

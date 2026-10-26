@@ -1,3 +1,5 @@
+import {QueryPagesComponent} from '../../core/components/query-pages.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { isGuid } from '../../core/services/workflow-api.service';
 import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
 import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
@@ -45,7 +47,7 @@ export interface ProcedimientoSeguridadItem {
 @Component({
   selector: 'msst-modulo08-recursos',
   standalone: true,
-  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
+  imports: [QueryPagesComponent,WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
 @if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
 <msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
@@ -454,7 +456,9 @@ export interface ProcedimientoSeguridadItem {
       }
 
     </div>
-  `
+
+<msst-query-pages [routes]="pageRoutes" />
+`
 })
 export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
   readonly mensajeOperacion=signal('');
@@ -538,6 +542,8 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
     this.equiposEpp().reduce((acc, e) => acc + (Number(e.stock) || 0), 0)
   );
 
+  readonly pageRoutes=['/capacitacion/lista', '/equiposeguridad/lista', '/procedimientoseguridad/lista'];
+  private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
   }

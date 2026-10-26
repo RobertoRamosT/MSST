@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, from, map, switchMap } from 'rxjs';
 
 export interface WorkflowSubject {subjectType:string;subjectId:number;label:string;idContratista?:number|null;idProyecto?:number|null;}
-export interface WorkflowRequirement {requirementCode:string;title:string;stageCode:string;mandatory:boolean;verificationKind:string;evidenceRequired:boolean;verifierRoles:string[];status:string;message:string;evidenceIds:string[];declaredValue?:string|null;requiresValidityEnd:boolean;maxValidityHours?:number|null;}
+export interface WorkflowRequirement {requirementCode:string;title:string;stageCode:string;mandatory:boolean;verificationKind:string;evidenceRequired:boolean;verifierRoles:string[];status:string;message:string;evidenceIds:string[];declaredValue?:string|null;requiresValidityEnd:boolean;maxValidityHours?:number|null;requiresClinicalReview?:boolean;}
 export interface WorkflowStage {stageCode:string;order:number;title:string;roleCode:string;deadlineHours?:number|null;allowNoRequirements:boolean;requirements:WorkflowRequirement[];}
 export interface WorkflowTransition {actionCode:string;label:string;fromStageCode:string;fromStateCode:string;toStageCode:string;toStateCode:string;requiredRoles:string[];requiresVerifiedRequirements:boolean;requiresComment:boolean;isFinal:boolean;effectCode?:string|null;effectValue?:string|null;}
 export interface WorkflowDefinition {definitionId:number;codigoCaso:string;subtipo:string;definitionVersion:number;nombre:string;subjectType:string;status:string;initialStageCode:string;initialStateCode:string;stages:WorkflowStage[];transitions:WorkflowTransition[];validationMessages:string[];}
@@ -21,7 +21,7 @@ export const isGuid=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}-
 export function asObject(raw:unknown):Record<string,unknown>{if(raw===null||typeof raw!=='object'||Array.isArray(raw))throw new WorkflowContractError('Respuesta del servidor inválida.');return raw as Record<string,unknown>;}
 type Schema=Record<string,unknown>;
 const subjectSchema:Schema={subjectType:'text',subjectId:'id',label:'text',idContratista:'id?',idProyecto:'id?'};
-const requirementSchema:Schema={requirementCode:'text',title:'text',stageCode:'text',mandatory:'bool',verificationKind:'text',evidenceRequired:'bool',verifierRoles:['text'],status:'text',message:'string',evidenceIds:['guid'],declaredValue:'string?',requiresValidityEnd:'bool',maxValidityHours:'id?'};
+const requirementSchema:Schema={requirementCode:'text',title:'text',stageCode:'text',mandatory:'bool',verificationKind:'text',evidenceRequired:'bool',verifierRoles:['text'],status:'text',message:'string',evidenceIds:['guid'],declaredValue:'string?',requiresValidityEnd:'bool',maxValidityHours:'id?',requiresClinicalReview:'bool?'};
 const transitionSchema:Schema={actionCode:'text',label:'text',fromStageCode:'text',fromStateCode:'text',toStageCode:'text',toStateCode:'text',requiredRoles:['text'],requiresVerifiedRequirements:'bool',requiresComment:'bool',isFinal:'bool',effectCode:'text?',effectValue:'text?'};
 const stageSchema:Schema={stageCode:'text',order:'id',title:'text',roleCode:'text',deadlineHours:'id?',allowNoRequirements:'bool',requirements:[requirementSchema]};
 const definitionSchema:Schema={definitionId:'id',codigoCaso:'text',subtipo:'text',definitionVersion:'id',nombre:'text',subjectType:'text',status:'text',initialStageCode:'text',initialStateCode:'text',stages:[stageSchema],transitions:[transitionSchema],validationMessages:['string']};
@@ -97,7 +97,10 @@ function stable(value:unknown):unknown{
 export class IntentKeys{
   private readonly keys=new Map<string,string>();
   key(operation:string,data:unknown):string{const fingerprint=operation+JSON.stringify(stable(data));let key=this.keys.get(fingerprint);if(!key){key=crypto.randomUUID();this.keys.set(fingerprint,key);}return key;}
-  confirmed():void{this.keys.clear();}
+  confirmed(operation:string,data:unknown,key:string):void{
+    const fingerprint=operation+JSON.stringify(stable(data));
+    if(this.keys.get(fingerprint)===key)this.keys.delete(fingerprint);
+  }
 }
 @Injectable({providedIn:'root'})
 export class WorkflowApiService{
@@ -124,7 +127,7 @@ export class WorkflowApiService{
     const canonical={...data,values:[...data.values].sort((a,b)=>a.requirementCode.localeCompare(b.requirementCode)),evidenceIds:[...data.evidenceIds].sort()};
     return this.mutate('/expedientes/'+snapshot.expedienteId+'/actions',canonical,'WF_ACTION_CONFIRMED',snapshot.expedienteId,snapshot.definitionVersion);
   }
-  proof(snapshot:WorkflowSnapshot,data:{requirementCode:string;decision:string;evidenceIds:string[];validUntilUtc:string|null;comment:string|null;signatureId?:string|null}):Observable<WorkflowEnvelope>{
+  proof(snapshot:WorkflowSnapshot,data:{requirementCode:string;decision:string;evidenceIds:string[];validUntilUtc:string|null;comment:string|null;signatureId?:string|null;clinicalRecordId?:number|null;clinicalRecordVersion?:string|null}):Observable<WorkflowEnvelope>{
     return this.mutate('/expedientes/'+snapshot.expedienteId+'/proofs',{...data,expectedVersion:snapshot.version},'WF_PROOF_RECORDED',snapshot.expedienteId,snapshot.definitionVersion);
   }
   saveDefinition(data:Record<string,unknown>):Observable<WorkflowEnvelope>{return this.mutate('/definitions',data,'WF_DEFINITION_SAVED');}
@@ -135,6 +138,7 @@ export class WorkflowApiService{
     return this.http.post<unknown>(this.base+path,payload).pipe(map(raw=>{
       const result=readWorkflowEnvelope(raw,code,idempotencyKey,id);
       if(definitionVersion!==undefined&&result.snapshot?.definitionVersion!==definitionVersion)throw new WorkflowContractError('La definición de la respuesta no coincide con la solicitud.');
+      this.intents.confirmed(path,data,idempotencyKey);
       return result;
     }));
   }
@@ -147,7 +151,8 @@ export class EvidenceApiService{
       const digest=await crypto.subtle.digest('SHA-256',bytes);
       return Array.from(new Uint8Array(digest)).map(v=>v.toString(16).padStart(2,'0')).join('');
     })).pipe(switchMap(sha256=>{
-      const idempotencyKey=this.intents.key('upload',{sha256,fileName:file.name,size:file.size,expedienteId:snapshot.expedienteId,expectedVersion:snapshot.version,fieldCode});
+      const identity={sha256,fileName:file.name,size:file.size,expedienteId:snapshot.expedienteId,expectedVersion:snapshot.version,fieldCode};
+      const idempotencyKey=this.intents.key('upload',identity);
       const body=new FormData();body.append('file',file,file.name);body.append('expedienteId',String(snapshot.expedienteId));
       body.append('fieldCode',fieldCode);body.append('expectedVersion',snapshot.version);body.append('idempotencyKey',idempotencyKey);
       return this.http.post<unknown>('/sst/evidence',body).pipe(map(raw=>{
@@ -157,6 +162,7 @@ export class EvidenceApiService{
           ||typeof e['fileName']!=='string'||!e['fileName']||e['size']!==file.size
           ||typeof e['contentType']!=='string'||!e['contentType']||e['stateCode']!=='UPLOADED')
           throw new WorkflowContractError('No se confirmó la evidencia persistida. Conserve el archivo y reintente.');
+        this.intents.confirmed('upload',identity,idempotencyKey);
         return structuredClone(e) as unknown as EvidenceReceipt;
       }));
     }));
@@ -167,7 +173,8 @@ export class EvidenceApiService{
       const digest=await crypto.subtle.digest('SHA-256',bytes);
       return Array.from(new Uint8Array(digest)).map(v=>v.toString(16).padStart(2,'0')).join('');
     })).pipe(switchMap(sha256=>{
-      const idempotencyKey=this.intents.key('signature',{sha256,evidenceId,expectedVersion});
+      const identity={sha256,evidenceId,expectedVersion};
+      const idempotencyKey=this.intents.key('signature',identity);
       const body=new FormData();body.append('signature',signature,signature.name);
       body.append('expectedVersion',expectedVersion);body.append('idempotencyKey',idempotencyKey);
       return this.http.post<unknown>('/sst/evidence/'+encodeURIComponent(evidenceId)+'/signatures',body).pipe(map(raw=>{
@@ -175,6 +182,7 @@ export class EvidenceApiService{
         if(v['succeeded']!==true||v['code']!=='SIGNATURE_VERIFIED'||typeof v['requestId']!=='string'
           ||v['requestId'].toLowerCase()!==idempotencyKey.toLowerCase()||!isGuid(v['signatureId']))
           throw new WorkflowContractError('El servidor no confirmó la firma del documento.');
+        this.intents.confirmed('signature',identity,idempotencyKey);
         return v['signatureId'];
       }));
     }));

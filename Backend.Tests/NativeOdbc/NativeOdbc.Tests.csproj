@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+ <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><PublishAot>true</PublishAot><AllowUnsafeBlocks>true</AllowUnsafeBlocks><TreatWarningsAsErrors>true</TreatWarningsAsErrors><ILLinkTreatWarningsAsErrors>true</ILLinkTreatWarningsAsErrors><DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes></PropertyGroup>
+ <ItemGroup><Compile Include="../../Backend/Database/NativeOdbc.cs" Link="NativeOdbc.cs" /><Compile Include="../../Backend/Workflow/WorkflowV2Contracts.cs" Link="WorkflowV2Contracts.cs" /></ItemGroup>
+</Project>

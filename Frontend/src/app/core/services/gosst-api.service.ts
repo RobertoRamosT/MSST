@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, map, throwError } from 'rxjs';
+import { Observable, map, throwError, Subject, finalize } from 'rxjs';
 import { IntentKeys, isGuid, isSafeId, asObject } from './workflow-api.service';
 import { GosstSessionService } from './gosst-session.service';
 
@@ -30,11 +30,54 @@ export function validateLegacyResponse(raw:unknown):Record<string,any> {
   }
   return v;
 }
+export interface QueryPageState{
+ route:string;label:string;pageSize:number;maximumPageSize:number;returned:number;hasMore:boolean;nextCursor:string|null;
+ cursor:string|null;history:(string|null)[];index:number;search:string;loading:boolean;
+}
 @Injectable({providedIn:'root'})
 export class GosstApiService {
   private readonly http=inject(HttpClient);
   private readonly session=inject(GosstSessionService);
   private readonly intents=new IntentKeys();
+  readonly pages=signal<Record<string,QueryPageState>>({});
+  readonly pageChanges=new Subject<string>();
+  private querySequence=new Map<string,number>();
+  private pagingIdentity='';
+  private queryCounter=0;
+  pageEntries(routes:readonly string[]):QueryPageState[]{return routes.flatMap(route=>this.pages()[route]?[this.pages()[route]]:[]);}
+  private changePage(route:string,update:(state:QueryPageState)=>QueryPageState):void{
+    const state=this.pages()[route];if(!state||state.loading)return;
+    this.pages.update(all=>({...all,[route]:update(state)}));this.pageChanges.next(route);
+  }
+  nextPage(route:string):void{this.changePage(route,s=>s.hasMore&&s.nextCursor?{...s,cursor:s.nextCursor,history:[...s.history,s.cursor],index:s.index+1}:s);}
+  previousPage(route:string):void{this.changePage(route,s=>s.history.length?{...s,cursor:s.history.at(-1)??null,history:s.history.slice(0,-1),index:s.index-1}:s);}
+  searchPage(route:string,search:string):void{this.changePage(route,s=>({...s,search:search.trim(),cursor:null,history:[],index:1}));}
+  resizePage(route:string,size:number):void{const s=this.pages()[route];if(!s||!Number.isSafeInteger(size)||size<1||size>s.maximumPageSize)return;this.changePage(route,s=>({...s,pageSize:size,cursor:null,history:[],index:1}));}
+  private prepareQuery(route:string,payload:Record<string,any>):number{
+    const actor=this.session.snapshot();const identity=String(actor?.userId??'')+'/'+String(actor?.empresaId??'')+'/'+String(actor?.contratistaId??'');
+    if(identity!==this.pagingIdentity){this.pages.set({});this.querySequence.clear();this.pagingIdentity=identity;}
+    const state=this.pages()[route];
+    if(state){payload['pageSize']=state.pageSize;payload['cursor']=state.cursor;payload['search']=state.search;this.pages.update(all=>({...all,[route]:{...state,loading:true}}));}
+    const sequence=++this.queryCounter;this.querySequence.set(route,sequence);return sequence;
+  }
+  private acceptQuery(route:string,response:Record<string,any>,sequence:number):void{
+    if(this.querySequence.get(route)!==sequence)throw new FunctionalApiError('QUERY_REPLACED','La consulta fue reemplazada por una selección más reciente.');
+    if(response['page']===undefined||response['page']===null)return;
+    const p=asObject(response['page']);
+    if(response['contractVersion']!==3||!Number.isSafeInteger(p['pageSize'])||Number(p['pageSize'])<1
+      ||!Number.isSafeInteger(p['maximumPageSize'])||Number(p['maximumPageSize'])<Number(p['pageSize'])
+      ||!Number.isSafeInteger(p['returned'])||Number(p['returned'])<0||Number(p['returned'])>Number(p['pageSize'])
+      ||typeof p['hasMore']!=='boolean'||!(p['nextCursor']===null||typeof p['nextCursor']==='string')
+      ||p['hasMore']!==(typeof p['nextCursor']==='string'&&!!p['nextCursor'])
+      ||p['sort']!=='id:asc'||typeof p['label']!=='string'||!p['label']
+      ||!Array.isArray(response['list'])||response['list'].length!==p['returned'])
+      throw new FunctionalApiError('PAGE_INVALID','El servidor no confirmó una página válida.');
+    const before=this.pages()[route];
+    this.pages.update(all=>({...all,[route]:{route,label:p['label'] as string,pageSize:Number(p['pageSize']),maximumPageSize:Number(p['maximumPageSize']),
+     returned:Number(p['returned']),hasMore:p['hasMore'] as boolean,nextCursor:p['nextCursor'] as string|null,
+     cursor:before?.cursor??null,history:before?.history??[],index:before?.index??1,search:before?.search??'',loading:false}}));
+  }
+
   login(payload:{userName:string;password:string}):Observable<void>{return this.session.login(payload.userName,payload.password);}
   getEmpresaById(idCompany?:number):Observable<Record<string,any>>{return this.callAjaxPost('/empresa/id',idCompany?{idCompany}:{});}
   getEmpresaMensaje(idCompany?:number):Observable<Record<string,any>>{return this.callAjaxPost('/empresa/mensaje',idCompany?{idCompany}:{});}
@@ -44,14 +87,17 @@ export class GosstApiService {
     const payload={...dataParam};
     for(const name of ['idEmpresa','empresaId','idCompany','idContratista','contratistaId','usuario','rolAprobador'])delete payload[name];
     const mutating=/(?:^|\/)(?:insert|save|update|delete|remove|votar|register|registrar|enviar)/i.test(route);
+    let intentData:Record<string,unknown>={};
     if(mutating){
       if(payload['idempotencyKey']!==undefined&&!isGuid(payload['idempotencyKey']))throw new FunctionalApiError('REQUEST_INVALID','Identificador de solicitud no valido.');
-      payload['idempotencyKey']??=this.intents.key(route,payload);
       if(!payload['expectedVersion']&&typeof payload['version']==='string')payload['expectedVersion']=payload['version'];
       delete payload['version'];
+      intentData={...payload};delete intentData['idempotencyKey'];
+      payload['idempotencyKey']??=this.intents.key(route,intentData);
       if(/(?:^|\/)(?:update|delete|remove)/i.test(route)&&!isRowVersion(payload['expectedVersion']))return throwError(()=>new FunctionalApiError('VERSION_REQUIRED','Consulte nuevamente el registro antes de modificarlo o eliminarlo.'));
     }
-    return this.http.post<unknown>('/sst'+route,payload,{withCredentials:true}).pipe(map(raw=>{
+    const sequence=mutating?0:this.prepareQuery(route,payload);
+    return this.http.post<unknown>('/sst'+route,payload,{withCredentials:true,headers:mutating?{}:{'X-Msst-List-Contract':'3'}}).pipe(map(raw=>{
       const confirmed=validateLegacyResponse(raw);
       if(mutating){
         if(confirmed['CODE_RESPONSE']!=='05'||confirmed['STATUS_CODE']!=='01')throw new FunctionalApiError('RECEIPT_INVALID','La escritura no se confirmó en la base de datos.');
@@ -60,9 +106,11 @@ export class GosstApiService {
         if(!isRowVersion(snapshot['version']))throw new FunctionalApiError('RECEIPT_INVALID','Falta la versión persistida de la operación.');
         const record=asObject(snapshot['record']);
         if(!isSafeId(record['id'])||record['version']!==snapshot['version'])throw new FunctionalApiError('RECEIPT_INVALID','Falta el identificador persistido.');
+        this.intents.confirmed(route,intentData,String(payload['idempotencyKey']));
       }
+      if(!mutating)this.acceptQuery(route,confirmed,sequence);
       return confirmed as T;
-    }));
+    }),finalize(()=>{const page=this.pages()[route];if(page&&!mutating&&this.querySequence.get(route)===sequence)this.pages.update(all=>({...all,[route]:{...page,loading:false}}));}));
   }
 }
 

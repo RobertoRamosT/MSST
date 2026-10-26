@@ -1,3 +1,5 @@
+import {QueryPagesComponent} from '../../core/components/query-pages.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -12,7 +14,7 @@ export type PermisoModuloItem=ProfilePermission;
 @Component({
   selector: 'msst-modulo01-seguridad',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [QueryPagesComponent,CommonModule, FormsModule],
   template: `
 @if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
 
@@ -512,7 +514,9 @@ export type PermisoModuloItem=ProfilePermission;
         </div>
       </div>
     }
-  `
+
+<msst-query-pages [routes]="pageRoutes" />
+`
 })
 export class Modulo01SeguridadPerfilesComponent implements OnInit {
   readonly mensajeOperacion=signal('');
@@ -577,6 +581,8 @@ export class Modulo01SeguridadPerfilesComponent implements OnInit {
 
   // Visor 1:1
 
+  readonly pageRoutes=['/perfil/lista', '/usuario/lista'];
+  private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarPerfiles();
     this.cargarUsuarios();

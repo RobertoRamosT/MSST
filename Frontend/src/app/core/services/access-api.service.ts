@@ -42,7 +42,7 @@ export class AccessApiService{
  savePolicy(data:AccessPolicyDraft,expectedVersion:string|null):Observable<AccessPolicy>{
   const payload={...structuredClone(data),expectedVersion};const idempotencyKey=this.intents.key('access-policy',payload);
   return this.http.put<unknown>('/sst/access/policy',{...payload,idempotencyKey}).pipe(map(raw=>{
-   const policy=readAccessPolicy(raw,'ACCESS_POLICY_SAVED',idempotencyKey);if(!policy)throw new WorkflowContractError('Falta la política guardada.');return policy;
+   const policy=readAccessPolicy(raw,'ACCESS_POLICY_SAVED',idempotencyKey);if(!policy)throw new WorkflowContractError('Falta la política guardada.');this.intents.confirmed('access-policy',payload,idempotencyKey);return policy;
   }));
  }
  evaluate(subjectType:string,identifier:string,direction:string,projectId:number|null=null,zoneId:number|null=null):Observable<AccessDecision>{
@@ -64,6 +64,7 @@ export class AccessApiService{
    if(!version(s['version'])||r['version']!==s['version']||!isSafeId(r['id'])||typeof r['autorizado']!=='boolean'||r['autorizado']!==decision.habilitado
     ||r['movimiento']!==decision.direction||!text(r['documentoOPlaca'])||!text(r['nombre'])||!text(r['garita'])||!text(r['vigilante'])
     ||!text(r['fechaRegistro'])||!Number.isFinite(Date.parse(r['fechaRegistro'])))throw new WorkflowContractError('No se confirmó el movimiento persistido.');
+   this.intents.confirmed('access-register',data,idempotencyKey);
    return structuredClone(s);
   }));
  }

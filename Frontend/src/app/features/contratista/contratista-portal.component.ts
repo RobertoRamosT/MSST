@@ -511,18 +511,18 @@ const PREF_COMPACTO = 'onesst.ui.compacto';
         }
 
         @switch (moduloActivo()) {
-          @case ('MOD_01') { <msst-modulo01-seguridad [tab]="tabActiva()" /> }
-          @case ('MOD_02') { <msst-modulo02-organizacion [tab]="tabActiva()" /> }
-          @case ('MOD_03') { <msst-modulo03-contratistas [tab]="tabActiva()" /> }
-          @case ('MOD_04') { <msst-modulo04-portal-trabajador [tab]="tabActiva()" /> }
-          @case ('MOD_05') { <msst-modulo05-trabajadores [tab]="tabActiva()" /> }
-          @case ('MOD_06') { <msst-modulo06-prevencion [tab]="tabActiva()" /> }
-          @case ('MOD_07') { <msst-modulo07-accidentes [tab]="tabActiva()" /> }
-          @case ('MOD_08') { <msst-modulo08-recursos [tab]="tabActiva()" /> }
-          @case ('MOD_09') { <msst-modulo09-salud [tab]="tabActiva()" /> }
-          @case ('MOD_10') { <msst-modulo10-auditorias [tab]="tabActiva()" /> }
-          @case ('MOD_11') { <msst-modulo11-ambiente [tab]="tabActiva()" /> }
-          @case ('MOD_12') { <msst-modulo12-bi [tab]="tabActiva()" /> }
+          @case ('MOD_01') { @defer(on immediate){ <msst-modulo01-seguridad [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_02') { @defer(on immediate){ <msst-modulo02-organizacion [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_03') { @defer(on immediate){ <msst-modulo03-contratistas [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_04') { @defer(on immediate){ <msst-modulo04-portal-trabajador [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_05') { @defer(on immediate){ <msst-modulo05-trabajadores [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_06') { @defer(on immediate){ <msst-modulo06-prevencion [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_07') { @defer(on immediate){ <msst-modulo07-accidentes [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_08') { @defer(on immediate){ <msst-modulo08-recursos [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_09') { @defer(on immediate){ <msst-modulo09-salud [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_10') { @defer(on immediate){ <msst-modulo10-auditorias [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_11') { @defer(on immediate){ <msst-modulo11-ambiente [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
+          @case ('MOD_12') { @defer(on immediate){ <msst-modulo12-bi [tab]="tabActiva()" /> }@placeholder{ <p role="status">Cargando módulo…</p> } }
         }
       </div>
     </main>
@@ -2249,7 +2249,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
       next: (res) => {
         const lista = Array.isArray(res?.['list']) ? res['list'] : [];
         if (lista.length) {
-          this.kpiGaritaPersonal.set(`${lista.length} trabajadores registrados`);
+          this.kpiGaritaPersonal.set(`${lista.length} trabajadores en la página consultada`);
         }
       }
     });
@@ -2257,7 +2257,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
       next: (res) => {
         const lista = Array.isArray(res?.['list']) ? res['list'] : [];
         if (lista.length) {
-          this.kpiMatricesIperc.set(`${lista.length} matrices registradas`);
+          this.kpiMatricesIperc.set(`${lista.length} matrices en la página consultada`);
         }
       }
     });

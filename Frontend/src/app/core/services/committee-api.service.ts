@@ -47,6 +47,6 @@ export class CommitteeApiService{
  private get(path:string,code:string):Observable<CommitteeEnvelope>{return this.http.get<unknown>(this.base+path).pipe(map(raw=>readCommitteeEnvelope(raw,code)));}
  private post(path:string,data:Record<string,unknown>,code:string):Observable<CommitteeEnvelope>{
   const idempotencyKey=this.intents.key(path,data);
-  return this.http.post<unknown>(this.base+path,{...structuredClone(data),idempotencyKey}).pipe(map(raw=>readCommitteeEnvelope(raw,code,idempotencyKey)));
+  return this.http.post<unknown>(this.base+path,{...structuredClone(data),idempotencyKey}).pipe(map(raw=>{const result=readCommitteeEnvelope(raw,code,idempotencyKey);this.intents.confirmed(path,data,idempotencyKey);return result;}));
  }
 }

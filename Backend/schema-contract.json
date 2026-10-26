@@ -1,0 +1,123 @@
+{
+  "Migrations": [
+    {
+      "Name": "25_Integridad_Identidad_Efectos_Dominio.sql",
+      "Sha256": "8257ebee9bd0426caec6467cea13b527ff630ea5e8505b119bd2578fc3869f6b"
+    },
+    {
+      "Name": "26_Evidencias_Reservas_Reconciliacion.sql",
+      "Sha256": "c585b9bed46465406c786d00f5c053da724481d425e011964acbc23f2cc65b8b"
+    },
+    {
+      "Name": "27_Operacion_Paginacion_Contrato.sql",
+      "Sha256": "48758d7357fa8c20321200d2c32b33a90619fe60afe58f5bbab8b191a495c189"
+    },
+    {
+      "Name": "28_Workflow_Evaluacion_Clinica.sql",
+      "Sha256": "2175ca35d9bdc28bfc9602058cf0ffe566018dc986a2e0fad4c06e31a9438406"
+    }
+  ],
+  "Objects": [
+    {
+      "Name": "[dbo].[AccessV2_LegacyRecord]",
+      "Sha256": "0d4914f374eefa54af1f6b8e88c005e510cd1c9d8cb189abdf6ed6ab260b85aa"
+    },
+    {
+      "Name": "[dbo].[SecV2_EffectivePermission]",
+      "Sha256": "7fa8eaadfd3513c937f82a2b6d0c79a4aeb140a55d657386d62ee5b9bc445b2c"
+    },
+    {
+      "Name": "[dbo].[SecV2_Identity]",
+      "Sha256": "4f42737fa1c1c227a6a7abfc53f8156c93fb91ffc770880e2154e13e3bedceb0"
+    },
+    {
+      "Name": "[dbo].[ufn_CommitteeV2_ActaJson]",
+      "Sha256": "46d41e3ad3e453fd26e177beb9ea33be45674fa2d8429ec03d20281aa19c0315"
+    },
+    {
+      "Name": "[dbo].[ufn_WfV2_DefinitionJson]",
+      "Sha256": "6b158787f7f4ee7eb49b55b786e89a2a791260e9303c532fcef2dd85e1754740"
+    },
+    {
+      "Name": "[dbo].[ufn_WfV2_SnapshotJson]",
+      "Sha256": "58a99037d32089d736e5616f3ce44e960ac8086cd566113d41fdbec6fa75f8c1"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_AccessV2]",
+      "Sha256": "73d3354d8c5b34b7801aa4c978634ee244e8a6fadeb91c52a3828d1d507ed238"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_BootstrapV2]",
+      "Sha256": "47eb6f55a71c6feae1855918dff31da961e4c79b8d6c1a94ba82f26084bbab03"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_ClinicalWorkflowV2]",
+      "Sha256": "1f9e92e0155959fcde3c8d18827b0982f2ae232326c030071305ea88f8b2e335"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_CommitteeV2]",
+      "Sha256": "966ecaf1e2a4e92ca27ddac5cc7f0973d8438a647d165ce5848f947180a3df4e"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_EvidenceReservationV2]",
+      "Sha256": "b0c5f07838eafe96ef1d10d923d13051f969c8fc9753b375eefda5c62e4d48c6"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_EvidenceV2]",
+      "Sha256": "a27659025269a2993eafb5938033c40205560c438a5ec27cf615aae9d991886b"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_LegacyV2]",
+      "Sha256": "2d0941cf666bfad35bebd65cb61c00f347f26075a4710ddcb4ef5e5de81ee1b6"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_ProfilePermissions]",
+      "Sha256": "3c6bb6c4970246f0ab4b0550c980dfb5621c7c031ceebceb30920833244e69db"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_SecurityV2]",
+      "Sha256": "7c0796be8953d4dc2d0a7b5e1292a644fbe809c266dcf585d46acf0706e177d4"
+    },
+    {
+      "Name": "[dbo].[usp_Msst_WorkflowV2]",
+      "Sha256": "f28b09ec527bcbb65a8ef994ef31a9f29cf6ca11b299506c802b5a9f183d9c95"
+    },
+    {
+      "Name": "[dbo].[WfV2_ClinicalCandidate]",
+      "Sha256": "78f5cfae0c8dbe3ee5e3fa7e6fbd05c4590cecd7268bf6611d73ca32abc47a6a"
+    },
+    {
+      "Name": "[dbo].[WfV2_EvidenceContentPolicy]",
+      "Sha256": "9ec63b50a9364cd320d73dcb5e003f5184f7472f56a6e3530525050816ca51fc"
+    },
+    {
+      "Name": "[dbo].[WfV2_EvidenceScope]",
+      "Sha256": "5c3161b9a947acde7bcba0c6eade954b7282e8724a9a4e8958e30229517e6479"
+    },
+    {
+      "Name": "[dbo].[WfV2_FinalizationRule]",
+      "Sha256": "5bfa992a3588130c619314c8b1d80e1b2a34b80481a2a4a4b08d5ea17be500c0"
+    },
+    {
+      "Name": "[dbo].[WfV2_RequirementEvaluation]",
+      "Sha256": "aabb6ee4c94076a607e1331ecf8577b121cdd8536c745a2dc5900169837c6b1f"
+    },
+    {
+      "Name": "[dbo].[WfV2_Subject]",
+      "Sha256": "ff2d6e6ae50fd7b293a323fac29404bd71e5c54dcc2469dc6fc919984efb8571"
+    },
+    {
+      "Name": "[dbo].[WfV2_SubjectExtension]",
+      "Sha256": "8003e8e14f6635d9c8319cb006b947321dea40e8626bb1d663eb489280a386e0"
+    },
+    {
+      "Name": "[dbo].[WfV2_VisibleSubject]",
+      "Sha256": "afe02c29b8f97159fb0e0b7a22d11582504e34c8f4d5da46d49a0a9dd0f0edcd"
+    },
+    {
+      "Name": "[dbo].[WfV2_VisibleSubjectExtension]",
+      "Sha256": "b4cedeffd85491f1df7d8e9b1e5c5f2ff7117a92c25375cce988896ded5d6cf2"
+    }
+  ],
+  "TablesSha256": "e15327deb41b4e7c85886024365013ef59cf73a9e6bf4753df03533005880ae7"
+}

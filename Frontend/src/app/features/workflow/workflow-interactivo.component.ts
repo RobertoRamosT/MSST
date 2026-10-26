@@ -1,3 +1,4 @@
+import {ClinicalWorkflowService,ClinicalRecord,ClinicalOption} from '../../core/services/clinical-workflow.service';
 import { Component, EventEmitter, Input, Output, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -26,14 +27,14 @@ import { EvidenceApiService, EvidenceReceipt, WorkflowApiService, WorkflowCase, 
     <main class="console">
       <header><div><h1>Procesos y expedientes SST</h1><p>Estado, requisitos y trazabilidad confirmados por el servidor.</p></div>
         <div class="tools no-print"><button (click)="portal()">Volver al portal</button><button (click)="reload()" [disabled]="busy()">Actualizar</button>
-        <button class="primary" (click)="openCreate()">Nuevo expediente</button><button (click)="openDefinition()">Configurar proceso</button></div>
+        <button class="primary" (click)="openCreate()" [disabled]="busy()">Nuevo expediente</button><button (click)="openDefinition()" [disabled]="busy()">Configurar proceso</button></div>
       </header>
       @if(message()){<p role="status" [class.error]="failed()" [class.ok]="!failed()">{{message()}}</p>}
       @for(v of violations();track $index){<p class="error">{{v.requirementCode}}: {{v.message}}</p>}
       <section class="card no-print grid">
-        <label>Caso <select [ngModel]="caseCode()" (ngModelChange)="selectCase($event)"><option value="">Seleccione un caso</option>
+        <label>Caso <select [disabled]="busy()" [ngModel]="caseCode()" (ngModelChange)="selectCase($event)"><option value="">Seleccione un caso</option>
           @for(c of cases();track c.codigoCaso){<option [value]="c.codigoCaso">{{c.nombre}}</option>}</select></label>
-        <label>Subtipo y versión <select [ngModel]="definitionId()" (ngModelChange)="selectDefinition(+$event)"><option [ngValue]="0">Seleccione una definición</option>
+        <label>Subtipo y versión <select [disabled]="busy()" [ngModel]="definitionId()" (ngModelChange)="selectDefinition(+$event)"><option [ngValue]="0">Seleccione una definición</option>
           @for(d of definitions();track d.definitionId){<option [ngValue]="d.definitionId">{{d.nombre}} · {{d.subtipo}} · v{{d.definitionVersion}} · {{d.status}}</option>}</select></label>
         <label>Buscar expediente <input [(ngModel)]="search" placeholder="Código, título o sujeto"></label>
       </section>
@@ -42,7 +43,7 @@ import { EvidenceApiService, EvidenceReceipt, WorkflowApiService, WorkflowCase, 
         <table><thead><tr><th>Código</th><th>Título y sujeto</th><th>Estado</th><th>Etapa</th><th>Cumplimiento</th><th class="no-print">Detalle</th></tr></thead>
           <tbody>@for(e of filtered();track e.expedienteId){<tr [class.current]="current()?.expedienteId===e.expedienteId">
             <td>{{e.codigoExpediente}}</td><td>{{e.titulo}}<br><span class="muted">{{e.subject.label}}</span></td><td>{{e.estadoGeneral}}</td>
-            <td>{{e.etapaActual}} / {{e.totalEtapas}}</td><td>{{e.cumplimientoPorc}}%</td><td class="no-print"><button (click)="load(e.expedienteId)">Abrir</button></td>
+            <td>{{e.etapaActual}} / {{e.totalEtapas}}</td><td>{{e.cumplimientoPorc}}%</td><td class="no-print"><button (click)="load(e.expedienteId)" [disabled]="busy()">Abrir</button></td>
           </tr>}@empty{<tr><td colspan="6">No hay expedientes confirmados para la selección.</td></tr>}</tbody>
         </table>
       </section>
@@ -107,6 +108,12 @@ import { EvidenceApiService, EvidenceReceipt, WorkflowApiService, WorkflowCase, 
           <label>Decisión <select [(ngModel)]="proofDecision" [disabled]="busy()"><option value="">Seleccione</option><option value="APPROVED">Aprobado</option>
             <option value="OBSERVED">Observado</option><option value="REJECTED">Rechazado</option></select></label>
           <label>Vigente hasta @if(r.requiresValidityEnd){<strong>· Obligatorio</strong>}<input type="datetime-local" [(ngModel)]="validUntil" [required]="r.requiresValidityEnd" [disabled]="busy()"></label>
+          @if(r.requiresClinicalReview){
+           <p>La aprobación debe vincular una evaluación médica vigente de este trabajador. Su vigencia no puede superar la del registro clínico.</p>
+           <label>Evaluación clínica confirmada <select [(ngModel)]="clinicalRecordId" [disabled]="busy()||clinicalLoading"><option [ngValue]="0">Seleccione evaluación</option>
+            @for(m of clinicalRecords();track m.clinicalRecordId){<option [ngValue]="m.clinicalRecordId">{{m.outcomeLabel}} · {{m.clinic}} · {{m.examinedOn}} – {{m.expiresOn}}</option>}
+           </select></label><button (click)="loadClinicalRecords(true)" [disabled]="busy()||clinicalLoading">Consultar más evaluaciones</button>
+          }
           <label>Comentario <textarea [(ngModel)]="proofComment" [disabled]="busy()"></textarea></label>
           <label>Evidencia para firma <select [(ngModel)]="signatureEvidenceId" [disabled]="busy()"><option value="">Seleccione documento</option>
             @for(id of requirementEvidenceIds(r);track id){<option [value]="id">{{id}}</option>}</select></label>
@@ -148,7 +155,9 @@ import { EvidenceApiService, EvidenceReceipt, WorkflowApiService, WorkflowCase, 
             <label>Estado de destino <input [(ngModel)]="t.toStateCode"></label><label>Roles (separados por coma) <input [(ngModel)]="t.rolesText"></label>
             <label><input type="checkbox" [(ngModel)]="t.requiresVerifiedRequirements">Exige requisitos verificados</label>
             <label><input type="checkbox" [(ngModel)]="t.requiresComment">Exige comentario</label><label><input type="checkbox" [(ngModel)]="t.isFinal">Acción final</label>
-            <label>Efecto operativo (opcional) <input [(ngModel)]="t.effectCode"></label><label>Valor del efecto (opcional) <input [(ngModel)]="t.effectValue"></label>
+            <label>Efecto operativo (opcional) <input [(ngModel)]="t.effectCode"></label><label>Valor del efecto (opcional) @if(t.effectCode==='WORKER_APTITUDE'){
+<select [(ngModel)]="t.effectValue"><option value="">Seleccione dictamen vigente</option>@for(o of clinicalOptions();track o.code){<option [value]="o.code">{{o.label}}</option>}</select>
+}@else{<input [(ngModel)]="t.effectValue">}</label>
             <button (click)="draft.transitions.splice(ti,1)">Quitar acción</button>
           </section>}<button (click)="addTransition()">Añadir acción</button>
           <p role="alert">{{dialogError()}}</p>
@@ -179,6 +188,7 @@ export class WorkflowInteractivoComponent implements OnInit{
   readonly currentStage=computed(()=>this.currentDefinition()?.stages.find(s=>s.stageCode===this.viewStage())??null);
   readonly visibleRequirements=computed(()=>this.current()?.requirements.filter(r=>r.stageCode===this.viewStage())??[]);
   search='';newTitle='';subjectSearch='';subjectId=0;comment='';values:Record<string,string>={};files:Record<string,File>={};
+  readonly clinical=inject(ClinicalWorkflowService);readonly clinicalRecords=signal<ClinicalRecord[]>([]);readonly clinicalOptions=signal<ClinicalOption[]>([]);clinicalRecordId=0;clinicalLoading=false;clinicalAfter=0;
   proofDecision='';proofComment='';validUntil='';signatureId='';signatureEvidenceId='';signatureFile:File|null=null;
   draft:{codigoCaso:string;subtipo:string;nombre:string;subjectType:string;initialStageCode:string;initialStateCode:string;stages:any[];transitions:any[]}={codigoCaso:'',subtipo:'',nombre:'',subjectType:'',initialStageCode:'',initialStateCode:'',stages:[],transitions:[]};
   @Output() readonly loaded=new EventEmitter<WorkflowSnapshot>();
@@ -186,11 +196,26 @@ export class WorkflowInteractivoComponent implements OnInit{
   ngOnInit():void{this.reload();const id=Number(this.route.snapshot.queryParamMap.get('expedienteId'));if(Number.isSafeInteger(id)&&id>0)this.load(id);}
   portal():void{void this.router.navigate(['/contratista']);}
   reload():void{this.api.catalog().subscribe({next:r=>{this.cases.set(r.cases);if(!this.caseCode()&&r.cases[0]){this.caseCode.set(this.current()?.codigoCaso??r.cases[0].codigoCaso);this.loadList();}},error:e=>this.fail(e)});this.loadList();}
-  selectCase(code:string):void{this.caseCode.set(code);this.definitionId.set(0);this.current.set(null);this.loadList();}
-  selectDefinition(id:number):void{this.definitionId.set(id);this.current.set(null);this.loadList();}
-  loadList():void{this.api.list(this.caseCode()||undefined,this.definition()?.subtipo).subscribe({next:r=>this.rows.set(r.expedientes),error:e=>this.fail(e)});}
+  selectCase(code:string):void{if(this.busy())return;this.cancelDetail();this.caseCode.set(code);this.definitionId.set(0);this.current.set(null);this.loadList();}
+  selectDefinition(id:number):void{if(this.busy())return;this.cancelDetail();this.definitionId.set(id);this.current.set(null);this.loadList();}
+  private listRequest:{unsubscribe():void}|null=null;
+  private listSequence=0;
+  loadList():void{const sequence=++this.listSequence;this.listRequest?.unsubscribe();this.listRequest=this.api.list(this.caseCode()||undefined,this.definition()?.subtipo).subscribe({next:r=>{if(sequence===this.listSequence)this.rows.set(r.expedientes);},error:e=>{if(sequence===this.listSequence)this.fail(e);}});}
   filtered():WorkflowSnapshot[]{const q=this.search.trim().toLowerCase();return this.rows().filter(e=>(!this.caseCode()||e.codigoCaso===this.caseCode())&&(!this.definition()||e.subtipo===this.definition()?.subtipo)&&(!q||(e.codigoExpediente+' '+e.titulo+' '+e.subject.label).toLowerCase().includes(q)));}
-  load(id:number):void{if(this.busy())return;this.api.detail(id).subscribe({next:r=>{if(r.snapshot)this.apply(r.snapshot);},error:e=>this.fail(e)});}
+  private detailRequest:{unsubscribe():void}|null=null;
+  private detailSequence=0;
+  private clinicalSequence=0;
+  load(id:number):void{
+    if(this.busy()||!Number.isSafeInteger(id)||id<=0)return;
+    const sequence=++this.detailSequence;
+    this.detailRequest?.unsubscribe();
+    this.detailRequest=this.api.detail(id).subscribe({
+      next:r=>{if(sequence===this.detailSequence&&r.snapshot)this.apply(r.snapshot);},
+      error:e=>{if(sequence===this.detailSequence)this.fail(e);}
+    });
+  }
+  private cancelDetail():void{this.detailSequence++;this.detailRequest?.unsubscribe();this.detailRequest=null;}
+  ngOnDestroy():void{this.cancelDetail();this.clinicalSequence++;this.listSequence++;this.listRequest?.unsubscribe();}
   private apply(snapshot:WorkflowSnapshot):void{
     this.current.set(snapshot);this.loaded.emit(snapshot);this.viewStage.set(snapshot.stageCode);this.rows.update(rows=>{const exists=rows.some(r=>r.expedienteId===snapshot.expedienteId);return exists?rows.map(r=>r.expedienteId===snapshot.expedienteId?snapshot:r):[snapshot,...rows];});
     this.receipts.set({});this.files={};this.values=Object.fromEntries(snapshot.requirements.map(r=>[r.requirementCode,r.declaredValue??'']));
@@ -201,37 +226,48 @@ export class WorkflowInteractivoComponent implements OnInit{
   }
   private fail(error:unknown):void{const f=workflowFailure(error);this.busy.set(false);this.failed.set(true);this.message.set(f.message);this.dialogError.set(f.message);this.violations.set(f.violations);}
   private success(message:string):void{this.busy.set(false);this.failed.set(false);this.message.set(message);this.dialogError.set('');this.violations.set([]);}
-  openCreate():void{if(!this.definition()||this.definition()?.status!=='PUBLISHED'){this.fail(new Error('Seleccione una definición publicada y válida para crear el expediente.'));return;}this.createOpen.set(true);this.dialogError.set('');this.subjects.set([]);this.subjectId=0;}
+  openCreate():void{if(this.busy())return;if(!this.definition()||this.definition()?.status!=='PUBLISHED'){this.fail(new Error('Seleccione una definición publicada y válida para crear el expediente.'));return;}this.cancelDetail();this.createOpen.set(true);this.dialogError.set('');this.subjects.set([]);this.subjectId=0;}
   searchSubjects():void{const d=this.definition();if(!d)return;this.api.subjects(d.subjectType,this.subjectSearch).subscribe({next:r=>this.subjects.set(r.subjects),error:e=>this.fail(e)});}
   create():void{
     const d=this.definition(),subject=this.subjects().find(s=>s.subjectId===this.subjectId);
     if(this.busy()||!d||!subject||!this.newTitle.trim())return;
-    this.busy.set(true);this.api.create({codigoCaso:d.codigoCaso,subtipo:d.subtipo,definitionVersion:d.definitionVersion,titulo:this.newTitle.trim(),subjectType:subject.subjectType,subjectId:subject.subjectId}).subscribe({
+    this.cancelDetail();this.busy.set(true);this.api.create({codigoCaso:d.codigoCaso,subtipo:d.subtipo,definitionVersion:d.definitionVersion,titulo:this.newTitle.trim(),subjectType:subject.subjectType,subjectId:subject.subjectId}).subscribe({
       next:r=>{if(r.snapshot)this.apply(r.snapshot);this.createOpen.set(false);this.success(r.message);},error:e=>this.fail(e)});
   }
-  openAction(action:WorkflowTransition):void{if(this.busy())return;this.action.set(action);this.actionOpen.set(true);this.dialogError.set('');}
+  openAction(action:WorkflowTransition):void{if(this.busy())return;this.cancelDetail();this.action.set(action);this.actionOpen.set(true);this.dialogError.set('');}
   execute():void{
     const s=this.current(),a=this.action();if(this.busy()||!s||!a)return;
     if(a.requiresComment&&!this.comment.trim()){this.dialogError.set('Ingrese el comentario requerido para esta acción.');return;}
     try{const request=this.api.action(s,{expectedVersion:s.version,definitionVersion:s.definitionVersion,actionCode:a.actionCode,
       values:s.requirements.map(r=>({requirementCode:r.requirementCode,value:this.values[r.requirementCode]??''})),evidenceIds:[...new Set(s.requirements.flatMap(r=>this.requirementEvidenceIds(r)))],comment:this.comment||null});
-      this.busy.set(true);request.subscribe({next:r=>{if(r.snapshot)this.apply(r.snapshot);this.actionOpen.set(false);this.success(r.message);if(r.replayed&&r.snapshot)this.load(r.snapshot.expedienteId);},error:e=>this.fail(e)});
+      this.cancelDetail();this.busy.set(true);request.subscribe({next:r=>{if(r.snapshot)this.apply(r.snapshot);this.actionOpen.set(false);this.success(r.message);if(r.replayed&&r.snapshot)this.load(r.snapshot.expedienteId);},error:e=>this.fail(e)});
     }catch(e){this.fail(e);}
   }
   chooseFile(r:WorkflowRequirement,event:Event):void{const file=(event.target as HTMLInputElement).files?.[0];if(file)this.files[r.requirementCode]=file;}
-  upload(r:WorkflowRequirement):void{const s=this.current(),file=this.files[r.requirementCode];if(this.busy()||!s||!file)return;this.busy.set(true);
+  upload(r:WorkflowRequirement):void{const s=this.current(),file=this.files[r.requirementCode];if(this.busy()||!s||!file)return;this.cancelDetail();this.busy.set(true);
     this.evidence.upload(file,s,r.requirementCode).subscribe({next:receipt=>{this.receipts.update(all=>({...all,[r.requirementCode]:receipt}));this.success('El archivo se persistió. Registre la revisión del requisito para confirmar su cumplimiento.');},error:e=>this.fail(e)});}
   requirementEvidenceIds(r:WorkflowRequirement):string[]{const receipt=this.receipts()[r.requirementCode];return [...new Set([...r.evidenceIds,...(receipt?[receipt.evidenceId]:[])])];}
-  openProof(r:WorkflowRequirement):void{this.proofRequirement.set(r);this.proofOpen.set(true);this.dialogError.set('');this.signatureId='';this.signatureFile=null;this.signatureEvidenceId='';}
+  openProof(r:WorkflowRequirement):void{if(this.busy())return;this.cancelDetail();this.clinicalSequence++;this.clinicalLoading=false;this.proofRequirement.set(r);this.proofOpen.set(true);this.dialogError.set('');this.proofDecision='';this.proofComment='';this.validUntil='';this.signatureId='';this.signatureFile=null;this.signatureEvidenceId='';this.clinicalRecordId=0;this.clinicalAfter=0;this.clinicalRecords.set([]);if(r.requiresClinicalReview)this.loadClinicalRecords();}
+  loadClinicalRecords(more=false):void{
+   const s=this.current(),r=this.proofRequirement();if(!s||!r||this.clinicalLoading)return;
+   const id=s.expedienteId,requirement=r.requirementCode,sequence=++this.clinicalSequence;this.clinicalLoading=true;
+   this.clinical.records(id,more?this.clinicalAfter:0).subscribe({next:rows=>{
+    if(sequence!==this.clinicalSequence)return;this.clinicalLoading=false;if(this.current()?.expedienteId!==id||this.proofRequirement()?.requirementCode!==requirement||!this.proofOpen())return;
+    this.clinicalRecords.update(before=>more?[...before,...rows]:rows);this.clinicalAfter=rows.at(-1)?.clinicalRecordId??this.clinicalAfter;
+    if(!rows.length)this.dialogError.set('No hay más evaluaciones vigentes para este trabajador y su autorización profesional.');
+   },error:e=>{if(sequence!==this.clinicalSequence)return;this.clinicalLoading=false;if(this.current()?.expedienteId===id)this.dialogError.set(workflowFailure(e).message);}});
+  }
   chooseSignature(event:Event):void{this.signatureFile=(event.target as HTMLInputElement).files?.[0]??null;this.signatureId='';}
-  verifySignature():void{const s=this.current();if(this.busy()||!s||!this.signatureFile||!this.signatureEvidenceId)return;this.busy.set(true);
+  verifySignature():void{const s=this.current();if(this.busy()||!s||!this.signatureFile||!this.signatureEvidenceId)return;this.cancelDetail();this.busy.set(true);
     this.evidence.sign(this.signatureFile,this.signatureEvidenceId,s.version).subscribe({next:id=>{this.signatureId=id;this.success('Firma del documento verificada por el servidor.');},error:e=>this.fail(e)});}
   recordProof():void{const s=this.current(),r=this.proofRequirement();if(this.busy()||!s||!r||!this.proofDecision)return;
     let date:string|null=null;if(this.validUntil){const parsed=new Date(this.validUntil);if(!Number.isFinite(parsed.getTime())){this.dialogError.set('La vigencia es inválida.');return;}date=parsed.toISOString();}
-    this.busy.set(true);this.api.proof(s,{requirementCode:r.requirementCode,decision:this.proofDecision,evidenceIds:this.requirementEvidenceIds(r),validUntilUtc:date,comment:this.proofComment||null,signatureId:this.signatureId||null}).subscribe({
+    const medical=r.requiresClinicalReview&&this.proofDecision==='APPROVED'?this.clinicalRecords().find(m=>m.clinicalRecordId===this.clinicalRecordId):undefined;
+    if(r.requiresClinicalReview&&this.proofDecision==='APPROVED'&&!medical){this.dialogError.set('Seleccione la evaluación médica confirmada de este trabajador.');return;}
+    this.cancelDetail();this.busy.set(true);this.api.proof(s,{requirementCode:r.requirementCode,decision:this.proofDecision,evidenceIds:this.requirementEvidenceIds(r),validUntilUtc:date,comment:this.proofComment||null,signatureId:this.signatureId||null,...(medical?{clinicalRecordId:medical.clinicalRecordId,clinicalRecordVersion:medical.version}:{})}).subscribe({
       next:result=>{if(result.snapshot)this.apply(result.snapshot);this.proofOpen.set(false);this.success(result.message);if(result.replayed&&result.snapshot)this.load(result.snapshot.expedienteId);},error:e=>this.fail(e)});
   }
-  openDefinition():void{this.legacy.callAjaxPost('/usuario/lista',{}).subscribe({next:r=>{try{this.roleUsers.set(confirmedList<Record<string,unknown>>(r));}catch(e){this.fail(e);}},error:e=>this.fail(e)});this.definitionOpen.set(true);this.dialogError.set('');const d=this.definition();if(d){this.draft={codigoCaso:d.codigoCaso,subtipo:d.subtipo,nombre:d.nombre,subjectType:d.subjectType,initialStageCode:d.initialStageCode,initialStateCode:d.initialStateCode,
+  openDefinition():void{if(this.busy())return;this.clinical.options().subscribe({next:o=>this.clinicalOptions.set(o),error:e=>this.dialogError.set(workflowFailure(e).message)});this.legacy.callAjaxPost('/usuario/lista',{}).subscribe({next:r=>{try{this.roleUsers.set(confirmedList<Record<string,unknown>>(r));}catch(e){this.fail(e);}},error:e=>this.fail(e)});this.definitionOpen.set(true);this.dialogError.set('');const d=this.definition();if(d){this.draft={codigoCaso:d.codigoCaso,subtipo:d.subtipo,nombre:d.nombre,subjectType:d.subjectType,initialStageCode:d.initialStageCode,initialStateCode:d.initialStateCode,
     stages:d.stages.map(s=>({...structuredClone(s),requirements:s.requirements.map(r=>({...r,rolesText:r.verifierRoles.join(', ')}))})),transitions:d.transitions.map(t=>({...structuredClone(t),rolesText:t.requiredRoles.join(', ')}))};this.savedDefinition.set(d);}else this.savedDefinition.set(null);}
   addStage():void{this.draft.stages.push({stageCode:'',order:this.draft.stages.length+1,title:'',roleCode:'',deadlineHours:null,allowNoRequirements:false,requirements:[]});}
   addRequirement(index:number):void{this.draft.stages[index].requirements.push({requirementCode:'',title:'',verificationKind:'',mandatory:false,evidenceRequired:false,requiresValidityEnd:false,maxValidityHours:null,rolesText:''});}
@@ -241,16 +277,16 @@ export class WorkflowInteractivoComponent implements OnInit{
       requirements:s.requirements.map((r:any)=>({requirementCode:r.requirementCode,title:r.title,verificationKind:r.verificationKind,mandatory:r.mandatory,evidenceRequired:r.evidenceRequired,requiresValidityEnd:r.requiresValidityEnd,maxValidityHours:r.maxValidityHours??null,verifierRoles:String(r.rolesText).split(',').map(x=>x.trim()).filter(Boolean)}))})),
       transitions:this.draft.transitions.map(t=>({actionCode:t.actionCode,label:t.label,fromStageCode:t.fromStageCode,fromStateCode:t.fromStateCode,toStageCode:t.toStageCode,toStateCode:t.toStateCode,
       requiredRoles:String(t.rolesText).split(',').map(x=>x.trim()).filter(Boolean),requiresVerifiedRequirements:t.requiresVerifiedRequirements,requiresComment:t.requiresComment,isFinal:t.isFinal,effectCode:t.effectCode||null,effectValue:t.effectValue||null}))};
-    this.busy.set(true);this.api.saveDefinition(data).subscribe({next:r=>{this.savedDefinition.set(r.definition??null);this.success(r.message);this.reload();},error:e=>this.fail(e)});
+    this.cancelDetail();this.busy.set(true);this.api.saveDefinition(data).subscribe({next:r=>{this.savedDefinition.set(r.definition??null);this.success(r.message);this.reload();},error:e=>this.fail(e)});
   }
-  publish(d:WorkflowDefinition):void{if(this.busy())return;this.busy.set(true);this.api.publishDefinition(d.definitionId).subscribe({next:r=>{this.savedDefinition.set(r.definition??null);this.success(r.message);this.reload();},error:e=>this.fail(e)});}
+  publish(d:WorkflowDefinition):void{if(this.busy())return;this.cancelDetail();this.busy.set(true);this.api.publishDefinition(d.definitionId).subscribe({next:r=>{this.savedDefinition.set(r.definition??null);this.success(r.message);this.reload();},error:e=>this.fail(e)});}
   exportCurrent():void{const s=this.current();if(!s)return;const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=s.codigoExpediente+'.json';a.click();URL.revokeObjectURL(url);}
   saveRoleGrant():void{
  if(this.busy()||!this.roleUsers().some(u=>u['id']===this.roleGrantUserId)||!this.roleCodes().includes(this.roleGrantRole)||!this.roleGrantReason.trim()){
   this.dialogError.set('Seleccione usuario, rol y motivo de la asignación.');return;
  }
  let validUntilUtc:string|null=null;if(this.roleGrantUntil){const date=new Date(this.roleGrantUntil);if(!Number.isFinite(date.getTime())){this.dialogError.set('La fecha de vigencia es inválida.');return;}validUntilUtc=date.toISOString();}
- this.busy.set(true);this.api.grantRole({userId:this.roleGrantUserId,roleCode:this.roleGrantRole,enabled:this.roleGrantEnabled,validUntilUtc,reason:this.roleGrantReason}).subscribe({
+ this.cancelDetail();this.busy.set(true);this.api.grantRole({userId:this.roleGrantUserId,roleCode:this.roleGrantRole,enabled:this.roleGrantEnabled,validUntilUtc,reason:this.roleGrantReason}).subscribe({
  next:r=>{this.success(r.message);this.dialogError.set(r.message);},error:e=>this.fail(e)});
 }
 print():void{window.print();}

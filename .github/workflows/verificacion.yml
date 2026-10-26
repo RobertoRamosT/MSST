@@ -1,0 +1,37 @@
+name: Verificar Angular y .NET Native AOT
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contratos-y-compilacion:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.15.0'
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Instalar dependencias bloqueadas
+        working-directory: Frontend
+        run: npm ci
+      - name: Verificar contratos y concurrencia Angular
+        working-directory: Frontend
+        run: npm test
+      - name: Compilar Angular de producción
+        working-directory: Frontend
+        run: npm run build -- --output-path "$env:RUNNER_TEMP/msst-web"
+      - name: Publicar backend con análisis AOT y trimming estricto
+        run: dotnet publish Backend/Msst.Backend.csproj -c Release -r win-x64 --artifacts-path "$env:RUNNER_TEMP/msst-artifacts" -o "$env:RUNNER_TEMP/msst-api"
+      - name: Publicar y ejecutar regresiones del adaptador nativo
+        run: |
+          dotnet publish Backend.Tests/NativeOdbc/NativeOdbc.Tests.csproj -c Release -r win-x64 --artifacts-path "$env:RUNNER_TEMP/msst-test-artifacts" -o "$env:RUNNER_TEMP/msst-native-tests"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:RUNNER_TEMP/msst-native-tests/NativeOdbc.Tests.exe"

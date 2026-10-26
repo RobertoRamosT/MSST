@@ -18,11 +18,12 @@ public static class EvidenceV2Endpoints
 {
     public static IServiceCollection AddMsstEvidenceV2(this IServiceCollection services)
     {
-        services.AddSingleton<ISignatureReader,SqlSignatureReader>(); services.AddSingleton<CmsSignatureVerifier>(); services.AddSingleton<EvidenceStore>(); services.AddSingleton<EvidenceByteStore>(); services.AddSingleton<IEvidenceReader,SqlEvidenceReader>();
+        services.AddSingleton<EvidenceReservations>();services.AddSingleton<ISignatureReader,SqlSignatureReader>(); services.AddSingleton<CmsSignatureVerifier>(); services.AddSingleton<EvidenceStore>(); services.AddSingleton<EvidenceByteStore>(); services.AddSingleton<IEvidenceReader,SqlEvidenceReader>();
         return services;
     }
     public static IEndpointRouteBuilder MapMsstEvidenceV2(this IEndpointRouteBuilder endpoints)
     {
+        EvidenceReservations.MapEndpoints(endpoints);
         endpoints.MapPost("/sst/evidence", UploadAsync).RequireAuthorization();
         endpoints.MapGet("/sst/evidence/{evidenceId:guid}", MetadataAsync).RequireAuthorization();
         endpoints.MapGet("/sst/evidence/{evidenceId:guid}/content", ContentAsync).RequireAuthorization();
@@ -34,7 +35,7 @@ public static class EvidenceV2Endpoints
             requestId, result.Evidence is null ? null : result.Evidence with { StorageKey = null }, result.SignatureId),
             EvidenceV2JsonContext.Default.EvidenceReceipt, statusCode: status);
 
-    private static async Task<IResult> UploadAsync(HttpContext ctx, IAntiforgery anti, EvidenceStore store, EvidenceByteStore bytes)
+    private static async Task<IResult> UploadAsync(HttpContext ctx, IAntiforgery anti, EvidenceStore store, EvidenceByteStore bytes, EvidenceReservations reservations)
     {
         if (!await SecurityV2Endpoints.ValidateCsrfAsync(ctx, anti))
             return Reply(ctx, new(false,"CSRF_INVALID","Actualice la sesión antes de continuar."),null,400);
@@ -54,10 +55,11 @@ public static class EvidenceV2Endpoints
         var file = form.Files[0];
         if (file.Length < 1 || file.Length > scope.Policy.MaximumBytes || string.IsNullOrWhiteSpace(file.FileName))
             return Reply(ctx,new(false,"FILE_SIZE_INVALID","El tamaño del archivo no es válido."),requestId,422);
+        var reservation=await reservations.Reserve(actor,empresa,requestId,false,ctx.RequestAborted);
         StoredBytes saved;
         try {
             await using var source = file.OpenReadStream();
-            saved = await bytes.SaveAsync(source,scope.Policy.MaximumBytes,scope.Policy.AllowedContentTypes,false,ctx.RequestAborted);
+            saved = await bytes.SaveAsync(source,scope.Policy.MaximumBytes,scope.Policy.AllowedContentTypes,false,ctx.RequestAborted,reservation.StorageKey);
         } catch (InvalidDataException ex) {
             return Reply(ctx,new(false,ex.Message,"El archivo no cumple el formato o tamaño permitido."),requestId,422);
         }
@@ -65,10 +67,9 @@ public static class EvidenceV2Endpoints
         // Ante timeout/desconexión no se borra: el COMMIT podría haberse efectuado. El reintento usa la misma clave.
         var result = await store.CallAsync("STORE",actor,empresa,command with {
             EvidenceId=Guid.NewGuid(),Sha256=saved.Sha256,FileName=Path.GetFileName(file.FileName),
-            Size=saved.Size,ContentType=saved.ContentType,StorageKey=saved.StorageKey
+            Size=saved.Size,ContentType=saved.ContentType,StorageKey=saved.StorageKey,ReservationToken=reservation.LeaseToken
         },ctx.RequestAborted);
-        if (result.Evidence?.StorageKey != saved.StorageKey)
-            bytes.DeleteRedundant(saved.StorageKey); // Respuesta definitiva de rechazo o recibo ya aplicado.
+        // La reserva conserva también los reintentos redundantes para una reconciliación durable.
         return Reply(ctx,result,requestId,result.Succeeded?200:409);
     }
 
@@ -95,7 +96,7 @@ public static class EvidenceV2Endpoints
     }
 
     private static async Task<IResult> SignAsync(Guid evidenceId,HttpContext ctx,IAntiforgery anti,
-        EvidenceStore store,EvidenceByteStore bytes,CmsSignatureVerifier verifier)
+        EvidenceStore store,EvidenceByteStore bytes,CmsSignatureVerifier verifier,EvidenceReservations reservations)
     {
         if(!await SecurityV2Endpoints.ValidateCsrfAsync(ctx,anti))
             return Reply(ctx,new(false,"CSRF_INVALID","Actualice la sesión antes de continuar."),null,400);
@@ -128,12 +129,13 @@ public static class EvidenceV2Endpoints
             var check=await store.CallAsync("CERTIFICATE",actor,empresa,scopeCommand with{CertificateSha256=certSha},ctx.RequestAborted);
             if(!check.Succeeded) return Reply(ctx,check,requestId,403);
             signature.Position=0;
-            var saved=await bytes.SaveAsync(signature,scope.Policy.MaximumBytes,[],true,ctx.RequestAborted);
+            var reservation=await reservations.Reserve(actor,empresa,requestId,true,ctx.RequestAborted);
+            var saved=await bytes.SaveAsync(signature,scope.Policy.MaximumBytes,[],true,ctx.RequestAborted,reservation.StorageKey);
             var result=await store.CallAsync("SIGN",actor,empresa,scopeCommand with {
                 SignatureId=Guid.NewGuid(),CertificateSha256=certSha,Sha256=get.Evidence.Sha256,
-                SignatureSha256=saved.Sha256,SignatureStorageKey=saved.StorageKey
+                SignatureSha256=saved.Sha256,SignatureStorageKey=saved.StorageKey,ReservationToken=reservation.LeaseToken
             },ctx.RequestAborted);
-            if(result.SignatureStorageKey != saved.StorageKey) bytes.DeleteRedundant(saved.StorageKey);
+            // Ante respuesta incierta, la reserva permite resolver el resultado sin borrar bytes referenciados.
             return Reply(ctx,result,requestId,result.Succeeded?200:409);
         } catch(Exception ex) when(ex is CryptographicException or InvalidDataException or IOException) {
             return Reply(ctx,new(false,"SIGNATURE_VERIFICATION_FAILED","La firma, la cadena de confianza o el archivo no pudieron verificarse."),requestId,422);

@@ -9,7 +9,7 @@ public sealed record EvidenceOperation(string? ExpedienteId = null, string? Fiel
     string? ExpectedVersion = null, string? IdempotencyKey = null, Guid? EvidenceId = null,
     string? Sha256 = null, string? FileName = null, long? Size = null, string? ContentType = null,
     string? StorageKey = null, Guid? SignatureId = null, string? CertificateSha256 = null,
-    string? SignatureSha256 = null, string? SignatureStorageKey = null);
+    string? SignatureSha256 = null, string? SignatureStorageKey = null, Guid? ReservationToken = null);
 public sealed record EvidenceStoreResult(bool Succeeded, string Code, string Message,
     EvidenceMetadata? Evidence = null, EvidencePolicy? Policy = null, Guid? SignatureId = null, string? SignatureStorageKey = null,SignatureArtifact? SignatureArtifact = null);
 public sealed record EvidenceReceipt(bool Succeeded, string Code, string Message, string CorrelationId,

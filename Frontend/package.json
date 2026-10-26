@@ -6,7 +6,8 @@
     "ng": "ng",
     "start": "ng serve --ssl --proxy-config proxy.conf.cjs",
     "build": "ng build --configuration production",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "test": "node scripts/test-contracts.cjs"
   },
   "private": true,
   "dependencies": {

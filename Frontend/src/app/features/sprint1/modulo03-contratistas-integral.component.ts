@@ -1,3 +1,5 @@
+import {QueryPagesComponent} from '../../core/components/query-pages.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +21,7 @@ export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,e
 @Component({
   selector: 'msst-modulo03-contratistas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [QueryPagesComponent,CommonModule, FormsModule],
   template: `
     <!-- Encabezado Corporativo del Módulo 03 (El módulo más grande de GOSST: 93 Tablas / 21 Modales) -->
     <div class="panel panel-primary" style="margin-bottom: 16px; border-color: #004B87;">
@@ -551,6 +553,7 @@ export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,e
             <button title="Cerrar" class="btn btn-xs btn-danger" (click)="modalContratistaAbierto.set(false)"><i class="fa fa-times"></i></button>
           </div>
           <div class="panel-body">
+            <div class="form-group"><label for="tipo-contratista">Código de tipo de contratista</label><input id="tipo-contratista" type="number" min="1" step="1" class="form-control input-sm" [(ngModel)]="formContratista.tipoContratistaId" required><p>Ingrese el código de clasificación definido por su organización.</p></div>
             <div class="row">
               <div class="col-md-4 form-group">
                 <label>RUC (11 dígitos):</label>
@@ -607,6 +610,18 @@ export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,e
             <button title="Cerrar" class="btn btn-xs btn-danger" (click)="modalProyectoAbierto.set(false)"><i class="fa fa-times"></i></button>
           </div>
           <div class="panel-body">
+            @if (administradorEmpresa()) {
+              <div class="form-group">
+                <label for="contratista-proyecto">Contratista</label>
+                <select id="contratista-proyecto" name="contractorRefId" class="form-control" [(ngModel)]="formProyecto.contractorRefId" required>
+                  <option [ngValue]="null">Seleccione una contratista autorizada</option>
+                  @for (c of contratistas(); track c['id']) {
+                    <option [ngValue]="c['id']">{{c['razonSocial']}}</option>
+                  }
+                </select>
+              </div>
+            }
+
             <div class="row">
               <div class="col-md-4 form-group">
                 <label>Código Proyecto:</label>
@@ -667,9 +682,22 @@ export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,e
             <button title="Cerrar" class="btn btn-xs btn-danger" (click)="modalTrabajadorAbierto.set(false)"><i class="fa fa-times"></i></button>
           </div>
           <div class="panel-body">
+            @if (administradorEmpresa()) {
+              <div class="form-group">
+                <label for="contratista-trabajador">Contratista</label>
+                <select id="contratista-trabajador" name="contractorRefId" class="form-control" [(ngModel)]="formTrabajador.contractorRefId" required>
+                  <option [ngValue]="null">Seleccione una contratista autorizada</option>
+                  @for (c of contratistas(); track c['id']) {
+                    <option [ngValue]="c['id']">{{c['razonSocial']}}</option>
+                  }
+                </select>
+              </div>
+            }
+
+            <div class="form-group"><label for="tipo-documento-trabajador">Tipo de documento</label><input id="tipo-documento-trabajador" class="form-control input-sm" [(ngModel)]="formTrabajador.tipoDocumento" maxlength="20" required></div>
             <div class="row">
               <div class="col-md-4 form-group">
-                <label>DNI / CE:</label>
+                <label>Número de documento:</label>
                 <input type="text" class="form-control input-sm" maxlength="12" [(ngModel)]="formTrabajador.dni" placeholder="45892136">
               </div>
               <div class="col-md-8 form-group">
@@ -713,6 +741,18 @@ export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,e
             <button title="Cerrar" class="btn btn-xs btn-danger" (click)="modalVehiculoAbierto.set(false)"><i class="fa fa-times"></i></button>
           </div>
           <div class="panel-body">
+            @if (administradorEmpresa()) {
+              <div class="form-group">
+                <label for="contratista-vehiculo">Contratista</label>
+                <select id="contratista-vehiculo" name="contractorRefId" class="form-control" [(ngModel)]="formVehiculo.contractorRefId" required>
+                  <option [ngValue]="null">Seleccione una contratista autorizada</option>
+                  @for (c of contratistas(); track c['id']) {
+                    <option [ngValue]="c['id']">{{c['razonSocial']}}</option>
+                  }
+                </select>
+              </div>
+            }
+
             <div class="row">
               <div class="col-md-6 form-group">
                 <label>Categoría de Unidad:</label>
@@ -893,7 +933,9 @@ export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,e
         </div>
       </div>
     }
-  `
+
+<msst-query-pages [routes]="pageRoutes" />
+`
 })
 export class Modulo03ContratistasIntegralComponent implements OnInit {
   private readonly api = inject(GosstApiService);
@@ -944,13 +986,13 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
 
   // Modales Signals
   readonly modalContratistaAbierto = signal<boolean>(false);
-  formContratista = {ruc:'',razonSocial:'',rubroActividad:'',representanteLegal:'',correo:'',telefono:''};
+  formContratista = {tipoContratistaId:null as number|null,ruc:'',razonSocial:'',rubroActividad:'',representanteLegal:'',correo:'',telefono:''};
   readonly modalProyectoAbierto = signal(false);
-  formProyecto = {codigo:'',nombre:'',responsableCliente:'',responsableContratista:'',nivelRiesgo:'',fechaInicio:'',fechaFin:''};
+  formProyecto = {contractorRefId:null as number|null,codigo:'',nombre:'',responsableCliente:'',responsableContratista:'',nivelRiesgo:'',fechaInicio:'',fechaFin:''};
   readonly modalTrabajadorAbierto = signal(false);
-  formTrabajador = {dni:'',nombres:'',apellidoPaterno:'',apellidoMaterno:'',puestoTrabajo:''};
+  formTrabajador = {contractorRefId:null as number|null,tipoDocumento:'',dni:'',nombres:'',apellidoPaterno:'',apellidoMaterno:'',puestoTrabajo:''};
   readonly modalVehiculoAbierto = signal(false);
-  formVehiculo = {categoria:'',placaCodigo:'',marca:'',modelo:'',anioFabricacion:null as number|null};
+  formVehiculo = {contractorRefId:null as number|null,categoria:'',placaCodigo:'',marca:'',modelo:'',anioFabricacion:null as number|null};
   readonly modalDocumentoAbierto = signal(false);
   readonly mensajeError = signal('');
   readonly archivoSeleccionadoNombre = signal('');
@@ -985,6 +1027,8 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
     this.evidenciaDocumentoId=null;
   }
 
+  readonly pageRoutes=['/contratista/documento/lista', '/contratista/garita/lista', '/contratista/lista', '/contratista/operacion/lista', '/contratista/proyecto/lista', '/contratista/trabajador/lista', '/contratista/vehiculo/lista'];
+  private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarTodoModulo03();
   }
@@ -1019,22 +1063,27 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
       error:error=>this.notificarError(apiErrorMessage(error))
     });
   }
+  administradorEmpresa():boolean {return this.session.snapshot()?.contratistaId===null;}
   private async guardarRegistro(route:string,data:Record<string,unknown>,expectedId?:number):Promise<Record<string,any>> {
     if(!this.session.snapshot())throw new Error('Inicie sesión para continuar.');
+    if(this.administradorEmpresa()&&['/contratista/proyecto/insert','/contratista/trabajador/insert','/contratista/vehiculo/insert'].includes(route)&&!isSafeId(data['contractorRefId']))throw new Error('Seleccione una contratista autorizada para este registro.');
     const requestId=this.intents.key(route,data);
     const result=await firstValueFrom(this.api.callAjaxPost(route,{...data,idempotencyKey:requestId}));
-    return readM03ConfirmedRecord(result,requestId,expectedId);
+    const record=readM03ConfirmedRecord(result,requestId,expectedId);
+    this.intents.confirmed(route,data,requestId);
+    return record;
   }
   private reemplazarRegistro(rows:Record<string,any>[],record:Record<string,any>):Record<string,any>[] {
     return [record,...rows.filter(x=>x['id']!==record['id'])];
   }
 
   abrirModalNuevoContratista():void {
-    this.formContratista={ruc:'',razonSocial:'',rubroActividad:'',representanteLegal:'',correo:'',telefono:''};
+    this.formContratista={tipoContratistaId:null as number|null,ruc:'',razonSocial:'',rubroActividad:'',representanteLegal:'',correo:'',telefono:''};
     this.modalContratistaAbierto.set(true);
   }
   async guardarContratista():Promise<void> {
     try {
+      if(!isSafeId(this.formContratista.tipoContratistaId))throw new Error('Ingrese el código de tipo de contratista definido por su organización.');
       if(!this.formContratista.ruc.trim()||!this.formContratista.razonSocial.trim())throw new Error('Complete RUC y razón social.');
       const record=await this.guardarRegistro('/contratista/insert',{...this.formContratista});
       this.contratistas.update(rows=>this.reemplazarRegistro(rows,record));this.modalContratistaAbierto.set(false);
@@ -1042,7 +1091,7 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
     }catch(error){this.notificarError(apiErrorMessage(error));}
   }
   abrirModalNuevoProyecto():void {
-    this.formProyecto={codigo:'',nombre:'',responsableCliente:'',responsableContratista:'',nivelRiesgo:'',fechaInicio:'',fechaFin:''};
+    this.formProyecto={contractorRefId:null as number|null,codigo:'',nombre:'',responsableCliente:'',responsableContratista:'',nivelRiesgo:'',fechaInicio:'',fechaFin:''};
     this.modalProyectoAbierto.set(true);
   }
   async guardarProyecto():Promise<void> {
@@ -1053,10 +1102,11 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
     }catch(error){this.notificarError(apiErrorMessage(error));}
   }
   abrirModalNuevoTrabajador():void {
-    this.formTrabajador={dni:'',nombres:'',apellidoPaterno:'',apellidoMaterno:'',puestoTrabajo:''};this.modalTrabajadorAbierto.set(true);
+    this.formTrabajador={contractorRefId:null as number|null,tipoDocumento:'',dni:'',nombres:'',apellidoPaterno:'',apellidoMaterno:'',puestoTrabajo:''};this.modalTrabajadorAbierto.set(true);
   }
   async guardarTrabajador():Promise<void> {
     try {
+      if(!this.formTrabajador.tipoDocumento.trim())throw new Error('Ingrese el tipo de documento del trabajador.');
       if(!this.formTrabajador.dni.trim()||!this.formTrabajador.nombres.trim()||!this.formTrabajador.apellidoPaterno.trim())throw new Error('Complete identidad y nombre del trabajador.');
       const record=await this.guardarRegistro('/contratista/trabajador/insert',{...this.formTrabajador});
       this.trabajadores.update(rows=>this.reemplazarRegistro(rows,record));this.modalTrabajadorAbierto.set(false);
@@ -1064,7 +1114,7 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
     }catch(error){this.notificarError(apiErrorMessage(error));}
   }
   abrirModalNuevoVehiculo():void {
-    this.formVehiculo={categoria:'',placaCodigo:'',marca:'',modelo:'',anioFabricacion:null};this.modalVehiculoAbierto.set(true);
+    this.formVehiculo={contractorRefId:null as number|null,categoria:'',placaCodigo:'',marca:'',modelo:'',anioFabricacion:null};this.modalVehiculoAbierto.set(true);
   }
   async guardarVehiculo():Promise<void> {
     try {
@@ -1149,6 +1199,7 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
       const result=asObject(await firstValueFrom(this.http.post<unknown>('/sst/access/register',{...data,idempotencyKey:key})));
       if(result['succeeded']!==true||result['code']!=='ACCESS_RECORDED'||result['requestId']!==key)throw new Error('No se confirmó el registro de acceso.');
       const record=readM03ConfirmedRecord(result,key);
+      this.intents.confirmed('access-register',data,key);
       this.movimientosGarita.update(rows=>this.reemplazarRegistro(rows,record));this.decisionPendiente=null;this.modalGaritaAbierto.set(false);
       this.notificarExito(typeof result['message']==='string'?result['message']:'Evaluación de acceso registrada.');
     }catch(error){this.notificarError(apiErrorMessage(error));}

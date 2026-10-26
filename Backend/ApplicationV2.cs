@@ -1,3 +1,4 @@
+using Msst.Backend.Operations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Antiforgery;
@@ -20,6 +21,7 @@ public static class ApplicationV2
  {
   var builder=WebApplication.CreateSlimBuilder(args);
   builder.WebHost.UseKestrelHttpsConfiguration();
+  OperationalEndpoints.Configure(builder);
   if(OperatingSystem.IsWindows())builder.Services.AddWindowsService(o=>o.ServiceName=builder.Configuration["Service:Name"]??"MsstIndustrialService");
   builder.Services.ConfigureHttpJsonOptions(o=>o.SerializerOptions.TypeInfoResolverChain.Insert(0,MsstJsonContext.Default));
   builder.Services.AddHttpContextAccessor();
@@ -33,6 +35,13 @@ public static class ApplicationV2
    if(origins.Length>0)p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
   }));
   var app=builder.Build();
+  OperationalEndpoints.Use(app);OperationalEndpoints.Map(app);
+  app.Use(async(context,next)=>{
+   if(context.Request.Path.StartsWithSegments("/sst"))context.Response.OnStarting(()=>{
+    context.Response.Headers.CacheControl="no-store";return Task.CompletedTask;
+   });
+   await next(context);
+  });
   app.UseExceptionHandler(error=>error.Run(async ctx=>{
    var exception=ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
    var status=500;var code="OPERATION_UNCONFIRMED";var message="No se pudo confirmar la operación. Conserve los datos y revise el expediente.";
@@ -42,7 +51,7 @@ public static class ApplicationV2
     status=503;code="DATABASE_UNAVAILABLE";message="No se pudo confirmar la operación de datos. Intente nuevamente con la misma operación.";
     app.Logger.LogError("Operación SQL no confirmada. Número={Number}; Estado={State}; Referencia={CorrelationId}",sql.Number,sql.SqlState,ctx.TraceIdentifier);
    }
-   else if(exception is OperationCanceledException){status=499;code="REQUEST_CANCELED";message="La operación fue interrumpida. Consulte el expediente antes de reintentar.";}
+   else if(exception is OperationCanceledException){if(ctx.RequestAborted.IsCancellationRequested){ctx.Response.StatusCode=499;return;}status=504;code="OPERATION_TIMEOUT";message="La operación venció. Consulte su recibo antes de reintentar.";}
    else app.Logger.LogError("Operación no confirmada. Tipo={Type}; Referencia={CorrelationId}",exception?.GetType().Name,ctx.TraceIdentifier);
    ctx.Response.StatusCode=status;
    await Results.Json(new BoundaryError(false,code,message,ctx.TraceIdentifier),BoundaryJsonContext.Default.BoundaryError,statusCode:status).ExecuteAsync(ctx);
@@ -60,7 +69,7 @@ public static class ApplicationV2
   });
   app.MapGet("/health",(RequestDelegate)(async ctx=>await Results.Json(new BoundaryHealth("Healthy",DateTimeOffset.UtcNow),
    BoundaryJsonContext.Default.BoundaryHealth).ExecuteAsync(ctx))).AllowAnonymous();
-  app.MapMsstSecurityV2();app.MapPermissionV2();app.MapMsstEvidenceV2();app.MapWorkflowV2();app.MapAccessV2();app.MapCommitteeV2();app.MapLegacyV2();
+  app.MapClinicalWorkflow();app.MapMsstSecurityV2();app.MapPermissionV2();app.MapMsstEvidenceV2();app.MapWorkflowV2();app.MapAccessV2();app.MapCommitteeV2();app.MapLegacyV2();
   var configured=builder.Configuration["Web:FrontendRoot"];
   if(!string.IsNullOrWhiteSpace(configured))
   {

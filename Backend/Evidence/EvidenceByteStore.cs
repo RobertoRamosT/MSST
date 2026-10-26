@@ -16,15 +16,16 @@ public sealed class EvidenceByteStore
         return Path.Combine(root, key);
     }
     public async Task<StoredBytes> SaveAsync(Stream source, long maximumBytes, string[] allowedTypes,
-        bool signature, CancellationToken ct)
+        bool signature, CancellationToken ct, string? reservedKey=null)
     {
-        var key = Guid.NewGuid().ToString("N"); var path = Resolve(key);
+        var key = reservedKey ?? Guid.NewGuid().ToString("N"); var path = Resolve(key);var created=false;
         using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         byte[] buffer = new byte[64 * 1024]; byte[] header = new byte[16];
         long count = 0; var headerLength = 0;
         try {
             await using var destination = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None,
                 buffer.Length, FileOptions.Asynchronous | FileOptions.WriteThrough);
+            created=true;
             while (true) {
                 var read = await source.ReadAsync(buffer, ct); if (read == 0) break;
                 count += read;
@@ -56,7 +57,7 @@ public sealed class EvidenceByteStore
                 throw new InvalidDataException("FILE_CONTENT_TYPE_REJECTED");
             return new StoredBytes(key, Convert.ToHexString(sha.GetHashAndReset()).ToLowerInvariant(), count, type);
         } catch {
-            File.Delete(path); // Solo archivo recién creado cuya clave se generó en este método.
+            if(created)File.Delete(path); // Solo el archivo creado exitosamente por esta llamada.
             throw;
         }
     }

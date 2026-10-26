@@ -94,10 +94,13 @@ public static class WorkflowV2Endpoints
                         request.Decision is not ("APPROVED" or "OBSERVED" or "REJECTED") || request.EvidenceIds is null ||
                         request.EvidenceIds.Any(value => value == Guid.Empty) || request.EvidenceIds.Distinct().Count() != request.EvidenceIds.Length)
                         throw new WorkflowV2InputException("Indique requisito, dictamen y evidencias válidos.");
+                    if (request.ClinicalRecordId.HasValue != (request.ClinicalRecordVersion is not null) || request.ClinicalRecordId<=0)
+                        throw new WorkflowV2InputException("Seleccione una evaluación clínica con identificador y versión válidos.");
+                    if (request.ClinicalRecordVersion is not null) ValidateVersion(request.ClinicalRecordVersion);
                     requestId = request.IdempotencyKey;
                     payload = JsonSerializer.Serialize(new WorkflowV2ProofCommand(id.Value, request.IdempotencyKey,
                         request.ExpectedVersion, request.RequirementCode, request.Decision, request.EvidenceIds,
-                        request.ValidUntilUtc, request.Comment, request.SignatureId, [], []), WorkflowV2JsonContext.Default.WorkflowV2ProofCommand);
+                        request.ValidUntilUtc, request.Comment, request.SignatureId, [], [], request.ClinicalRecordId, request.ClinicalRecordVersion), WorkflowV2JsonContext.Default.WorkflowV2ProofCommand);
                     break;
                 }
                 case "DEFINE":

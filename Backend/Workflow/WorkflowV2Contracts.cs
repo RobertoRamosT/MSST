@@ -7,7 +7,7 @@ public sealed record WorkflowV2Violation(string RequirementCode, string Code, st
 public sealed record WorkflowV2Subject(string SubjectType, long SubjectId, string Label, int? IdContratista, int? IdProyecto);
 public sealed record WorkflowV2Requirement(string RequirementCode, string Title, string StageCode,
     bool Mandatory, string VerificationKind, bool EvidenceRequired, string[] VerifierRoles,
-    string Status, string Message, Guid[] EvidenceIds, string? DeclaredValue, bool RequiresValidityEnd, int? MaxValidityHours, Guid? SignatureId=null);
+    string Status, string Message, Guid[] EvidenceIds, string? DeclaredValue, bool RequiresValidityEnd, int? MaxValidityHours, Guid? SignatureId=null, bool RequiresClinicalReview=false);
 public sealed record WorkflowV2Stage(string StageCode, int Order, string Title, string RoleCode,
     int? DeadlineHours, bool AllowNoRequirements, WorkflowV2Requirement[] Requirements);
 public sealed record WorkflowV2Transition(string ActionCode, string Label, string FromStageCode,
@@ -38,11 +38,11 @@ public sealed record WorkflowV2Envelope
     public bool Replayed { get; init; }
     public int HttpStatus { get; init; }
     public WorkflowV2Snapshot? Snapshot { get; init; }
-    public WorkflowV2Case[] Cases { get; init; } = [];
-    public WorkflowV2Snapshot[] Expedientes { get; init; } = [];
-    public WorkflowV2Subject[] Subjects { get; init; } = [];
+    public WorkflowV2Case[] Cases { get; set; } = [];
+    public WorkflowV2Snapshot[] Expedientes { get; set; } = [];
+    public WorkflowV2Subject[] Subjects { get; set; } = [];
     public WorkflowV2Definition? Definition { get; init; }
-    public WorkflowV2Violation[] ValidationErrors { get; init; } = [];
+    public WorkflowV2Violation[] ValidationErrors { get; set; } = [];
     public int Total { get; init; }
 }
 
@@ -77,7 +77,9 @@ public sealed record WorkflowV2ProofRequest(
     [property: JsonRequired] Guid[] EvidenceIds,
     DateTimeOffset? ValidUntilUtc,
     string? Comment,
-    Guid? SignatureId);
+    Guid? SignatureId,
+    long? ClinicalRecordId,
+    string? ClinicalRecordVersion);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record WorkflowV2RequirementDraft(
     [property: JsonRequired] string RequirementCode,
@@ -139,7 +141,7 @@ internal sealed record WorkflowV2Query(long? ExpedienteId, long? DefinitionId, s
 internal sealed record WorkflowV2ActionCommand(long ExpedienteId, Guid IdempotencyKey, string ExpectedVersion,
     int DefinitionVersion, string ActionCode, WorkflowV2FieldValue[] Values, Guid[] EvidenceIds, string? Comment, Guid[] VerifiedEvidenceIds, Guid[] VerifiedSignatureIds);
 internal sealed record WorkflowV2ProofCommand(long ExpedienteId, Guid IdempotencyKey, string ExpectedVersion,
-    string RequirementCode, string Decision, Guid[] EvidenceIds, DateTimeOffset? ValidUntilUtc, string? Comment, Guid? SignatureId, Guid[] VerifiedEvidenceIds, Guid[] VerifiedSignatureIds);
+    string RequirementCode, string Decision, Guid[] EvidenceIds, DateTimeOffset? ValidUntilUtc, string? Comment, Guid? SignatureId, Guid[] VerifiedEvidenceIds, Guid[] VerifiedSignatureIds, long? ClinicalRecordId=null, string? ClinicalRecordVersion=null);
 internal sealed record WorkflowV2PublishCommand(long DefinitionId, Guid IdempotencyKey);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,

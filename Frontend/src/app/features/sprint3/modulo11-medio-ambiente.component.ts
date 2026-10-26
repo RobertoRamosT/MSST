@@ -1,3 +1,5 @@
+import {QueryPagesComponent} from '../../core/components/query-pages.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
 import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
@@ -50,7 +52,7 @@ export interface HuellaCarbonoGeiItem {
 @Component({
   selector: 'msst-modulo11-ambiente',
   standalone: true,
-  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
+  imports: [QueryPagesComponent,WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
 @if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
 <msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
@@ -561,7 +563,9 @@ export interface HuellaCarbonoGeiItem {
       }
 
     </div>
-  `
+
+<msst-query-pages [routes]="pageRoutes" />
+`
 })
 export class Modulo11MedioAmbienteComponent implements OnInit {
   readonly mensajeOperacion=signal('');
@@ -644,6 +648,8 @@ export class Modulo11MedioAmbienteComponent implements OnInit {
   });
 
 
+  readonly pageRoutes=['/fichaquimica/lista', '/huella-carbono/lista', '/residuo/lista'];
+  private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
   }

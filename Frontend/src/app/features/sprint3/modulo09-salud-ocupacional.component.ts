@@ -1,3 +1,5 @@
+import {QueryPagesComponent} from '../../core/components/query-pages.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -83,7 +85,7 @@ export function readMedicalMutation(raw:Record<string,any>,requestId:string,expe
 @Component({
   selector: 'msst-modulo09-salud',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [QueryPagesComponent,CommonModule, FormsModule],
   template: `
     <div class="container-fluid" style="padding: 15px;">
 
@@ -741,7 +743,9 @@ export function readMedicalMutation(raw:Record<string,any>,requestId:string,expe
       }
 
     </div>
-  `
+
+<msst-query-pages [routes]="pageRoutes" />
+`
 })
 export class Modulo09SaludOcupacionalComponent implements OnInit {
   private readonly api = inject(GosstApiService);
@@ -818,6 +822,7 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
       if(res['CODE_RESPONSE']!=='05'||res['STATUS_CODE']!=='01')throw new Error(typeof res['mensajeRespuesta']==='string'?res['mensajeRespuesta']:'El catálogo no se confirmó.');
       const snapshot=res['snapshot'],row=snapshot?.['record'];
       if(res['requestId']!==payload.idempotencyKey||!snapshot||typeof snapshot['version']!=='string'||!snapshot['version']||!row||row['category']!==data.category||row['code']!==data.code||row['label']!==data.label||row['enabled']!==data.enabled)throw new Error('El recibo no corresponde al elemento enviado.');
+      this.intents.confirmed('medical:catalog:save',data,payload.idempotencyKey);
       this.edicionCatalogo={...data,expectedVersion:snapshot['version']};
       this.cargarDatosDesdeSql();this.cargarAdministracionCatalogos();this.mostrarAviso('Catálogo confirmado por el servidor.');
     }catch(error){this.mostrarAviso(apiErrorMessage(error));}},error:error=>{this.guardandoCatalogo.set(false);this.mostrarAviso(apiErrorMessage(error));}});
@@ -837,6 +842,8 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
     return rows.reduce((total,s)=>total+s.trabajadoresCubiertos,0);
   });
 
+  readonly pageRoutes=['/covid/lista', '/examenmedico/lista', '/psicologia/lista', '/sctr/lista'];
+  private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
     this.cargarAdministracionCatalogos();
@@ -877,6 +884,7 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
     this.api.callAjaxPost(route,payload).subscribe({
       next:res=>{try{
         const record=readMedicalMutation(res,payload.idempotencyKey,typeof data['id']==='number'?data['id']:undefined);
+        this.intents.confirmed(route,data,payload.idempotencyKey);
         apply(record);
         this.mostrarAviso(typeof res['mensajeRespuesta']==='string'?res['mensajeRespuesta']:'Cambio confirmado por el servidor.');
       }catch(error){this.mostrarAviso(apiErrorMessage(error));}},

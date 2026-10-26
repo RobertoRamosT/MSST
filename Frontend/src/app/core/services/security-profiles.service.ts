@@ -26,6 +26,6 @@ export class SecurityProfilesService{
  save(profileId:number,expectedVersion:string,permissions:readonly ProfilePermission[]):Observable<ProfilePermissionSnapshot>{
   const values=permissions.map(p=>({code:p.code,enabled:p.enabled})).sort((a,b)=>a.code.localeCompare(b.code));
   const data={expectedVersion,permissions:values},idempotencyKey=this.intents.key('profile-permissions:'+profileId,data);
-  return this.http.put<unknown>('/sst/security/profiles/'+profileId+'/permissions',{...data,idempotencyKey}).pipe(map(raw=>readProfilePermissions(raw,profileId,'PROFILE_PERMISSIONS_SAVED',idempotencyKey)));
+  return this.http.put<unknown>('/sst/security/profiles/'+profileId+'/permissions',{...data,idempotencyKey}).pipe(map(raw=>{const result=readProfilePermissions(raw,profileId,'PROFILE_PERMISSIONS_SAVED',idempotencyKey);this.intents.confirmed('profile-permissions:'+profileId,data,idempotencyKey);return result;}));
  }
 }

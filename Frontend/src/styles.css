@@ -347,9 +347,9 @@ h1, h2, h3, h4, h5, h6, .panel-title {
 /* Oculta únicamente la botonera repetida de sub-pestañas (.btn-group) dentro de la cabecera del módulo,
    conservando los KPIs, frases motivacionales y alertas de confirmación */
 .msst-area .panel-primary:first-of-type > .panel-body > .btn-group,
-msst-modulo01-seguridad > .panel-primary:first-child > .panel-body > .btn-group,
-msst-modulo02-organizacion > .panel-primary:first-child > .panel-body > .btn-group,
-msst-modulo03-contratistas > .panel-primary:first-child > .panel-body > .btn-group {
+msst-contratista-portal msst-modulo01-seguridad > .panel-primary:first-child > .panel-body > .btn-group,
+msst-contratista-portal msst-modulo02-organizacion > .panel-primary:first-child > .panel-body > .btn-group,
+msst-contratista-portal msst-modulo03-contratistas > .panel-primary:first-child > .panel-body > .btn-group {
   display: none !important;
 }
 .msst-area .panel-primary:first-of-type > .panel-body[style*="justify-content: space-between"] {

@@ -7,7 +7,7 @@ namespace Msst.Backend.Legacy;
 public static class LegacyV2Endpoints
 {
  public static IServiceCollection AddLegacyV2(this IServiceCollection services)
- {services.AddHttpContextAccessor();services.AddSingleton<LegacyV2Repository>();return services;}
+ {services.AddHttpContextAccessor();services.AddSingleton<LegacyPaging>();services.AddSingleton<LegacyV2Repository>();return services;}
  public static void MapLegacyV2(this WebApplication app)
  {
   var sst=app.MapGroup("/sst").RequireAuthorization();
