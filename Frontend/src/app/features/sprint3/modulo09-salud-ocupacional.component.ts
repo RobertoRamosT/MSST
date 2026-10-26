@@ -1,53 +1,61 @@
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { GosstApiService } from '../../core/services/gosst-api.service';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { apiErrorMessage, GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
+import { IntentKeys } from '../../core/services/workflow-api.service';
+
+export interface MedicalCatalogRow {category:string;code:string;label:string;enabled:boolean;version:string;}
 
 export interface ExamenMedicoItem {
   id: number;
+  version: string;
   dni: string;
   trabajador: string;
   puesto: string;
-  tipoExamen: 'PRE_OCUPACIONAL' | 'PERIODICO' | 'RETIRO';
+  tipoExamen: string;
   clinica: string;
   fechaExamen: string;
   fechaVencimiento: string;
-  aptitud: 'APTO' | 'APTO_CON_RESTRICCION' | 'NO_APTO' | 'PENDIENTE';
+  aptitud: string;
   restricciones: string;
   medico: string;
-  estado: 'VALIDADO' | 'PENDIENTE_REVISION' | 'PENDIENTE' | 'OBSERVADO';
+  estado: string;
 }
 
 export interface VigilanciaCovidItem {
   id: number;
+  version: string;
   dni: string;
   trabajador: string;
-  tipoPrueba: 'ANTIGENO' | 'MOLECULAR_PCR' | 'CONTROL_VACUNACION';
+  tipoPrueba: string;
   esquemaDosis: string;
-  resultado: 'NEGATIVO' | 'ALTA_EPIDEMIOLOGICA' | 'AISLAMIENTO';
-  fichaSintomatologica: 'SIN_SINTOMAS' | 'OBSERVADO';
+  resultado: string;
+  fichaSintomatologica: string;
   fechaControl: string;
   medicoResponsable: string;
-  estado: 'APROBADO' | 'EN_SEGUIMIENTO';
+  estado: string;
 }
 
 export interface EvaluacionPsicologicaItem {
   id: number;
+  version: string;
   dni: string;
   trabajador: string;
   bateriaEvaluacion: string;
-  trabajoCritico: 'ALTURA_Y_CONFINADOS' | 'CONDUCCION_MAQUINARIA' | 'OPERACION_GENERAL';
-  nivelEstresFatiga: 'BAJO_CONTROLADO' | 'MODERADO' | 'ALTO_RIESGO';
-  aptitudPsicologica: 'APTO' | 'APTO_CON_RECOMENDACION' | 'NO_APTO';
+  trabajoCritico: string;
+  nivelEstresFatiga: string;
+  aptitudPsicologica: string;
   psicologoEvaluador: string;
   fechaEvaluacion: string;
-  estado: 'VALIDADO' | 'PENDIENTE';
+  estado: string;
 }
 
 export interface PolizaSctrItem {
   id: number;
+  version: string;
   numeroPoliza: string;
   contratistaEmpresa: string;
   aseguradoraSalud: string;
@@ -55,8 +63,21 @@ export interface PolizaSctrItem {
   periodoVigencia: string;
   fechaVencimiento: string;
   trabajadoresCubiertos: number;
-  validadoGarita: boolean;
-  estado: 'VIGENTE_HABILITADO' | 'POR_RENOVAR';
+  estado: string;
+}
+
+export function readMedicalRecord<T>(raw:Record<string,any>):T {
+  if(!Number.isSafeInteger(raw['id'])||raw['id']<=0||typeof raw['version']!=='string'||!raw['version'])throw new Error('El servidor no confirmó identidad y versión del registro médico.');
+  return structuredClone(raw) as T;
+}
+export function readMedicalMutation(raw:Record<string,any>,requestId:string,expectedId?:number):Record<string,any> {
+  if(typeof raw['requestId']!=='string'||raw['requestId'].toLowerCase()!==requestId.toLowerCase())throw new Error('El recibo médico corresponde a otra solicitud.');
+  const snapshot=raw['snapshot'];
+  if(snapshot===null||typeof snapshot!=='object'||typeof snapshot['version']!=='string'||!snapshot['version']||
+      snapshot['record']===null||typeof snapshot['record']!=='object'||Array.isArray(snapshot['record']))throw new Error('Falta el registro médico persistido.');
+  const record=readMedicalRecord<Record<string,any>>({...snapshot['record'],version:snapshot['version']});
+  if(expectedId!==undefined&&record['id']!==expectedId)throw new Error('El servidor confirmó otro registro médico.');
+  return record;
 }
 
 @Component({
@@ -96,29 +117,29 @@ export interface PolizaSctrItem {
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #004B87; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">EXÁMENES MÉDICOS OCUPACIONALES (EMO)</div>
-                <div style="font-size: 20px; font-weight: bold; color: #004B87;">{{ examenesEmo().length }} Certificados</div>
-                <div style="font-size: 11px; color: #28a745;">{{ totalEmoAptos() }} Aptos Validados RM 312-2011-MINSA</div>
+                <div style="font-size: 20px; font-weight: bold; color: #004B87;">{{ examenesEmo().length }} Registros</div>
+                <div style="font-size: 11px; color: #28a745;">Dictámenes y revisiones registrados por separado</div>
               </div>
             </div>
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #17a2b8; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">VIGILANCIA EPIDEMIOLÓGICA COVID-19</div>
                 <div style="font-size: 20px; font-weight: bold; color: #17a2b8;">{{ registrosCovid().length }} Controles</div>
-                <div style="font-size: 11px; color: #888;">100% Esquema de Vacunación Completo</div>
+                <div style="font-size: 11px; color: #888;">Resultados recuperados de los controles registrados</div>
               </div>
             </div>
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #6f42c1; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">PSICOLOGÍA Y RIESGOS PSICOSOCIALES</div>
                 <div style="font-size: 20px; font-weight: bold; color: #6f42c1;">{{ evaluacionesPsicologia().length }} Evaluaciones</div>
-                <div style="font-size: 11px; color: #888;">Batería CENSOPAS-COPSOQ / Altura</div>
+                <div style="font-size: 11px; color: #888;">Métodos y resultados de cada evaluación</div>
               </div>
             </div>
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #28a745; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">COBERTURA SCTR SALUD Y PENSIÓN</div>
-                <div style="font-size: 20px; font-weight: bold; color: #28a745;">{{ totalTrabajadoresSctr() }} Asegurados</div>
-                <div style="font-size: 11px; color: #888;">{{ polizasSctr().length }} Pólizas Activas en Garita</div>
+                <div style="font-size: 20px; font-weight: bold; color: #28a745;">{{ totalTrabajadoresSctr() ?? 'Sin dato completo' }} Trabajadores declarados</div>
+                <div style="font-size: 11px; color: #888;">{{ polizasSctr().length }} Pólizas registradas</div>
               </div>
             </div>
           </div>
@@ -140,6 +161,31 @@ export interface PolizaSctrItem {
           </div>
         </div>
       </div>
+
+      @if (puedeAdministrarCatalogos()) {
+        <section class="panel panel-default" aria-label="Catálogos médicos">
+          <div class="panel-heading"><strong>Catálogos médicos configurados</strong></div>
+          <div class="panel-body">
+            <p>Los códigos disponibles y sus etiquetas se guardan por empresa. Una edición requiere la versión consultada.</p>
+            <button type="button" class="btn btn-default" (click)="cargarAdministracionCatalogos()">Actualizar catálogo</button>
+            <form (ngSubmit)="guardarCatalogo()" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+              <label>Categoría <select name="categoriaCatalogo" class="form-control" [(ngModel)]="edicionCatalogo.category" [disabled]="!!edicionCatalogo.expectedVersion" required>
+                <option value="">Seleccione</option>@for (tipo of tiposCatalogo(); track tipo.code) {<option [value]="tipo.code">{{ tipo.label }}</option>}
+              </select></label>
+              <label>Código <input name="codigoCatalogo" class="form-control" [(ngModel)]="edicionCatalogo.code" [readonly]="!!edicionCatalogo.expectedVersion" maxlength="100" required></label>
+              <label>Etiqueta <input name="etiquetaCatalogo" class="form-control" [(ngModel)]="edicionCatalogo.label" maxlength="250" required></label>
+              <label><input type="checkbox" name="habilitarCatalogo" [(ngModel)]="edicionCatalogo.enabled"> Habilitado</label>
+              <button class="btn btn-primary" type="submit" [disabled]="guardandoCatalogo()">Guardar catálogo</button>
+              <button class="btn btn-default" type="button" (click)="nuevoCatalogo()">Nuevo elemento</button>
+            </form>
+            <table class="table table-condensed"><thead><tr><th>Categoría</th><th>Código</th><th>Etiqueta</th><th>Habilitado</th><th>Edición</th></tr></thead><tbody>
+              @for (item of catalogosAdministrables(); track item.category + ':' + item.code) {
+                <tr><td>{{ item.category }}</td><td>{{ item.code }}</td><td>{{ item.label }}</td><td>{{ item.enabled ? 'Sí' : 'No' }}</td><td><button class="btn btn-xs btn-default" (click)="editarCatalogo(item)">Editar</button></td></tr>
+              } @empty {<tr><td colspan="5">No se han recuperado elementos de catálogo.</td></tr>}
+            </tbody></table>
+          </div>
+        </section>
+      }
 
       @if (notificacion()) {
         <div class="alert alert-success" style="padding: 10px 15px; margin-bottom: 15px;">
@@ -169,9 +215,7 @@ export interface PolizaSctrItem {
               <div class="col-md-3">
                 <select class="form-control input-sm" [(ngModel)]="filtroTipoEmo">
                   <option value="TODOS">Todos los Tipos de Examen</option>
-                  <option value="PRE_OCUPACIONAL">PRE_OCUPACIONAL (Ingreso)</option>
-                  <option value="PERIODICO">PERIODICO (Anual)</option>
-                  <option value="RETIRO">RETIRO</option>
+                  @for (option of catalogo('examType'); track option.code) {<option [value]="option.code">{{ option.label }}</option>}
                 </select>
               </div>
             </div>
@@ -201,28 +245,24 @@ export interface PolizaSctrItem {
                         <div><strong>{{ e.trabajador }}</strong></div>
                         <small class="text-muted">DNI: {{ e.dni }} &bull; {{ e.puesto }}</small>
                       </td>
-                      <td><span class="label label-primary">{{ e.tipoExamen }}</span></td>
+                      <td><span class="label label-primary">{{ etiquetaCatalogo('examType', e.tipoExamen) }}</span></td>
                       <td>{{ e.clinica }}</td>
                       <td>{{ e.fechaExamen }}</td>
                       <td>{{ e.fechaVencimiento }}</td>
                       <td>
-                        <span class="label" [ngClass]="{
-                          'label-success': e.aptitud === 'APTO',
-                          'label-warning': e.aptitud === 'APTO_CON_RESTRICCION',
-                          'label-danger': e.aptitud === 'NO_APTO'
-                        }">{{ e.aptitud }}</span>
+                        <span class="label label-default">{{ etiquetaCatalogo('outcome', e.aptitud) }}</span>
                       </td>
                       <td style="font-size: 11px;">{{ e.restricciones }}</td>
                       <td>{{ e.medico }}</td>
                       <td>
-                        <span class="label" [ngClass]="e.estado === 'VALIDADO' ? 'label-success' : 'label-warning'">
-                          {{ e.estado }}
+                        <span class="label label-default">
+                          {{ etiquetaCatalogo('reviewState', e.estado) }}
                         </span>
                       </td>
                       <td>
                         <div class="btn-group">
-                          <button class="btn btn-xs btn-success" (click)="aprobarEmo(e)" title="Validar Aptitud Médica">
-                            <i class="fa fa-check"></i> Validar
+                          <button class="btn btn-xs btn-success" (click)="aprobarEmo()" title="Solicitar revisión del dictamen sin cambiar la aptitud">
+                            <i class="fa fa-tasks"></i> Revisar expediente
                           </button>
                           <button class="btn btn-xs btn-danger" (click)="eliminarEmo(e)" title="Eliminar Registro">
                             <i class="fa fa-trash"></i>
@@ -280,28 +320,28 @@ export interface PolizaSctrItem {
                     <tr>
                       <td><strong>#{{ c.id }}</strong></td>
                       <td><strong>{{ c.trabajador }}</strong> <br><small class="text-muted">DNI: {{ c.dni }}</small></td>
-                      <td><span class="label label-info">{{ c.tipoPrueba }}</span></td>
+                      <td><span class="label label-info">{{ etiquetaCatalogo('covidTestType', c.tipoPrueba) }}</span></td>
                       <td><code>{{ c.esquemaDosis }}</code></td>
                       <td>
-                        <span class="label" [ngClass]="c.resultado === 'AISLAMIENTO' ? 'label-danger' : 'label-success'">
-                          {{ c.resultado }}
+                        <span class="label label-default">
+                          {{ etiquetaCatalogo('covidResult', c.resultado) }}
                         </span>
                       </td>
                       <td>
-                        <span class="label" [ngClass]="c.fichaSintomatologica === 'SIN_SINTOMAS' ? 'label-success' : 'label-warning'">
+                        <span class="label label-default">
                           {{ c.fichaSintomatologica }}
                         </span>
                       </td>
                       <td>{{ c.fechaControl }}</td>
                       <td>{{ c.medicoResponsable }}</td>
                       <td>
-                        <span class="label" [ngClass]="c.estado === 'APROBADO' ? 'label-success' : 'label-warning'">
-                          {{ c.estado }}
+                        <span class="label label-default">
+                          {{ etiquetaCatalogo('reviewState', c.estado) }}
                         </span>
                       </td>
                       <td>
                         <div class="btn-group">
-                          <button class="btn btn-xs btn-success" (click)="aprobarCovid(c)" title="Otorgar Alta / Aprobar">
+                          <button class="btn btn-xs btn-success" (click)="aprobarCovid()" title="Revisar control sin convertir el resultado">
                             <i class="fa fa-check"></i> Aprobar
                           </button>
                           <button class="btn btn-xs btn-danger" (click)="eliminarCovid(c)" title="Eliminar">
@@ -322,7 +362,7 @@ export interface PolizaSctrItem {
       @if (pestana() === 'PSICOLOGIA') {
         <div class="panel panel-primary">
           <div class="panel-heading" style="background-color: #004B87; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <h4 class="panel-title"><i class="fa fa-user-md"></i> Psicología Ocupacional, Batería CENSOPAS-COPSOQ y Trabajos Críticos</h4>
+            <h4 class="panel-title"><i class="fa fa-user-md"></i> Psicología Ocupacional y Trabajos Críticos</h4>
             <div style="display: flex; gap: 6px;">
               <button class="btn btn-xs btn-info" (click)="exportarCsvPsicologia()">
                 <i class="fa fa-download"></i> Exportar CSV
@@ -361,32 +401,24 @@ export interface PolizaSctrItem {
                       <td><strong>#{{ p.id }}</strong></td>
                       <td><strong>{{ p.trabajador }}</strong> <br><small class="text-muted">DNI: {{ p.dni }}</small></td>
                       <td>{{ p.bateriaEvaluacion }}</td>
-                      <td><span class="label label-primary">{{ p.trabajoCritico }}</span></td>
+                      <td><span class="label label-primary">{{ etiquetaCatalogo('psychWorkType', p.trabajoCritico) }}</span></td>
                       <td>
-                        <span class="label" [ngClass]="{
-                          'label-success': p.nivelEstresFatiga === 'BAJO_CONTROLADO',
-                          'label-warning': p.nivelEstresFatiga === 'MODERADO',
-                          'label-danger': p.nivelEstresFatiga === 'ALTO_RIESGO'
-                        }">{{ p.nivelEstresFatiga }}</span>
+                        <span class="label label-default">{{ etiquetaCatalogo('psychStress', p.nivelEstresFatiga) }}</span>
                       </td>
                       <td>
-                        <span class="label" [ngClass]="{
-                          'label-success': p.aptitudPsicologica === 'APTO',
-                          'label-warning': p.aptitudPsicologica === 'APTO_CON_RECOMENDACION',
-                          'label-danger': p.aptitudPsicologica === 'NO_APTO'
-                        }">{{ p.aptitudPsicologica }}</span>
+                        <span class="label label-default">{{ etiquetaCatalogo('psychOutcome', p.aptitudPsicologica) }}</span>
                       </td>
                       <td>{{ p.psicologoEvaluador }}</td>
                       <td>{{ p.fechaEvaluacion }}</td>
                       <td>
-                        <span class="label" [ngClass]="p.estado === 'VALIDADO' ? 'label-success' : 'label-warning'">
-                          {{ p.estado }}
+                        <span class="label label-default">
+                          {{ etiquetaCatalogo('reviewState', p.estado) }}
                         </span>
                       </td>
                       <td>
                         <div class="btn-group">
-                          <button class="btn btn-xs btn-success" (click)="aprobarPsicologia(p)">
-                            <i class="fa fa-check"></i> Validar
+                          <button class="btn btn-xs btn-success" (click)="aprobarPsicologia()">
+                            <i class="fa fa-tasks"></i> Revisar expediente
                           </button>
                           <button title="Eliminar registro" class="btn btn-xs btn-danger" (click)="eliminarPsicologia(p)">
                             <i class="fa fa-trash"></i>
@@ -452,19 +484,17 @@ export interface PolizaSctrItem {
                       <td>{{ s.fechaVencimiento }}</td>
                       <td style="text-align:center;"><strong>{{ s.trabajadoresCubiertos }} trab.</strong></td>
                       <td>
-                        <span class="label" [ngClass]="s.validadoGarita ? 'label-success' : 'label-warning'">
-                          {{ s.validadoGarita ? 'HABILITADO GARITA' : 'EN REVISIÓN' }}
-                        </span>
+                        <span>Consulte la evaluación vigente de garita.</span>
                       </td>
                       <td>
-                        <span class="label" [ngClass]="s.estado === 'VIGENTE_HABILITADO' ? 'label-success' : 'label-warning'">
-                          {{ s.estado }}
+                        <span class="label label-default">
+                          {{ etiquetaCatalogo('sctrState', s.estado) }}
                         </span>
                       </td>
                       <td>
                         <div class="btn-group">
-                          <button class="btn btn-xs btn-success" (click)="aprobarSctr(s)">
-                            <i class="fa fa-check"></i> Habilitar
+                          <button class="btn btn-xs btn-success" (click)="aprobarSctr()">
+                            <i class="fa fa-tasks"></i> Revisar expediente
                           </button>
                           <button title="Eliminar registro" class="btn btn-xs btn-danger" (click)="eliminarSctr(s)">
                             <i class="fa fa-trash"></i>
@@ -505,36 +535,28 @@ export interface PolizaSctrItem {
                   <input type="text" class="form-control input-sm" [(ngModel)]="nuevoEmo.puesto">
                 </div>
                 <div class="col-md-6 form-group">
-                  <label>Tipo de Examen (RM 312-2011-MINSA):</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevoEmo.tipoExamen">
-                    <option value="PRE_OCUPACIONAL">PRE_OCUPACIONAL (Ingreso)</option>
-                    <option value="PERIODICO">PERIODICO (Anual)</option>
-                    <option value="RETIRO">RETIRO</option>
-                  </select>
+                  <label>Tipo de Examen:</label>
+                  <select class="form-control input-sm" [(ngModel)]="nuevoEmo.tipoExamen"><option value="">Seleccione</option> @for (option of catalogo('examType'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-6 form-group">
-                  <label>Clínica Acreditada DIGESA:</label>
+                  <label>Clínica evaluadora:</label>
                   <input type="text" class="form-control input-sm" [(ngModel)]="nuevoEmo.clinica">
                 </div>
                 <div class="col-md-3 form-group">
                   <label>Fecha Examen:</label>
-                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoEmo.fechaExamen">
+                  <input type="date" class="form-control input-sm" [(ngModel)]="nuevoEmo.fechaExamen">
                 </div>
                 <div class="col-md-3 form-group">
                   <label>Fecha Vencimiento:</label>
-                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoEmo.fechaVencimiento">
+                  <input type="date" class="form-control input-sm" [(ngModel)]="nuevoEmo.fechaVencimiento">
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-5 form-group">
                   <label>Aptitud Médica:</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevoEmo.aptitud">
-                    <option value="APTO">APTO</option>
-                    <option value="APTO_CON_RESTRICCION">APTO_CON_RESTRICCION</option>
-                    <option value="NO_APTO">NO_APTO</option>
-                  </select>
+                  <select class="form-control input-sm" [(ngModel)]="nuevoEmo.aptitud"><option value="">Seleccione</option> @for (option of catalogo('outcome'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
                 <div class="col-md-7 form-group">
                   <label>Médico Evaluador (CMP / RNE):</label>
@@ -578,29 +600,21 @@ export interface PolizaSctrItem {
               <div class="row">
                 <div class="col-md-6 form-group">
                   <label>Tipo de Prueba / Control:</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevoCovid.tipoPrueba">
-                    <option value="CONTROL_VACUNACION">CONTROL_VACUNACION</option>
-                    <option value="ANTIGENO">ANTIGENO</option>
-                    <option value="MOLECULAR_PCR">MOLECULAR_PCR</option>
-                  </select>
+                  <select class="form-control input-sm" [(ngModel)]="nuevoCovid.tipoPrueba"><option value="">Seleccione</option> @for (option of catalogo('covidTestType'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
                 <div class="col-md-6 form-group">
-                  <label>Esquema de Dosis MINSA:</label>
+                  <label>Esquema de dosis registrado:</label>
                   <input type="text" class="form-control input-sm" [(ngModel)]="nuevoCovid.esquemaDosis">
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-4 form-group">
                   <label>Resultado:</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevoCovid.resultado">
-                    <option value="NEGATIVO">NEGATIVO</option>
-                    <option value="ALTA_EPIDEMIOLOGICA">ALTA_EPIDEMIOLOGICA</option>
-                    <option value="AISLAMIENTO">AISLAMIENTO</option>
-                  </select>
+                  <select class="form-control input-sm" [(ngModel)]="nuevoCovid.resultado"><option value="">Seleccione</option> @for (option of catalogo('covidResult'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
                 <div class="col-md-4 form-group">
                   <label>Fecha Control:</label>
-                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoCovid.fechaControl">
+                  <input type="date" class="form-control input-sm" [(ngModel)]="nuevoCovid.fechaControl">
                 </div>
                 <div class="col-md-4 form-group">
                   <label>Médico Evaluador:</label>
@@ -644,32 +658,20 @@ export interface PolizaSctrItem {
                 </div>
                 <div class="col-md-6 form-group">
                   <label>Perfil Trabajo Crítico:</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevaPsicologia.trabajoCritico">
-                    <option value="ALTURA_Y_CONFINADOS">ALTURA_Y_CONFINADOS</option>
-                    <option value="CONDUCCION_MAQUINARIA">CONDUCCION_MAQUINARIA</option>
-                    <option value="OPERACION_GENERAL">OPERACION_GENERAL</option>
-                  </select>
+                  <select class="form-control input-sm" [(ngModel)]="nuevaPsicologia.trabajoCritico"><option value="">Seleccione</option> @for (option of catalogo('psychWorkType'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-4 form-group">
                   <label>Nivel Estrés/Fatiga:</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevaPsicologia.nivelEstresFatiga">
-                    <option value="BAJO_CONTROLADO">BAJO_CONTROLADO</option>
-                    <option value="MODERADO">MODERADO</option>
-                    <option value="ALTO_RIESGO">ALTO_RIESGO</option>
-                  </select>
+                  <select class="form-control input-sm" [(ngModel)]="nuevaPsicologia.nivelEstresFatiga"><option value="">Seleccione</option> @for (option of catalogo('psychStress'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
                 <div class="col-md-4 form-group">
                   <label>Aptitud Psicológica:</label>
-                  <select class="form-control input-sm" [(ngModel)]="nuevaPsicologia.aptitudPsicologica">
-                    <option value="APTO">APTO</option>
-                    <option value="APTO_CON_RECOMENDACION">APTO_CON_RECOMENDACION</option>
-                    <option value="NO_APTO">NO_APTO</option>
-                  </select>
+                  <select class="form-control input-sm" [(ngModel)]="nuevaPsicologia.aptitudPsicologica"><option value="">Seleccione</option> @for (option of catalogo('psychOutcome'); track option.code) { <option [value]="option.code">{{ option.label }}</option> }</select>
                 </div>
                 <div class="col-md-4 form-group">
-                  <label>Psicólogo Evaluador:</label>
+                  <label>Fecha de evaluación:</label><input type="date" class="form-control input-sm" [(ngModel)]="nuevaPsicologia.fechaEvaluacion"><label>Psicólogo Evaluador:</label>
                   <input type="text" class="form-control input-sm" [(ngModel)]="nuevaPsicologia.psicologoEvaluador">
                 </div>
               </div>
@@ -720,7 +722,7 @@ export interface PolizaSctrItem {
                 </div>
                 <div class="col-md-4 form-group">
                   <label>Fecha Vencimiento:</label>
-                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoSctr.fechaVencimiento">
+                  <input type="date" class="form-control input-sm" [(ngModel)]="nuevoSctr.fechaVencimiento">
                 </div>
                 <div class="col-md-4 form-group">
                   <label>N° Trabajadores Cubiertos:</label>
@@ -744,7 +746,8 @@ export interface PolizaSctrItem {
 export class Modulo09SaludOcupacionalComponent implements OnInit {
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
 
   readonly pestana = signal<'EMO' | 'COVID' | 'PSICOLOGIA' | 'SCTR' | 'VISOR'>('EMO');
 
@@ -763,7 +766,7 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
     }
 
   });
-  readonly paginaVisorActiva = signal<'examenmedico.html' | 'covid.html' | 'psicologia.html'>('examenmedico.html');
+
   readonly notificacion = signal<string>('');
 
   readonly mostrarModalEmo = signal<boolean>(false);
@@ -777,307 +780,116 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
   filtroPsicologia = '';
   filtroSctr = '';
 
-  readonly examenesEmo = signal<ExamenMedicoItem[]>([
-    {
-      id: 1,
-      dni: '43891024',
-      trabajador: 'Juan Carlos Quispe Condori',
-      puesto: 'Soldador Homologado 6G',
-      tipoExamen: 'PERIODICO',
-      clinica: 'Clínica Ocupacional Internacional S.A.C. (DIGESA)',
-      fechaExamen: '10/10/2026',
-      fechaVencimiento: '10/10/2027',
-      aptitud: 'APTO',
-      restricciones: 'Uso permanente de lentes de seguridad y protección auditiva doble en molienda',
-      medico: 'Dr. Ricardo Vargas (CMP 45892 - RNE 21904)',
-      estado: 'VALIDADO'
-    },
-    {
-      id: 2,
-      dni: '46120987',
-      trabajador: 'Miguel Ángel Rojas Mendoza',
-      puesto: 'Operador de Grúa Telescópica',
-      tipoExamen: 'PRE_OCUPACIONAL',
-      clinica: 'Centro Médico Ocupacional Natclar - Sede Centro',
-      fechaExamen: '15/10/2026',
-      fechaVencimiento: '15/10/2027',
-      aptitud: 'APTO',
-      restricciones: 'Apto para trabajos en altura estructural (>1.80 m) y gran altitud geográfica (>4,000 msnm)',
-      medico: 'Dra. Elena Salas (CMP 51203)',
-      estado: 'VALIDADO'
-    },
-    {
-      id: 3,
-      dni: '71029384',
-      trabajador: 'Luis Alberto Villanueva Soto',
-      puesto: 'Técnico Instrumentista Planta',
-      tipoExamen: 'PERIODICO',
-      clinica: 'Pulso Corporación Médica Ocupacional',
-      fechaExamen: '18/10/2026',
-      fechaVencimiento: '18/10/2027',
-      aptitud: 'APTO_CON_RESTRICCION',
-      restricciones: 'Uso obligatorio de correctores visuales oftálmicos durante labores eléctricas',
-      medico: 'Dr. Ricardo Vargas (CMP 45892)',
-      estado: 'PENDIENTE_REVISION'
-    }
-  ]);
+  readonly examenesEmo = signal<ExamenMedicoItem[]>([]);
 
-  readonly registrosCovid = signal<VigilanciaCovidItem[]>([
-    {
-      id: 1,
-      dni: '43891024',
-      trabajador: 'Juan Carlos Quispe Condori',
-      tipoPrueba: 'CONTROL_VACUNACION',
-      esquemaDosis: '4 Dosis + Refuerzo Bivalente MINSA',
-      resultado: 'ALTA_EPIDEMIOLOGICA',
-      fichaSintomatologica: 'SIN_SINTOMAS',
-      fechaControl: '12/10/2026',
-      medicoResponsable: 'Dr. Ricardo Vargas',
-      estado: 'APROBADO'
-    },
-    {
-      id: 2,
-      dni: '46120987',
-      trabajador: 'Miguel Ángel Rojas Mendoza',
-      tipoPrueba: 'ANTIGENO',
-      esquemaDosis: '4 Dosis + Refuerzo Bivalente MINSA',
-      resultado: 'NEGATIVO',
-      fichaSintomatologica: 'SIN_SINTOMAS',
-      fechaControl: '16/10/2026',
-      medicoResponsable: 'Dra. Elena Salas',
-      estado: 'APROBADO'
-    }
-  ]);
+  readonly registrosCovid = signal<VigilanciaCovidItem[]>([]);
 
-  readonly evaluacionesPsicologia = signal<EvaluacionPsicologicaItem[]>([
-    {
-      id: 1,
-      dni: '43891024',
-      trabajador: 'Juan Carlos Quispe Condori',
-      bateriaEvaluacion: 'Batería CENSOPAS-COPSOQ + Test de Fobia a la Altura y Confinados',
-      trabajoCritico: 'ALTURA_Y_CONFINADOS',
-      nivelEstresFatiga: 'BAJO_CONTROLADO',
-      aptitudPsicologica: 'APTO',
-      psicologoEvaluador: 'Lic. Patricia Gómez (C.Ps.P. 18420)',
-      fechaEvaluacion: '11/10/2026',
-      estado: 'VALIDADO'
-    },
-    {
-      id: 2,
-      dni: '46120987',
-      trabajador: 'Miguel Ángel Rojas Mendoza',
-      bateriaEvaluacion: 'Evaluación Psicosensométrica y Control de Impulsos / Fatiga',
-      trabajoCritico: 'CONDUCCION_MAQUINARIA',
-      nivelEstresFatiga: 'BAJO_CONTROLADO',
-      aptitudPsicologica: 'APTO',
-      psicologoEvaluador: 'Lic. Patricia Gómez (C.Ps.P. 18420)',
-      fechaEvaluacion: '15/10/2026',
-      estado: 'VALIDADO'
-    }
-  ]);
+  readonly evaluacionesPsicologia = signal<EvaluacionPsicologicaItem[]>([]);
 
-  readonly polizasSctr = signal<PolizaSctrItem[]>([
-    {
-      id: 1,
-      numeroPoliza: 'SCTR-2026-889410',
-      contratistaEmpresa: 'CONSTRUCTORA E INGENIERÍA INDUSTRIAL DEL CENTRO S.A.C.',
-      aseguradoraSalud: 'Rímac Seguros EPS',
-      aseguradoraPension: 'Rímac Seguros y Reaseguros',
-      periodoVigencia: 'OCTUBRE - NOVIEMBRE 2026',
-      fechaVencimiento: '30/11/2026',
-      trabajadoresCubiertos: 85,
-      validadoGarita: true,
-      estado: 'VIGENTE_HABILITADO'
-    },
-    {
-      id: 2,
-      numeroPoliza: 'SCTR-2026-774125',
-      contratistaEmpresa: 'SERVICIOS ELECTROMECÁNICOS ANDINOS S.R.L.',
-      aseguradoraSalud: 'Pacífico Seguros EPS',
-      aseguradoraPension: 'ONP / Pacífico Vida',
-      periodoVigencia: 'OCTUBRE - NOVIEMBRE 2026',
-      fechaVencimiento: '30/11/2026',
-      trabajadoresCubiertos: 42,
-      validadoGarita: true,
-      estado: 'VIGENTE_HABILITADO'
-    }
-  ]);
+  readonly polizasSctr = signal<PolizaSctrItem[]>([]);
 
-  nuevoEmo = {
-    dni: '48219033',
-    trabajador: '',
-    puesto: 'Montajista Electromecánico',
-    tipoExamen: 'PRE_OCUPACIONAL' as ExamenMedicoItem['tipoExamen'],
-    clinica: 'Clínica Ocupacional Internacional S.A.C. (DIGESA)',
-    fechaExamen: '24/10/2026',
-    fechaVencimiento: '24/10/2027',
-    aptitud: 'APTO' as ExamenMedicoItem['aptitud'],
-    restricciones: 'Apto para trabajos de alto riesgo sin restricciones',
-    medico: 'Dr. Ricardo Vargas (CMP 45892)'
-  };
+  readonly tiposCatalogo=signal<{code:string;label:string}[]>([]);
+  readonly catalogosAdministrables=signal<MedicalCatalogRow[]>([]);
+  readonly guardandoCatalogo=signal(false);
+  edicionCatalogo:{category:string;code:string;label:string;enabled:boolean;expectedVersion?:string}={category:'',code:'',label:'',enabled:true};
+  puedeAdministrarCatalogos():boolean { return this.session.snapshot()?.permissions.includes('medical:catalog:write')===true; }
+  nuevoCatalogo():void {this.edicionCatalogo={category:'',code:'',label:'',enabled:true};}
+  editarCatalogo(item:MedicalCatalogRow):void {this.edicionCatalogo={category:item.category,code:item.code,label:item.label,enabled:item.enabled,expectedVersion:item.version};}
+  cargarAdministracionCatalogos():void {
+    if(!this.puedeAdministrarCatalogos())return;
+    this.http.get<Record<string,unknown>>('/sst/medical/catalogs/types').subscribe({next:res=>{try{
+      const rows=this.listaConfirmada(res);
+      if(rows.some(x=>typeof x['code']!=='string'||!x['code']||typeof x['label']!=='string'))throw new Error('El servidor no confirmó los tipos de catálogo.');
+      this.tiposCatalogo.set(rows as {code:string;label:string}[]);
+    }catch(error){this.mostrarAviso(apiErrorMessage(error));}},error:error=>this.mostrarAviso(apiErrorMessage(error))});
+    this.http.get<Record<string,unknown>>('/sst/medical/catalogs/admin').subscribe({next:res=>{try{
+      const rows=this.listaConfirmada(res);
+      if(rows.some(x=>typeof x['code']!=='string'||typeof x['label']!=='string'||typeof x['category']!=='string'||typeof x['enabled']!=='boolean'||typeof x['version']!=='string'||!x['version']))throw new Error('Falta el catálogo y su versión persistida.');
+      this.catalogosAdministrables.set(rows as MedicalCatalogRow[]);
+    }catch(error){this.mostrarAviso(apiErrorMessage(error));}},error:error=>this.mostrarAviso(apiErrorMessage(error))});
+  }
+  guardarCatalogo():void {
+    if(!this.puedeAdministrarCatalogos()||this.guardandoCatalogo())return;
+    const data={...this.edicionCatalogo};
+    if(!data.category||!data.code.trim()||!data.label.trim()){this.mostrarAviso('Complete categoría, código y etiqueta.');return;}
+    const payload={...data,idempotencyKey:this.intents.key('medical:catalog:save',data)};
+    this.guardandoCatalogo.set(true);
+    this.http.put<Record<string,any>>('/sst/medical/catalogs',payload).subscribe({next:res=>{this.guardandoCatalogo.set(false);try{
+      if(res['CODE_RESPONSE']!=='05'||res['STATUS_CODE']!=='01')throw new Error(typeof res['mensajeRespuesta']==='string'?res['mensajeRespuesta']:'El catálogo no se confirmó.');
+      const snapshot=res['snapshot'],row=snapshot?.['record'];
+      if(res['requestId']!==payload.idempotencyKey||!snapshot||typeof snapshot['version']!=='string'||!snapshot['version']||!row||row['category']!==data.category||row['code']!==data.code||row['label']!==data.label||row['enabled']!==data.enabled)throw new Error('El recibo no corresponde al elemento enviado.');
+      this.edicionCatalogo={...data,expectedVersion:snapshot['version']};
+      this.cargarDatosDesdeSql();this.cargarAdministracionCatalogos();this.mostrarAviso('Catálogo confirmado por el servidor.');
+    }catch(error){this.mostrarAviso(apiErrorMessage(error));}},error:error=>{this.guardandoCatalogo.set(false);this.mostrarAviso(apiErrorMessage(error));}});
+  }
+  readonly catalogos = signal<{code:string;label:string;category:string}[]>([]);
+  private readonly intents = new IntentKeys();
+  nuevoEmo = { dni:'', trabajador:'', puesto:'', tipoExamen:'', clinica:'', fechaExamen:'', fechaVencimiento:'', aptitud:'', restricciones:'', medico:'' };
+  nuevoCovid = { dni:'', trabajador:'', tipoPrueba:'', esquemaDosis:'', resultado:'', fechaControl:'', medicoResponsable:'' };
+  nuevaPsicologia = { dni:'', trabajador:'', bateriaEvaluacion:'', trabajoCritico:'', nivelEstresFatiga:'', aptitudPsicologica:'', psicologoEvaluador:'', fechaEvaluacion:'' };
+  nuevoSctr = { numeroPoliza:'', contratistaEmpresa:'', aseguradoraSalud:'', aseguradoraPension:'', periodoVigencia:'', fechaVencimiento:'', trabajadoresCubiertos:0 };
+  etiquetaCatalogo(category:string,code:string):string {return this.catalogo(category).find(x=>x.code===code)?.label??code;}
+  catalogo(category:string):{code:string;label:string;category:string}[] { return this.catalogos().filter(x=>x.category===category); }
 
-  nuevoCovid = {
-    dni: '48219033',
-    trabajador: '',
-    tipoPrueba: 'CONTROL_VACUNACION' as VigilanciaCovidItem['tipoPrueba'],
-    esquemaDosis: '4 Dosis + Refuerzo Anual Bivalente',
-    resultado: 'NEGATIVO' as VigilanciaCovidItem['resultado'],
-    fechaControl: '24/10/2026',
-    medicoResponsable: 'Dr. Ricardo Vargas'
-  };
-
-  nuevaPsicologia = {
-    dni: '48219033',
-    trabajador: '',
-    bateriaEvaluacion: 'Batería CENSOPAS-COPSOQ + Aptitud Altura/Confinados',
-    trabajoCritico: 'ALTURA_Y_CONFINADOS' as EvaluacionPsicologicaItem['trabajoCritico'],
-    nivelEstresFatiga: 'BAJO_CONTROLADO' as EvaluacionPsicologicaItem['nivelEstresFatiga'],
-    aptitudPsicologica: 'APTO' as EvaluacionPsicologicaItem['aptitudPsicologica'],
-    psicologoEvaluador: 'Lic. Patricia Gómez (C.Ps.P. 18420)'
-  };
-
-  nuevoSctr = {
-    numeroPoliza: 'SCTR-2026-991020',
-    contratistaEmpresa: '',
-    aseguradoraSalud: 'Rímac Seguros EPS',
-    aseguradoraPension: 'Rímac Seguros',
-    periodoVigencia: 'NOVIEMBRE 2026',
-    fechaVencimiento: '30/11/2026',
-    trabajadoresCubiertos: 30
-  };
-
-  readonly totalEmoAptos = computed(() =>
-    this.examenesEmo().filter(e => e.aptitud !== 'NO_APTO').length
-  );
-
-  readonly totalTrabajadoresSctr = computed(() =>
-    this.polizasSctr().reduce((acc, s) => acc + (Number(s.trabajadoresCubiertos) || 0), 0)
-  );
-
-  readonly urlVisorSeguro = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.paginaVisorActiva()}`)
-  );
+  readonly totalTrabajadoresSctr = computed<number|null>(() => {
+    const rows=this.polizasSctr();
+    if(rows.some(s=>!Number.isSafeInteger(s.trabajadoresCubiertos)||s.trabajadoresCubiertos<0))return null;
+    return rows.reduce((total,s)=>total+s.trabajadoresCubiertos,0);
+  });
 
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
+    this.cargarAdministracionCatalogos();
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/examenmedico/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['trabajador']) {
-          const desdeSql: ExamenMedicoItem[] = list.map((r: Record<string, any>, idx: number) => {
-            // F06: Preservar con estricta fidelidad clínica los resultados NO_APTO, PENDIENTE, APTO y RESTRICCIONES
-            const rawApt = String(r['aptitud'] || 'PENDIENTE').toUpperCase().trim();
-            let aptVal: 'APTO' | 'APTO_CON_RESTRICCION' | 'NO_APTO' | 'PENDIENTE' = 'PENDIENTE';
-            if (rawApt.includes('NO') || rawApt.includes('DESAPROBADO') || rawApt.includes('INAPTO')) {
-              aptVal = 'NO_APTO';
-            } else if (rawApt.includes('RESTRIC')) {
-              aptVal = 'APTO_CON_RESTRICCION';
-            } else if (rawApt === 'APTO') {
-              aptVal = 'APTO';
-            } else {
-              aptVal = 'PENDIENTE';
-            }
-
-            const rawEst = String(r['estado'] || '').toUpperCase().trim();
-            const estVal: 'VALIDADO' | 'PENDIENTE' | 'OBSERVADO' =
-              rawEst === 'VALIDADO' || (aptVal === 'APTO' || aptVal === 'APTO_CON_RESTRICCION')
-                ? 'VALIDADO'
-                : (aptVal === 'NO_APTO' ? 'OBSERVADO' : 'PENDIENTE');
-
-            return {
-              id: Number(r['id']) || (10 + idx),
-              dni: String(r['dni'] || `4500112${idx}`),
-              trabajador: String(r['trabajador'] || ''),
-              puesto: String(r['puesto'] || 'Operador Industrial Planta'),
-              tipoExamen: (String(r['tipoExamen'] || 'PERIODICO').toUpperCase().includes('PRE') ? 'PRE_OCUPACIONAL' : 'PERIODICO'),
-              clinica: String(r['clinica'] || 'Clínica Ocupacional Acreditada DIGESA'),
-              fechaExamen: String(r['fechaExamen'] || '15/10/2026'),
-              fechaVencimiento: String(r['fechaVencimiento'] || '15/10/2027'),
-              aptitud: aptVal,
-              restricciones: String(r['restricciones'] || (aptVal === 'APTO_CON_RESTRICCION' ? 'Uso obligatorio de lentes correctores / descanso visual' : 'Sin restricciones')),
-              medico: String(r['medico'] || 'Dr. Ricardo Vargas (CMP 45892)'),
-              estado: estVal
-            };
-          });
-          this.examenesEmo.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.trabajador === a.trabajador))
-          ]);
-        }
-      }
+    if(!this.session.snapshot()){ this.mostrarAviso('Inicie sesión para consultar información médica autorizada.'); return; }
+    this.api.callAjaxPost('/medical/catalogs',{}).subscribe({
+      next:res=>{try{
+        const list=this.listaConfirmada(res);
+        if(list.some(x=>typeof x['code']!=='string'||typeof x['label']!=='string'||typeof x['category']!=='string')) throw new Error('Catálogo médico inválido.');
+        this.catalogos.set(list as {code:string;label:string;category:string}[]);
+      }catch(error){this.mostrarAviso(apiErrorMessage(error));}},
+      error:error=>this.mostrarAviso(apiErrorMessage(error))
     });
+    this.cargarLista('/examenmedico/lista',rows=>this.examenesEmo.set(rows.map(r=>this.medicalRecord<ExamenMedicoItem>(r))));
+    this.cargarLista('/covid/lista',rows=>this.registrosCovid.set(rows.map(r=>this.medicalRecord<VigilanciaCovidItem>(r))));
+    this.cargarLista('/psicologia/lista',rows=>this.evaluacionesPsicologia.set(rows.map(r=>this.medicalRecord<EvaluacionPsicologicaItem>(r))));
+    this.cargarLista('/sctr/lista',rows=>this.polizasSctr.set(rows.map(r=>this.medicalRecord<PolizaSctrItem>(r))));
+  }
 
-    // F12: Procesar respuestas secundarias sin descartar datos
-    this.api.callAjaxPost('/covid/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const cList = res?.['list'];
-        if (Array.isArray(cList) && cList.length > 0 && cList[0]['trabajador']) {
-          const covidData: VigilanciaCovidItem[] = cList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            dni: String(r['dni'] || `4500112${i}`),
-            trabajador: String(r['trabajador'] || ''),
-            tipoPrueba: 'CONTROL_VACUNACION' as const,
-            esquemaDosis: `${Number(r['dosis']) || 4} Dosis`,
-            resultado: 'NEGATIVO' as const,
-            fichaSintomatologica: 'SIN_SINTOMAS' as const,
-            fechaControl: String(r['fecha'] || '10/01/2026'),
-            medicoResponsable: 'Dr. Ricardo Vargas (CMP 45892)',
-            estado: 'APROBADO' as const
-          }));
-          this.registrosCovid.set(covidData);
-        }
-      }
+  private listaConfirmada(res:Record<string,any>):Record<string,any>[] {
+    if(res['CODE_RESPONSE']!=='05'||res['STATUS_CODE']!=='01')throw new Error(typeof res['mensajeRespuesta']==='string'?res['mensajeRespuesta']:'La consulta no se confirmó.');
+    const rows:unknown=res['list'];
+    if(!Array.isArray(rows)||rows.some(r=>r===null||typeof r!=='object'||Array.isArray(r))) throw new Error('El servidor no confirmó la lista solicitada.');
+    return rows as Record<string,any>[];
+  }
+  private medicalRecord<T>(raw:Record<string,any>):T{return readMedicalRecord<T>(raw);}
+  private cargarLista(route:string,apply:(rows:Record<string,any>[])=>void):void {
+    this.api.callAjaxPost(route,{}).subscribe({
+      next:res=>{try{apply(this.listaConfirmada(res));}catch(error){this.mostrarAviso(apiErrorMessage(error));}},
+      error:error=>this.mostrarAviso(apiErrorMessage(error))
     });
-    this.api.callAjaxPost('/psicologia/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const pList = res?.['list'];
-        if (Array.isArray(pList) && pList.length > 0 && pList[0]['trabajador']) {
-          const psData: EvaluacionPsicologicaItem[] = pList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            dni: String(r['dni'] || `4500112${i}`),
-            trabajador: String(r['trabajador'] || ''),
-            bateriaEvaluacion: 'Test de Fatiga, Somnolencia y Batería Psicosocial',
-            trabajoCritico: 'ALTURA_Y_CONFINADOS' as const,
-            nivelEstresFatiga: 'BAJO_CONTROLADO' as const,
-            aptitudPsicologica: 'APTO' as const,
-            psicologoEvaluador: 'Lic. Claudia Paredes (C.Ps.P 28410)',
-            fechaEvaluacion: String(r['fecha'] || '18/10/2026'),
-            estado: 'VALIDADO' as const
-          }));
-          this.evaluacionesPsicologia.set(psData);
-        }
-      }
-    });
-    this.api.callAjaxPost('/sctr/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const sList = res?.['list'];
-        if (Array.isArray(sList) && sList.length > 0) {
-          const sctrData: PolizaSctrItem[] = sList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            numeroPoliza: String(r['polizaSalud'] || `POL-SCTR-2026-0${i + 1}`),
-            contratistaEmpresa: String(r['empresa'] || 'GRUPO ELIAS-29 S.A.C'),
-            aseguradoraSalud: String(r['aseguradoraSalud'] || 'Rímac Seguros'),
-            aseguradoraPension: String(r['aseguradoraPension'] || 'Prima AFP / ONP'),
-            periodoVigencia: String(r['periodo'] || 'OCTUBRE 2026'),
-            fechaVencimiento: String(r['vencimiento'] || '31/10/2026'),
-            trabajadoresCubiertos: Number(r['cubiertos']) || 24,
-            validadoGarita: true,
-            estado: 'VIGENTE_HABILITADO' as const
-          }));
-          this.polizasSctr.set(sctrData);
-        }
-      }
+  }
+  private registrarOperacion(route:string,data:Record<string,unknown>,apply:(record:Record<string,any>)=>void):void {
+    if(!this.session.snapshot()){this.mostrarAviso('Inicie sesión para continuar.');return;}
+    const payload={...data,idempotencyKey:this.intents.key(route,data)};
+    this.api.callAjaxPost(route,payload).subscribe({
+      next:res=>{try{
+        const record=readMedicalMutation(res,payload.idempotencyKey,typeof data['id']==='number'?data['id']:undefined);
+        apply(record);
+        this.mostrarAviso(typeof res['mensajeRespuesta']==='string'?res['mensajeRespuesta']:'Cambio confirmado por el servidor.');
+      }catch(error){this.mostrarAviso(apiErrorMessage(error));}},
+      error:error=>this.mostrarAviso(apiErrorMessage(error))
     });
   }
 
+  private coincide(value:unknown,query:string):boolean {return typeof value==='string'&&value.toLowerCase().includes(query);}
   examenesEmoFiltrados(): ExamenMedicoItem[] {
     const q = this.filtroEmo.trim().toLowerCase();
     return this.examenesEmo().filter(e => {
       const okTipo = this.filtroTipoEmo === 'TODOS' || e.tipoExamen === this.filtroTipoEmo;
-      const okTexto = !q || e.trabajador.toLowerCase().includes(q) || e.dni.includes(q) || e.clinica.toLowerCase().includes(q) || e.medico.toLowerCase().includes(q);
+      const okTexto = !q || this.coincide(e.trabajador,q) || this.coincide(e.dni,q) || this.coincide(e.clinica,q) || this.coincide(e.medico,q);
       return okTipo && okTexto;
     });
   }
@@ -1086,7 +898,7 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
     const q = this.filtroCovid.trim().toLowerCase();
     if (!q) return this.registrosCovid();
     return this.registrosCovid().filter(c =>
-      c.trabajador.toLowerCase().includes(q) || c.dni.includes(q) || c.esquemaDosis.toLowerCase().includes(q)
+      this.coincide(c.trabajador,q) || this.coincide(c.dni,q) || this.coincide(c.esquemaDosis,q)
     );
   }
 
@@ -1094,7 +906,7 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
     const q = this.filtroPsicologia.trim().toLowerCase();
     if (!q) return this.evaluacionesPsicologia();
     return this.evaluacionesPsicologia().filter(p =>
-      p.trabajador.toLowerCase().includes(q) || p.dni.includes(q) || p.bateriaEvaluacion.toLowerCase().includes(q)
+      this.coincide(p.trabajador,q) || this.coincide(p.dni,q) || this.coincide(p.bateriaEvaluacion,q)
     );
   }
 
@@ -1102,216 +914,50 @@ export class Modulo09SaludOcupacionalComponent implements OnInit {
     const q = this.filtroSctr.trim().toLowerCase();
     if (!q) return this.polizasSctr();
     return this.polizasSctr().filter(s =>
-      s.numeroPoliza.toLowerCase().includes(q) || s.contratistaEmpresa.toLowerCase().includes(q) || s.aseguradoraSalud.toLowerCase().includes(q)
+      this.coincide(s.numeroPoliza,q) || this.coincide(s.contratistaEmpresa,q) || this.coincide(s.aseguradoraSalud,q)
     );
   }
 
   guardarNuevoEmo(): void {
-    if (!this.nuevoEmo.trabajador.trim()) return;
-    this.api.callAjaxPost('/examenmedico/insert', { ...this.nuevoEmo, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarEmoLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarEmoLocal(Date.now() % 10000)
+    if(!this.nuevoEmo.dni.trim()||!this.nuevoEmo.trabajador.trim()||!this.nuevoEmo.aptitud||!this.nuevoEmo.tipoExamen){this.mostrarAviso('Complete sujeto, tipo y resultado según el catálogo vigente.');return;}
+    this.registrarOperacion('/examenmedico/insert',{...this.nuevoEmo},record=>{
+      this.examenesEmo.update(rows=>[this.medicalRecord<ExamenMedicoItem>(record),...rows.filter(x=>x.id!==record['id'])]);
+      this.mostrarModalEmo.set(false);
     });
   }
-
-  private insertarEmoLocal(id: number): void {
-    const item: ExamenMedicoItem = {
-      id,
-      dni: this.nuevoEmo.dni,
-      trabajador: this.nuevoEmo.trabajador,
-      puesto: this.nuevoEmo.puesto,
-      tipoExamen: this.nuevoEmo.tipoExamen,
-      clinica: this.nuevoEmo.clinica,
-      fechaExamen: this.nuevoEmo.fechaExamen,
-      fechaVencimiento: this.nuevoEmo.fechaVencimiento,
-      aptitud: this.nuevoEmo.aptitud,
-      restricciones: this.nuevoEmo.restricciones,
-      medico: this.nuevoEmo.medico,
-      estado: 'VALIDADO'
-    };
-    this.examenesEmo.update(list => [item, ...list]);
-    this.mostrarModalEmo.set(false);
-    this.mostrarAviso(`Certificado EMO de "${item.trabajador}" registrado correctamente en OneSST.`);
+  aprobarEmo():void { void this.router.navigate(['/workflow']); }
+  eliminarEmo(item:ExamenMedicoItem):void {
+    this.registrarOperacion('/examenmedico/delete',{id:item.id,expectedVersion:item.version},()=>this.examenesEmo.update(rows=>rows.filter(x=>x.id!==item.id)));
   }
-
-  aprobarEmo(item: ExamenMedicoItem): void {
-    this.api.callAjaxPost('/examenmedico/aprobar', { id: item.id }).subscribe({
-      next: () => this.marcarEmoAprobado(item),
-      error: () => this.marcarEmoAprobado(item)
+  guardarNuevoCovid():void {
+    if(!this.nuevoCovid.dni.trim()||!this.nuevoCovid.trabajador.trim()||!this.nuevoCovid.tipoPrueba||!this.nuevoCovid.resultado){this.mostrarAviso('Complete sujeto, prueba y resultado del control.');return;}
+    this.registrarOperacion('/covid/insert',{...this.nuevoCovid},record=>{
+      this.registrosCovid.update(rows=>[this.medicalRecord<VigilanciaCovidItem>(record),...rows.filter(x=>x.id!==record['id'])]);this.mostrarModalCovid.set(false);
     });
   }
-
-  private marcarEmoAprobado(item: ExamenMedicoItem): void {
-    this.examenesEmo.update(list => list.map(e => e.id === item.id ? { ...e, estado: 'VALIDADO' } : e));
-    this.mostrarAviso(`Aptitud médica de "${item.trabajador}" validada para pase en garita.`);
+  aprobarCovid():void { void this.router.navigate(['/workflow']); }
+  eliminarCovid(item:VigilanciaCovidItem):void {
+    this.registrarOperacion('/covid/delete',{id:item.id,expectedVersion:item.version},()=>this.registrosCovid.update(rows=>rows.filter(x=>x.id!==item.id)));
   }
-
-  eliminarEmo(item: ExamenMedicoItem): void {
-    this.api.callAjaxPost('/examenmedico/delete', { id: item.id }).subscribe({
-      next: () => this.quitarEmoLocal(item),
-      error: () => this.quitarEmoLocal(item)
+  guardarNuevaPsicologia():void {
+    if(!this.nuevaPsicologia.dni.trim()||!this.nuevaPsicologia.trabajador.trim()||!this.nuevaPsicologia.aptitudPsicologica){this.mostrarAviso('Complete sujeto y dictamen psicológico.');return;}
+    this.registrarOperacion('/psicologia/insert',{...this.nuevaPsicologia},record=>{
+      this.evaluacionesPsicologia.update(rows=>[this.medicalRecord<EvaluacionPsicologicaItem>(record),...rows.filter(x=>x.id!==record['id'])]);this.mostrarModalPsicologia.set(false);
     });
   }
-
-  private quitarEmoLocal(item: ExamenMedicoItem): void {
-    this.examenesEmo.update(list => list.filter(e => e.id !== item.id));
-    this.mostrarAviso(`Registro EMO #${item.id} eliminado.`);
+  aprobarPsicologia():void { void this.router.navigate(['/workflow']); }
+  eliminarPsicologia(item:EvaluacionPsicologicaItem):void {
+    this.registrarOperacion('/psicologia/delete',{id:item.id,expectedVersion:item.version},()=>this.evaluacionesPsicologia.update(rows=>rows.filter(x=>x.id!==item.id)));
   }
-
-  guardarNuevoCovid(): void {
-    if (!this.nuevoCovid.trabajador.trim()) return;
-    this.api.callAjaxPost('/covid/insert', { ...this.nuevoCovid, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarCovidLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarCovidLocal(Date.now() % 10000)
+  guardarNuevoSctr():void {
+    if(!this.nuevoSctr.numeroPoliza.trim()||!this.nuevoSctr.contratistaEmpresa.trim()){this.mostrarAviso('Complete los datos reales de la póliza.');return;}
+    this.registrarOperacion('/sctr/insert',{...this.nuevoSctr},record=>{
+      this.polizasSctr.update(rows=>[this.medicalRecord<PolizaSctrItem>(record),...rows.filter(x=>x.id!==record['id'])]);this.mostrarModalSctr.set(false);
     });
   }
-
-  private insertarCovidLocal(id: number): void {
-    const item: VigilanciaCovidItem = {
-      id,
-      dni: this.nuevoCovid.dni,
-      trabajador: this.nuevoCovid.trabajador,
-      tipoPrueba: this.nuevoCovid.tipoPrueba,
-      esquemaDosis: this.nuevoCovid.esquemaDosis,
-      resultado: this.nuevoCovid.resultado,
-      fichaSintomatologica: 'SIN_SINTOMAS',
-      fechaControl: this.nuevoCovid.fechaControl,
-      medicoResponsable: this.nuevoCovid.medicoResponsable,
-      estado: 'APROBADO'
-    };
-    this.registrosCovid.update(list => [item, ...list]);
-    this.mostrarModalCovid.set(false);
-    this.mostrarAviso(`Control epidemiológico COVID-19 de "${item.trabajador}" guardado.`);
-  }
-
-  aprobarCovid(item: VigilanciaCovidItem): void {
-    this.api.callAjaxPost('/covid/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.registrosCovid.update(list => list.map(c => c.id === item.id ? { ...c, estado: 'APROBADO', resultado: 'ALTA_EPIDEMIOLOGICA' } : c));
-        this.mostrarAviso(`Alta epidemiológica aprobada para "${item.trabajador}".`);
-      },
-      error: () => {
-        this.registrosCovid.update(list => list.map(c => c.id === item.id ? { ...c, estado: 'APROBADO', resultado: 'ALTA_EPIDEMIOLOGICA' } : c));
-        this.mostrarAviso(`Alta epidemiológica aprobada para "${item.trabajador}".`);
-      }
-    });
-  }
-
-  eliminarCovid(item: VigilanciaCovidItem): void {
-    this.api.callAjaxPost('/covid/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.registrosCovid.update(list => list.filter(c => c.id !== item.id));
-        this.mostrarAviso(`Control COVID #${item.id} eliminado.`);
-      },
-      error: () => {
-        this.registrosCovid.update(list => list.filter(c => c.id !== item.id));
-        this.mostrarAviso(`Control COVID #${item.id} eliminado.`);
-      }
-    });
-  }
-
-  guardarNuevaPsicologia(): void {
-    if (!this.nuevaPsicologia.trabajador.trim()) return;
-    this.api.callAjaxPost('/psicologia/insert', { ...this.nuevaPsicologia, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarPsicologiaLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarPsicologiaLocal(Date.now() % 10000)
-    });
-  }
-
-  private insertarPsicologiaLocal(id: number): void {
-    const item: EvaluacionPsicologicaItem = {
-      id,
-      dni: this.nuevaPsicologia.dni,
-      trabajador: this.nuevaPsicologia.trabajador,
-      bateriaEvaluacion: this.nuevaPsicologia.bateriaEvaluacion,
-      trabajoCritico: this.nuevaPsicologia.trabajoCritico,
-      nivelEstresFatiga: this.nuevaPsicologia.nivelEstresFatiga,
-      aptitudPsicologica: this.nuevaPsicologia.aptitudPsicologica,
-      psicologoEvaluador: this.nuevaPsicologia.psicologoEvaluador,
-      fechaEvaluacion: '24/10/2026',
-      estado: 'VALIDADO'
-    };
-    this.evaluacionesPsicologia.update(list => [item, ...list]);
-    this.mostrarModalPsicologia.set(false);
-    this.mostrarAviso(`Evaluación psicológica de "${item.trabajador}" registrada.`);
-  }
-
-  aprobarPsicologia(item: EvaluacionPsicologicaItem): void {
-    this.api.callAjaxPost('/psicologia/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.evaluacionesPsicologia.update(list => list.map(p => p.id === item.id ? { ...p, estado: 'VALIDADO' } : p));
-        this.mostrarAviso(`Evaluación psicológica #${item.id} validada.`);
-      },
-      error: () => {
-        this.evaluacionesPsicologia.update(list => list.map(p => p.id === item.id ? { ...p, estado: 'VALIDADO' } : p));
-        this.mostrarAviso(`Evaluación psicológica #${item.id} validada.`);
-      }
-    });
-  }
-
-  eliminarPsicologia(item: EvaluacionPsicologicaItem): void {
-    this.api.callAjaxPost('/psicologia/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.evaluacionesPsicologia.update(list => list.filter(p => p.id !== item.id));
-        this.mostrarAviso(`Evaluación psicológica #${item.id} eliminada.`);
-      },
-      error: () => {
-        this.evaluacionesPsicologia.update(list => list.filter(p => p.id !== item.id));
-        this.mostrarAviso(`Evaluación psicológica #${item.id} eliminada.`);
-      }
-    });
-  }
-
-  guardarNuevoSctr(): void {
-    if (!this.nuevoSctr.contratistaEmpresa.trim()) return;
-    this.api.callAjaxPost('/sctr/insert', { ...this.nuevoSctr, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarSctrLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarSctrLocal(Date.now() % 10000)
-    });
-  }
-
-  private insertarSctrLocal(id: number): void {
-    const item: PolizaSctrItem = {
-      id,
-      numeroPoliza: this.nuevoSctr.numeroPoliza,
-      contratistaEmpresa: this.nuevoSctr.contratistaEmpresa,
-      aseguradoraSalud: this.nuevoSctr.aseguradoraSalud,
-      aseguradoraPension: this.nuevoSctr.aseguradoraPension,
-      periodoVigencia: this.nuevoSctr.periodoVigencia,
-      fechaVencimiento: this.nuevoSctr.fechaVencimiento,
-      trabajadoresCubiertos: Number(this.nuevoSctr.trabajadoresCubiertos) || 10,
-      validadoGarita: true,
-      estado: 'VIGENTE_HABILITADO'
-    };
-    this.polizasSctr.update(list => [item, ...list]);
-    this.mostrarModalSctr.set(false);
-    this.mostrarAviso(`Póliza SCTR "${item.numeroPoliza}" registrada y vinculada con Garita.`);
-  }
-
-  aprobarSctr(item: PolizaSctrItem): void {
-    this.api.callAjaxPost('/sctr/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.polizasSctr.update(list => list.map(s => s.id === item.id ? { ...s, validadoGarita: true, estado: 'VIGENTE_HABILITADO' } : s));
-        this.mostrarAviso(`Póliza SCTR "${item.numeroPoliza}" habilitada en Garita.`);
-      },
-      error: () => {
-        this.polizasSctr.update(list => list.map(s => s.id === item.id ? { ...s, validadoGarita: true, estado: 'VIGENTE_HABILITADO' } : s));
-        this.mostrarAviso(`Póliza SCTR "${item.numeroPoliza}" habilitada en Garita.`);
-      }
-    });
-  }
-
-  eliminarSctr(item: PolizaSctrItem): void {
-    this.api.callAjaxPost('/sctr/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.polizasSctr.update(list => list.filter(s => s.id !== item.id));
-        this.mostrarAviso(`Póliza SCTR #${item.id} eliminada.`);
-      },
-      error: () => {
-        this.polizasSctr.update(list => list.filter(s => s.id !== item.id));
-        this.mostrarAviso(`Póliza SCTR #${item.id} eliminada.`);
-      }
-    });
+  aprobarSctr():void { void this.router.navigate(['/workflow']); }
+  eliminarSctr(item:PolizaSctrItem):void {
+    this.registrarOperacion('/sctr/delete',{id:item.id,expectedVersion:item.version},()=>this.polizasSctr.update(rows=>rows.filter(x=>x.id!==item.id)));
   }
 
   exportarCsvEmo(): void {

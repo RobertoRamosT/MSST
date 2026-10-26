@@ -1,8 +1,13 @@
+import { AccessPolicyComponent } from '../../core/components/access-policy.component';
 import { Component, HostListener, OnDestroy, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { GosstApiService } from '../../core/services/gosst-api.service';
+import * as QRCode from 'qrcode';
+import { WorkflowInteractivoComponent } from '../workflow/workflow-interactivo.component';
+import { WorkflowApiService, WorkflowSnapshot, workflowFailure } from '../../core/services/workflow-api.service';
+import { AccessApiService, AccessDecision, AccessCatalog } from '../../core/services/access-api.service';
+import { apiErrorMessage, GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
 import {
   MENU_MODULOS_MSST,
@@ -52,17 +57,13 @@ const PREF_PULSO = 'onesst.ui.pulso';
 const PREF_GRAFICOS = 'onesst.ui.graficos';
 const PREF_COMPACTO = 'onesst.ui.compacto';
 
-// Palabras clave de estado (se evalúan en este orden: crítico → en proceso → conforme).
-const ESTADOS_CRITICOS = /(^|[^A-ZÁÉÍÓÚ])(NO APTO|OBSERVAD[OA]S?|VENCID[OA]S?|POR VENCER|RECHAZAD[OA]S?|CR[IÍ]TIC[OA]S?|RESTRINGID[OA]S?|BLOQUEAD[OA]S?|INHABILITAD[OA]S?|NO CONFORME|SUSPENDID[OA]S?|GRAVE|INTOLERABLE)([^A-ZÁÉÍÓÚ]|$)/i;
-const ESTADOS_EN_PROCESO = /(^|[^A-ZÁÉÍÓÚ])(PENDIENTES?|EN PROCESO|EN REVISI[OÓ]N|PROGRAMAD[OA]S?|BORRADOR|ABIERT[OA]S?|EN CURSO|EN EJECUCI[OÓ]N|POR FIRMAR|SEGUIMIENTO|PLANIFICAD[OA]S?)([^A-ZÁÉÍÓÚ]|$)/i;
-const ESTADOS_CONFORMES = /(^|[^A-ZÁÉÍÓÚ])(APTO|VIGENTES?|APROBAD[OA]S?|CONFORMES?|HABILITAD[OA]S?|ACTIV[OA]S?|CERRAD[OA]S?|COMPLETAD[OA]S?|FIRMAD[OA]S?|EJECUTAD[OA]S?|CUMPLE|AUTORIZAD[OA]S?|ENTREGAD[OA]S?|LEVANTAD[OA]S?|INSTALAD[OA]S?|VALIDAD[OA]S?|REALIZAD[OA]S?)([^A-ZÁÉÍÓÚ]|$)/i;
 
-const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
+
 
 @Component({
   selector: 'msst-contratista-portal',
   standalone: true,
-  imports: [
+  imports: [AccessPolicyComponent,WorkflowInteractivoComponent,
     CommonModule,
     FormsModule,
     MsstSidebarComponent,
@@ -80,6 +81,7 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
     Modulo12BiEstadisticasIaVisitantesComponent
   ],
   template: `
+<msst-access-policy [open]="accessPolicyOpen()" (closed)="accessPolicyOpen.set(false)"></msst-access-policy>
     <!-- Barra superior fija corporativa OneSST con Buscador Inteligente y Acciones Rápidas -->
     <header class="msst-topbar" [style.background]="'linear-gradient(135deg, #07192d 0%, ' + colorEmpresa() + ' 62%, #0d7490 100%)'">
       <div class="msst-topbar-izq">
@@ -170,6 +172,7 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
           }
         </div>
 
+        <button *ngIf="session.snapshot()?.permissions?.includes('access:configure')" type="button" class="msst-garita-pill" (click)="accessPolicyOpen.set(true)">Política de accesos</button>
         <button type="button" class="msst-garita-pill" title="Verificación instantánea de pase por DNI o Placa" (click)="abrirModalGaritaRapida()">
           <i class="fa fa-id-card-o" aria-hidden="true"></i><span class="msst-txt-opcional"> Garita</span>
         </button>
@@ -240,46 +243,46 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
             <div class="onesst-pulse-card" [class.activa]="moduloActivo() === 'MOD_03' && tabActiva() === '3A'" (click)="seleccionarPorKey('M03:3A')">
               <div class="onesst-pulse-top">
                 <span class="onesst-pulse-label">HOMOLOGACIÓN SST</span>
-                <span class="onesst-pulse-badge ok">Nivel A+</span>
+                <span class="onesst-pulse-badge info">Consulta</span>
               </div>
               <div class="onesst-pulse-val">{{ kpiHomologacion() }}</div>
-              <div class="onesst-pulse-sub">Ley 29783 · Auditoría Vigente</div>
+              <div class="onesst-pulse-sub">Consulte requisitos y revisión del expediente</div>
             </div>
 
             <div class="onesst-pulse-card" [class.activa]="moduloActivo() === 'MOD_03' && tabActiva() === '3C'" (click)="seleccionarPorKey('M03:3C')">
               <div class="onesst-pulse-top">
                 <span class="onesst-pulse-label">PERSONAL Y FLOTA EN GARITA</span>
-                <span class="onesst-pulse-badge ok">100 % Aptos</span>
+                <span class="onesst-pulse-badge info">Padrón</span>
               </div>
               <div class="onesst-pulse-val">{{ kpiGaritaPersonal() }}</div>
-              <div class="onesst-pulse-sub">SCTR, EMO, Inducción y SOAT al día</div>
+              <div class="onesst-pulse-sub">La habilitación se evalúa en garita</div>
             </div>
 
             <div class="onesst-pulse-card" [class.activa]="moduloActivo() === 'MOD_06'" (click)="seleccionarPorKey('M06:IPERC')">
               <div class="onesst-pulse-top">
                 <span class="onesst-pulse-label">RIESGOS CRÍTICOS E IPERC</span>
-                <span class="onesst-pulse-badge info">Controlado</span>
+                <span class="onesst-pulse-badge info">Registros</span>
               </div>
               <div class="onesst-pulse-val">{{ kpiMatricesIperc() }}</div>
-              <div class="onesst-pulse-sub">0 Riesgos intolerables sin control</div>
+              <div class="onesst-pulse-sub">Consulte riesgos y controles registrados</div>
             </div>
 
             <div class="onesst-pulse-card" [class.activa]="moduloActivo() === 'MOD_09'" (click)="seleccionarPorKey('M09:EMO')">
               <div class="onesst-pulse-top">
                 <span class="onesst-pulse-label">SALUD OCUPACIONAL (EMO)</span>
-                <span class="onesst-pulse-badge ok">Vigente</span>
+                <span class="onesst-pulse-badge info">Consulta</span>
               </div>
               <div class="onesst-pulse-val">{{ kpiSaludEmo() }}</div>
-              <div class="onesst-pulse-sub">Vigilancia médica sin vencimientos</div>
+              <div class="onesst-pulse-sub">Consulte resultados y vigencias registrados</div>
             </div>
 
             <div class="onesst-pulse-card" [class.activa]="moduloActivo() === 'MOD_12'" (click)="seleccionarPorKey('M12:ESTADISTICAS')">
               <div class="onesst-pulse-top">
                 <span class="onesst-pulse-label">SINIESTRALIDAD (IF / IS)</span>
-                <span class="onesst-pulse-badge ok">Meta Cumplida</span>
+                <span class="onesst-pulse-badge info">Estadísticas</span>
               </div>
               <div class="onesst-pulse-val">{{ kpiHorasHombre() }}</div>
-              <div class="onesst-pulse-sub">0.00 IF · Cero Accidentes Incapacitantes</div>
+              <div class="onesst-pulse-sub">Consulte el período y los datos confirmados</div>
             </div>
           </div>
         </section>
@@ -359,7 +362,7 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
           <button type="button" class="onesst-tool-btn" (click)="exportarVistaActualCsv()">
             <i class="fa fa-file-excel-o"></i> Exportar Excel / CSV
           </button>
-          <button type="button" class="onesst-tool-btn" (click)="imprimirVistaActual()" title="Imprimir reporte oficial ISO 45001 / Ley 29783">
+          <button type="button" class="onesst-tool-btn" (click)="imprimirVistaActual()" title="Imprimir la consulta actual">
             <i class="fa fa-print"></i> Imprimir Reporte
           </button>
         </div>
@@ -540,13 +543,17 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
               <input
                 type="text"
                 class="form-control"
-                placeholder="Ingresa DNI (ej. 45892103) o Placa (ej. BKT-892)..."
-                [(ngModel)]="garitaFiltro"
+                placeholder="Documento o placa exactos"
+                [(ngModel)]="garitaFiltro" (ngModelChange)="clearAccessDecision()"
                 (keyup.enter)="ejecutarConsultaGarita()">
               <button type="button" class="btn btn-primary" (click)="ejecutarConsultaGarita()">
                 <i class="fa fa-search"></i> Verificar
               </button>
             </div>
+<div class="form-group"><label>Tipo <select [(ngModel)]="garitaSubjectType" (ngModelChange)="clearAccessDecision()"><option value="">Seleccione</option>@for(t of accessCatalog()?.subjectTypes;track t.code){<option [value]="t.code">{{t.label}}</option>}</select></label><label>Sentido <select [(ngModel)]="garitaDirection" (ngModelChange)="clearAccessDecision()"><option value="">Seleccione</option>@for(d of accessCatalog()?.directions;track d.code){<option [value]="d.code">{{d.label}}</option>}</select></label>
+<label>Proyecto<select [(ngModel)]="garitaProjectId" (ngModelChange)="clearAccessDecision()"><option [ngValue]="null">Seleccione si corresponde</option>@for(p of accessCatalog()?.projects;track p.id){<option [ngValue]="p.id">{{p.label}}</option>}</select></label>
+<label>Punto de control<select [(ngModel)]="garitaZoneId" (ngModelChange)="clearAccessDecision()"><option [ngValue]="null">Seleccione</option>@for(z of accessCatalog()?.zones;track z.id){<option [ngValue]="z.id">{{z.label}}</option>}</select></label></div>
+@if(accessDecision()){<button type="button" (click)="registrarMovimientoGarita()">Registrar movimiento con decisión del servidor</button>}
             @if (garitaResultado()) {
               <div class="alert" [ngClass]="garitaResultado()!.habilitado ? 'alert-success' : 'alert-danger'" style="margin-bottom:0; display:flex; align-items:center; justify-content:space-between; gap:14px;">
                 <div style="flex:1;">
@@ -557,12 +564,12 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
                     </span>
                   </div>
                   <div style="font-size:12px; margin-top:6px;">
-                    Empresa: <strong>{{ garitaResultado()!.empresa }}</strong> &bull; Vigencia SCTR / EMO: <strong>{{ garitaResultado()!.vigencia }}</strong>
+                    Empresa: <strong>{{ garitaResultado()!.empresa }}</strong> &bull; Decisión válida hasta: <strong>{{ garitaResultado()!.vigencia }}</strong>
                   </div>
                 </div>
                 <div class="onesst-qr-mini-box" (click)="abrirQrDesdeGarita()" title="Ampliar e imprimir Fotocheck QR">
                   <svg viewBox="0 0 25 25" class="onesst-qr-svg-mini" shape-rendering="crispEdges">
-                    <path [attr.d]="generarPathsQrSvg('GARITA|' + garitaFiltro + '|' + garitaResultado()!.nombre)" fill="#0a2540" />
+                    <path [attr.d]="generarPathsQrSvg('ACCESS_DECISION|' + accessDecision()?.decisionId)" fill="#0a2540" />
                   </svg>
                   <span>Pase QR</span>
                 </div>
@@ -602,14 +609,14 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
                 <div style="font-size:12.5px; color:#64748b; margin-top:3px;">
                   Organización: <strong>{{ session.empresaNombre() }}</strong>
                 </div>
-                <span class="label label-success" style="display:inline-block; margin-top:6px;">Credencial Verificada Activa</span>
+                <span class="label label-success" style="display:inline-block; margin-top:6px;">Sesión autenticada</span>
               </div>
             </div>
             <div class="row" style="font-size:13px; color:#334155; line-height:1.9;">
-              <div class="col-sm-6"><strong>Nivel de Acceso:</strong> Corporativo Multi-Sede</div>
-              <div class="col-sm-6"><strong>Módulos Habilitados:</strong> 12 / 12 Módulos SST</div>
-              <div class="col-sm-6"><strong>Normativa Base:</strong> Ley N.° 29783 / ISO 45001</div>
-              <div class="col-sm-6"><strong>Estado Homologación:</strong> 98.5% (Apto Nivel A+)</div>
+              <div class="col-sm-6"><strong>Perfil:</strong> {{session.snapshot()?.perfilNombre}}</div>
+              <div class="col-sm-6"><strong>Permisos vigentes:</strong> {{session.snapshot()?.permissions?.length}}</div>
+              <div class="col-sm-6"><strong>Empresa:</strong> {{session.snapshot()?.empresaNombre}}</div>
+              <div class="col-sm-6"><strong>Homologación:</strong> Consulte el expediente de su organización</div>
             </div>
             <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:8px;">
               <button type="button" class="btn btn-default" (click)="modalMiPerfilAbierto.set(false)">Cerrar</button>
@@ -680,9 +687,9 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
                 <div style="font-size:12px; color:#64748b;">Controles críticos verificados para trabajos de alto riesgo.</div>
               </a>
               <a class="list-group-item efectoLink" (click)="seleccionarPorKey('M09:EMO'); modalAlertasAbierto.set(false)">
-                <span class="badge" style="background:#0284c7;">100% Aptos</span>
+                <span class="badge" style="background:#0284c7;">Consultar resultados</span>
                 <strong>Salud Ocupacional &rsaquo; Exámenes Médicos (EMO)</strong>
-                <div style="font-size:12px; color:#64748b;">Certificados de aptitud médica y pólizas SCTR vigentes.</div>
+                <div style="font-size:12px; color:#64748b;">Consultar el estado clínico y documental registrado.</div>
               </a>
             </div>
           </div>
@@ -752,44 +759,14 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
               </div>
             </div>
 
-            <!-- Motor de Workflow del Registro (5 Etapas con Acciones Directas) -->
-            <div class="onesst-ficha-wf-box">
-              <div class="onesst-ficha-wf-top">
-                <span class="onesst-ficha-kicker"><i class="fa fa-sitemap"></i> WORKFLOW DE ESTE REGISTRO (ETAPA {{ fichaRegistro360()!.etapaActual }} DE 5)</span>
-                <div class="onesst-ficha-wf-actions">
-                  <button type="button" class="btn btn-xs btn-primary" (click)="avanzarEtapaFicha360()">
-                    <i class="fa fa-step-forward"></i> Avanzar Etapa
-                  </button>
-                  <button type="button" class="btn btn-xs btn-success" (click)="cambiarEstadoFicha360('APROBADO / VIGENTE', 3, 'Aprobación y validación técnica SSOMA')">
-                    <i class="fa fa-check"></i> Aprobar / Validar
-                  </button>
-                  <button type="button" class="btn btn-xs btn-warning" (click)="cambiarEstadoFicha360('OBSERVADO - SUBSANAR', 2, 'Observación registrada para levantamiento')">
-                    <i class="fa fa-exclamation-triangle"></i> Observar
-                  </button>
-                  <button type="button" class="btn btn-xs btn-info" (click)="abrirQrDesdeFicha360()">
-                    <i class="fa fa-qrcode"></i> Emitir Pase QR
-                  </button>
-                  <button type="button" class="btn btn-xs btn-default" (click)="cambiarEstadoFicha360('CERRADO - AUDITADO', 5, 'Cierre formal y certificación digital ISO 45001')">
-                    <i class="fa fa-lock"></i> Certificar y Cerrar
-                  </button>
-                </div>
-              </div>
-
-              <div class="onesst-ficha-wf-stepper">
-                @for (etapa of workflowProcesoActual(); track etapa.paso) {
-                  <div
-                    class="onesst-ficha-wf-node"
-                    [class.completada]="etapa.paso < fichaRegistro360()!.etapaActual"
-                    [class.actual]="etapa.paso === fichaRegistro360()!.etapaActual"
-                    [class.observada]="fichaRegistro360()!.observado && etapa.paso === fichaRegistro360()!.etapaActual"
-                    (click)="irAEtapaFicha360(etapa.paso)">
-                    <span class="onesst-ficha-wf-circle">{{ etapa.paso }}</span>
-                    <span class="onesst-ficha-wf-label">{{ etapa.titulo }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-
+            <section class="onesst-ficha-wf-box">
+  <label>Expediente operativo confirmado <select [(ngModel)]="fichaExpedienteId">
+    <option [ngValue]="0">Seleccione un expediente existente</option>
+    @for(e of fichaExpedientes();track e.expedienteId){<option [ngValue]="e.expedienteId">{{e.codigoExpediente}} · {{e.subject.label}} · {{e.subtipo}}</option>}
+  </select></label>
+  <p>Los campos del registro se conservan. Esta selección consulta el expediente; no vincula registros ni altera aptitud o dictamen.</p>
+  @if(fichaExpedienteId>0){<msst-workflow-interactivo [expedienteId]="fichaExpedienteId" (loaded)="onFichaSnapshot($event)"></msst-workflow-interactivo>}
+</section>
             <div class="onesst-ficha-grid">
               @for (c of fichaRegistro360()!.campos; track $index) {
                 <div class="onesst-ficha-item">
@@ -814,7 +791,7 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
 
             <div class="onesst-ficha-footer">
               <div style="font-size:11.5px; color:#64748b;">
-                <i class="fa fa-check-circle" style="color:#10b981;"></i> Registro sincronizado y respaldado en repositorio corporativo OneSST
+                <i class="fa fa-check-circle" style="color:#10b981;"></i> Vista de consulta. Las operaciones se confirman en el expediente seleccionado.
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button type="button" class="btn btn-success btn-sm" (click)="abrirQrDesdeFicha360()">
@@ -824,7 +801,7 @@ const STORAGE_BITACORA_WF = 'onesst.workflow.bitacora';
                   <i class="fa fa-download"></i> Descargar CSV
                 </button>
                 <button type="button" class="btn btn-default btn-sm" (click)="imprimirFicha360()">
-                  <i class="fa fa-print"></i> Imprimir Ficha Oficial
+                  <i class="fa fa-print"></i> Imprimir Ficha
                 </button>
                 <button type="button" class="btn btn-primary btn-sm" (click)="modalFicha360Abierto.set(false)">
                   Cerrar
@@ -2032,11 +2009,11 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   readonly conteoFilasVisibles = signal<number>(0);
   readonly modoCompacto = signal<boolean>(this.leerPreferencia(PREF_COMPACTO, false));
 
-  readonly kpiHomologacion = signal<string>('98.5 % Homologado');
-  readonly kpiGaritaPersonal = signal<string>('Padrón Habilitado');
-  readonly kpiMatricesIperc = signal<string>('Controles Activos');
-  readonly kpiSaludEmo = signal<string>('100 % Aptitud EMO');
-  readonly kpiHorasHombre = signal<string>('145,200 HHT');
+  readonly kpiHomologacion = signal<string>('Sin datos confirmados');
+  readonly kpiGaritaPersonal = signal<string>('Sin datos confirmados');
+  readonly kpiMatricesIperc = signal<string>('Sin datos confirmados');
+  readonly kpiSaludEmo = signal<string>('Sin datos confirmados');
+  readonly kpiHorasHombre = signal<string>('Sin datos confirmados');
 
   readonly modalGaritaAbierto = signal<boolean>(false);
   readonly modalMiPerfilAbierto = signal<boolean>(false);
@@ -2050,7 +2027,14 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   readonly credencialQrActual = signal<DatosCredencialQr | null>(null);
   readonly mensajeNotificacion = signal<string>('');
 
-  private filaSeleccionadaDom: HTMLTableRowElement | null = null;
+  private readonly workflowApi=inject(WorkflowApiService);
+  private readonly accessApi=inject(AccessApiService);
+  readonly fichaExpedientes=signal<WorkflowSnapshot[]>([]);
+  readonly fichaSnapshot=signal<WorkflowSnapshot|null>(null);
+  fichaExpedienteId=0;
+  readonly accessDecision=signal<AccessDecision|null>(null);
+  garitaSubjectType='';garitaDirection='';garitaProjectId:number|null=null;garitaZoneId:number|null=null;
+  readonly accessPolicyOpen=signal(false);readonly accessCatalog=signal<AccessCatalog|null>(null);readonly accessBusy=signal(false);
 
   garitaFiltro = '';
   readonly garitaResultado = signal<{ nombre: string; empresa: string; estado: string; vigencia: string; habilitado: boolean } | null>(null);
@@ -2059,167 +2043,9 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   claveNueva = '';
   claveConfirmar = '';
 
-  private readonly insightsPorModulo: Record<ModuloActivoId, InsightModulo> = {
-    MOD_01: {
-      norma: 'ISO 27001 · Control de Accesos',
-      indicador: 'Perfiles RBAC y credenciales corporativas protegidas',
-      estado: 'Óptimo',
-      recomendacion: 'Audita periódicamente los privilegios de aprobación PETAR y Garita.'
-    },
-    MOD_02: {
-      norma: 'Ley N.° 29783 Art. 26 · Organización SST',
-      indicador: 'Sedes, áreas operativas y puestos mapeados con riesgos por función',
-      estado: 'Conforme',
-      recomendacion: 'Mantén sincronizado el Mapa de Procesos (MDF) con los puestos críticos.'
-    },
-    MOD_03: {
-      norma: 'Ley N.° 29783 Art. 68 · DS 024-2016-EM',
-      indicador: '98.5 % de cumplimiento en homologación documentaria y pase de garita',
-      estado: 'Apto Nivel A+',
-      recomendacion: 'Verifica en 1 clic la vigencia de SCTR, EMO y PETAR antes del ingreso a planta.'
-    },
-    MOD_04: {
-      norma: 'DS 005-2012-TR · Participación y Firma Digital',
-      indicador: 'Ejecución del Programa Anual PASST y bandeja de firmas al día',
-      estado: 'Activo',
-      recomendacion: 'Revisa las constancias pendientes de firma digital en la bandeja del colaborador.'
-    },
-    MOD_05: {
-      norma: 'DS 005-2012-TR Art. 42 · Comité Paritario SST',
-      indicador: 'Padrón laboral acreditado y libro de actas del Comité SST vigente',
-      estado: 'Instalado',
-      recomendacion: 'Registra el seguimiento mensual de acuerdos del Comité Paritario.'
-    },
-    MOD_06: {
-      norma: 'Ley N.° 29783 Art. 57 · ISO 45001 Cláusula 6.1',
-      indicador: 'Matrices IPERC actualizadas e inspecciones planeadas en ejecución',
-      estado: 'Preventivo',
-      recomendacion: 'Prioriza la jerarquía de controles (Eliminación / Ingeniería) en riesgos altos.'
-    },
-    MOD_07: {
-      norma: 'DS 005-2012-TR Art. 88 · Investigación y Mejora',
-      indicador: '0 accidentes incapacitantes y planes de acción SAC/SAP con trazabilidad',
-      estado: 'Controlado',
-      recomendacion: 'Verifica la eficacia de cada medida correctiva antes del cierre definitivo.'
-    },
-    MOD_08: {
-      norma: 'Ley N.° 29783 Art. 27 y 60 · Capacitación, EPP y PETS',
-      indicador: 'Mínimo 4 capacitaciones anuales por trabajador y entrega de EPP homologado',
-      estado: 'Vigente',
-      recomendacion: 'Valida la difusión de procedimientos PETS antes de autorizar tareas críticas.'
-    },
-    MOD_09: {
-      norma: 'RM 312-2011-MINSA · Vigilancia Médica Ocupacional',
-      indicador: '100 % de colaboradores con certificado de aptitud médica EMO y SCTR activo',
-      estado: 'Saludable',
-      recomendacion: 'Programa alertas preventivas 30 días antes del vencimiento de cada EMO.'
-    },
-    MOD_10: {
-      norma: 'ISO 45001:2018 Cláusula 9.2 · Matriz Legal SST',
-      indicador: 'Auditorías internas y evaluación de requisitos legales por encima del 95 %',
-      estado: 'Auditado',
-      recomendacion: 'Realiza seguimiento continuo a los hallazgos de auditoría y normas sectoriales.'
-    },
-    MOD_11: {
-      norma: 'ISO 14001 · D. Leg. 1278 (Residuos y MATPEL)',
-      indicador: 'Manifiestos EO-RS, hojas MSDS/SGA y huella de carbono GEI controlados',
-      estado: 'Sostenible',
-      recomendacion: 'Asegura la disponibilidad de hojas MSDS en cada punto de almacenamiento químico.'
-    },
-    MOD_12: {
-      norma: 'DS 005-2012-TR Art. 85 · Analítica e Indicadores BI',
-      indicador: 'Índices IF, IS e IA en meta corporativa y control QR de visitantes activo',
-      estado: 'Predictivo',
-      recomendacion: 'Revisa las proyecciones de analítica predictiva IA para anticipar desvíos.'
-    }
-  };
 
-  private readonly workflowsPorModulo: Record<ModuloActivoId, EtapaWorkflowProceso[]> = {
-    MOD_01: [
-      { paso: 1, titulo: 'Solicitud de Acceso', subtitulo: 'Definir perfil y alcance', icono: 'fa-plus-circle' },
-      { paso: 2, titulo: 'Matriz de Permisos', subtitulo: 'Asignar privilegios RBAC', icono: 'fa-sliders' },
-      { paso: 3, titulo: 'Validación Seguridad', subtitulo: 'Aprobar rol o usuario', icono: 'fa-shield' },
-      { paso: 4, titulo: 'Credencial Digital QR', subtitulo: 'Emitir token / QR activo', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Auditoría ISO 27001', subtitulo: 'Imprimir reporte oficial', icono: 'fa-print' }
-    ],
-    MOD_02: [
-      { paso: 1, titulo: 'Alta de Sede / Puesto', subtitulo: 'Registrar área o cargo', icono: 'fa-building-o' },
-      { paso: 2, titulo: 'Mapeo MDF de Procesos', subtitulo: 'Vincular actividades', icono: 'fa-sitemap' },
-      { paso: 3, titulo: 'Evaluación de Riesgos', subtitulo: 'Validar perfil SST', icono: 'fa-check-square-o' },
-      { paso: 4, titulo: 'Código QR de Área', subtitulo: 'Etiqueta QR de estación', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Aprobación Organizacional', subtitulo: 'Imprimir ficha oficial', icono: 'fa-print' }
-    ],
-    MOD_03: [
-      { paso: 1, titulo: 'Registro / Solicitud', subtitulo: 'Empresa, personal o PETAR', icono: 'fa-plus-circle' },
-      { paso: 2, titulo: 'Carga Documental SST', subtitulo: 'SCTR, EMO, SOAT e IPERC', icono: 'fa-cloud-upload' },
-      { paso: 3, titulo: 'Auditoría IA y SSOMA', subtitulo: 'Homologar / Dictaminar', icono: 'fa-check-circle' },
-      { paso: 4, titulo: 'Fotocheck y Pase QR', subtitulo: 'Habilitar ingreso Garita', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Certificación y Cierre', subtitulo: 'Imprimir constancia SST', icono: 'fa-print' }
-    ],
-    MOD_04: [
-      { paso: 1, titulo: 'Generación Documental', subtitulo: 'Programar o emitir doc.', icono: 'fa-file-text-o' },
-      { paso: 2, titulo: 'Notificación a Bandeja', subtitulo: 'Envío al colaborador', icono: 'fa-envelope-o' },
-      { paso: 3, titulo: 'Firma Digital Biométrica', subtitulo: 'Validar conformidad', icono: 'fa-pencil-square-o' },
-      { paso: 4, titulo: 'Sello de Tiempo QR', subtitulo: 'Constancia verificable', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Archivo Legal PASST', subtitulo: 'Imprimir cargo firmado', icono: 'fa-print' }
-    ],
-    MOD_05: [
-      { paso: 1, titulo: 'Empadronamiento / Conv.', subtitulo: 'Registrar titular o acta', icono: 'fa-user-plus' },
-      { paso: 2, titulo: 'Instalación / Sufragio', subtitulo: 'Sesión del Comité CSST', icono: 'fa-users' },
-      { paso: 3, titulo: 'Acuerdos y Compromisos', subtitulo: 'Aprobar acta paritaria', icono: 'fa-check' },
-      { paso: 4, titulo: 'Acreditación QR CSST', subtitulo: 'Credencial de miembro', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Libro Oficial de Actas', subtitulo: 'Imprimir acta legal', icono: 'fa-print' }
-    ],
-    MOD_06: [
-      { paso: 1, titulo: 'Identificación en Campo', subtitulo: 'Peligro, inspección u OPT', icono: 'fa-search-plus' },
-      { paso: 2, titulo: 'Valoración de Riesgo', subtitulo: 'Probabilidad × Severidad', icono: 'fa-th' },
-      { paso: 3, titulo: 'Jerarquía de Controles', subtitulo: 'Ingeniería, admin. y EPP', icono: 'fa-shield' },
-      { paso: 4, titulo: 'Ficha QR de Punto Crítico', subtitulo: 'Etiqueta QR en área', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Publicación de Matriz', subtitulo: 'Imprimir matriz IPERC', icono: 'fa-print' }
-    ],
-    MOD_07: [
-      { paso: 1, titulo: 'Reporte Flash (24 h)', subtitulo: 'Notificar evento SST', icono: 'fa-ambulance' },
-      { paso: 2, titulo: 'Análisis Causal (Ishikawa)', subtitulo: 'Determinar causas raíz', icono: 'fa-sitemap' },
-      { paso: 3, titulo: 'Plan de Acción SAC/SAP', subtitulo: 'Asignar medidas y plazos', icono: 'fa-tasks' },
-      { paso: 4, titulo: 'Verificación de Eficacia', subtitulo: 'Código QR de seguimiento', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Cierre y Reporte MINTRA', subtitulo: 'Imprimir informe oficial', icono: 'fa-print' }
-    ],
-    MOD_08: [
-      { paso: 1, titulo: 'Programación / Solicitud', subtitulo: 'Curso, EPP o PETS', icono: 'fa-calendar-plus-o' },
-      { paso: 2, titulo: 'Ejecución / Entrega', subtitulo: 'Evaluación y dotación', icono: 'fa-graduation-cap' },
-      { paso: 3, titulo: 'Conformidad y Registro', subtitulo: 'Validar nota o entrega', icono: 'fa-check-circle' },
-      { paso: 4, titulo: 'Certificado / Kardex QR', subtitulo: 'Emitir diploma o ficha QR', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Padrón Legal Ley 29783', subtitulo: 'Imprimir formato oficial', icono: 'fa-print' }
-    ],
-    MOD_09: [
-      { paso: 1, titulo: 'Programación Médica', subtitulo: 'Cita clínica EMO / SCTR', icono: 'fa-calendar' },
-      { paso: 2, titulo: 'Evaluación Ocupacional', subtitulo: 'Exámenes y psicología', icono: 'fa-stethoscope' },
-      { paso: 3, titulo: 'Dictamen de Aptitud', subtitulo: 'Apto / Con restricción', icono: 'fa-user-md' },
-      { paso: 4, titulo: 'Pase Médico QR', subtitulo: 'Habilitación en Garita', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Vigilancia RM 312-MINSA', subtitulo: 'Imprimir certificado EMO', icono: 'fa-print' }
-    ],
-    MOD_10: [
-      { paso: 1, titulo: 'Plan de Auditoría / Norma', subtitulo: 'Registrar alcance legal', icono: 'fa-balance-scale' },
-      { paso: 2, titulo: 'Verificación en Sitio', subtitulo: 'Evaluar evidencias SST', icono: 'fa-clipboard' },
-      { paso: 3, titulo: 'Calificación de Hallazgos', subtitulo: 'Dictaminar conformidad', icono: 'fa-check-square-o' },
-      { paso: 4, titulo: 'Sello QR de Auditoría', subtitulo: 'Trazabilidad ISO 45001', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Informe Ejecutivo Final', subtitulo: 'Imprimir informe oficial', icono: 'fa-print' }
-    ],
-    MOD_11: [
-      { paso: 1, titulo: 'Generación / Inventario', subtitulo: 'Residuo, MSDS o GEI', icono: 'fa-leaf' },
-      { paso: 2, titulo: 'Segregación y Control', subtitulo: 'Almacenamiento seguro', icono: 'fa-recycle' },
-      { paso: 3, titulo: 'Manifiesto EO-RS / SGA', subtitulo: 'Validar disposición final', icono: 'fa-truck' },
-      { paso: 4, titulo: 'Etiqueta QR Ambiental', subtitulo: 'QR de lote / hoja MSDS', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Declaración MINAM / ISO', subtitulo: 'Imprimir manifiesto', icono: 'fa-print' }
-    ],
-    MOD_12: [
-      { paso: 1, titulo: 'Captura / Pre-registro', subtitulo: 'Indicadores HHT o Visita', icono: 'fa-database' },
-      { paso: 2, titulo: 'Procesamiento BI / IA', subtitulo: 'Cálculo IF, IS, IA y riesgo', icono: 'fa-line-chart' },
-      { paso: 3, titulo: 'Aprobación / Autorización', subtitulo: 'Validar meta o anfitrión', icono: 'fa-check-circle' },
-      { paso: 4, titulo: 'Emisión de Pase QR', subtitulo: 'Fotocheck QR verificable', icono: 'fa-qrcode' },
-      { paso: 5, titulo: 'Reporte de Alta Dirección', subtitulo: 'Imprimir tablero oficial', icono: 'fa-print' }
-    ]
-  };
+
+
 
   /** Único menú del sistema: "Gestión SST" */
   readonly grupos = computed<MsstMenuGrupo[]>(() => [
@@ -2227,11 +2053,11 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   ]);
 
   readonly insightActual = computed<InsightModulo>(() =>
-    this.insightsPorModulo[this.moduloActivo()] ?? this.insightsPorModulo.MOD_03
+    ({norma:this.fichaSnapshot()?.codigoCaso??'Gestión SST',indicador:this.fichaSnapshot()?.estadoGeneral??'Seleccione un expediente para consultar el estado',estado:this.fichaSnapshot()?.estadoGeneral??'',recomendacion:'El estado operativo se confirma en el expediente y en la evaluación del servidor.'})
   );
 
   readonly workflowProcesoActual = computed<EtapaWorkflowProceso[]>(() =>
-    this.workflowsPorModulo[this.moduloActivo()] ?? this.workflowsPorModulo.MOD_03
+    []
   );
 
   readonly resultadosBusquedaGlobal = computed(() => {
@@ -2274,8 +2100,8 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    const empresaId = Number(this.session.getSession('gestopcompanyid')) || 773;
-    const contratistaId = this.session.getSession('contratistaGosstId') || '3234';
+    const empresaId = this.session.snapshot()?.empresaId;
+    const contratistaId = this.session.snapshot()?.contratistaId;
 
     this.api.callAjaxPost<Record<string, any>>('/contratista/perfiles', { empresaId, contratistaId }).subscribe({
       next: (res) => {
@@ -2349,46 +2175,17 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     this.temporizadorAnalitica = setTimeout(() => this.recalcularAnaliticaVista(), 250);
   }
 
-  private clasificarEstado(texto: string): 'ok' | 'proceso' | 'critico' | null {
-    const t = (texto || '').toUpperCase();
-    if (ESTADOS_CRITICOS.test(t)) return 'critico';
-    if (ESTADOS_EN_PROCESO.test(t)) return 'proceso';
-    if (ESTADOS_CONFORMES.test(t)) return 'ok';
-    return null;
-  }
-
-  /** Devuelve el texto de estado de una fila: columna "Estado/Aptitud/Resultado" o, en su defecto, su última etiqueta. */
-  private textoEstadoFila(tr: HTMLTableRowElement, idxEstado: number): string {
-    if (idxEstado >= 0 && tr.cells[idxEstado]) return tr.cells[idxEstado].textContent || '';
-    const etiquetas = tr.querySelectorAll('.label, .badge, [class*="estado"], [class*="status"]');
-    return etiquetas.length ? etiquetas[etiquetas.length - 1].textContent || '' : '';
-  }
-
-  recalcularAnaliticaVista(): void {
-    if (typeof document === 'undefined') return;
-    const tablas = Array.from(document.querySelectorAll<HTMLTableElement>('.msst-area table'));
-    let registros = 0, conformes = 0, enProceso = 0, observados = 0;
-    for (const tabla of tablas) {
-      const cabeceras = Array.from(tabla.querySelectorAll('thead th')).map(th => (th.textContent || '').toUpperCase());
-      const idxEstado = cabeceras.findIndex(h => /ESTADO|APTITUD|SITUACI|RESULTADO|VIGENCIA|CONDICI/.test(h));
-      const filas = Array.from(tabla.querySelectorAll<HTMLTableRowElement>('tbody tr'))
-        .filter(tr => tr.cells.length > 1);
-      registros += filas.length;
-      for (const tr of filas) {
-        tr.classList.remove('onesst-fila-critica');
-        const clase = this.clasificarEstado(this.textoEstadoFila(tr, idxEstado));
-        if (clase === 'ok') conformes++;
-        else if (clase === 'proceso') enProceso++;
-        else if (clase === 'critico') { observados++; tr.classList.add('onesst-fila-critica'); }
-      }
-    }
-    const conEstado = conformes + enProceso + observados;
-    const actual = this.analiticaVista();
-    const nuevo: AnaliticaVista = {
-      registros, tablas: tablas.length, conEstado, conformes, enProceso, observados,
-      porcConformes: conEstado ? Math.round((conformes / conEstado) * 100) : 0
-    };
-    if (JSON.stringify(actual) !== JSON.stringify(nuevo)) this.analiticaVista.set(nuevo);
+  recalcularAnaliticaVista():void{
+    if(typeof document==='undefined')return;
+    const tablas=Array.from(document.querySelectorAll<HTMLTableElement>('.msst-area table'));
+    const registros=tablas.reduce((count,t)=>count+Array.from(t.querySelectorAll<HTMLTableRowElement>('tbody tr')).filter(r=>r.cells.length>1).length,0);
+    const snapshot=this.fichaSnapshot();
+    const requirements=snapshot?.requirements??[];
+    const conformes=requirements.filter(r=>r.status==='VERIFIED').length;
+    const enProceso=requirements.filter(r=>r.status==='PENDING').length;
+    const observados=requirements.length-conformes-enProceso;
+    const nuevo:AnaliticaVista={registros,tablas:tablas.length,conEstado:requirements.length,conformes,enProceso,observados,porcConformes:snapshot?.cumplimientoPorc??0};
+    if(JSON.stringify(this.analiticaVista())!==JSON.stringify(nuevo))this.analiticaVista.set(nuevo);
   }
 
   pct(valor: number): number {
@@ -2452,7 +2249,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
       next: (res) => {
         const lista = Array.isArray(res?.['list']) ? res['list'] : [];
         if (lista.length) {
-          this.kpiGaritaPersonal.set(`${lista.length} Colaboradores Activos`);
+          this.kpiGaritaPersonal.set(`${lista.length} trabajadores registrados`);
         }
       }
     });
@@ -2460,7 +2257,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
       next: (res) => {
         const lista = Array.isArray(res?.['list']) ? res['list'] : [];
         if (lista.length) {
-          this.kpiMatricesIperc.set(`${lista.length} Matrices IPERC Vigentes`);
+          this.kpiMatricesIperc.set(`${lista.length} matrices registradas`);
         }
       }
     });
@@ -2487,7 +2284,8 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   consultarEnGaritaDesdeBuscador(): void {
     const q = this.busquedaGlobal().trim();
     this.buscadorAbierto.set(false);
-    this.garitaFiltro = q || '45892103';
+    this.garitaFiltro = q;
+    this.loadAccessCatalog();
     this.ejecutarConsultaGarita();
     this.modalGaritaAbierto.set(true);
   }
@@ -2625,7 +2423,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     }
 
     if (paso === 5) {
-      // Etapa 5: emite el reporte/certificado oficial imprimible ISO 45001 / Ley 29783
+      // Imprime los registros visibles de la consulta actual.
       this.imprimirVistaActual();
     }
   }
@@ -2633,142 +2431,28 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   // ==========================================================================
   // Generador Vectorial Real de Códigos QR (Matriz 25×25 QR v2 SVG)
   // ==========================================================================
-  generarPathsQrSvg(texto: string): string {
-    const N = 25;
-    const m: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
-    const reservado: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
+  generarPathsQrSvg(texto:string):string{
+ if(!texto.trim())return '';const qr=QRCode.create(texto,{errorCorrectionLevel:'M'}),n=qr.modules.size,scale=25/(n+8);let path='';
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.modules.get(r,c)){const x=(c+4)*scale,y=(r+4)*scale;path+='M'+x+','+y+'h'+scale+'v'+scale+'h-'+scale+'z';}return path;
+}
 
-    const ponerFinder = (fila: number, col: number) => {
-      for (let r = -1; r <= 7; r++) {
-        for (let c = -1; c <= 7; c++) {
-          const rr = fila + r;
-          const cc = col + c;
-          if (rr < 0 || rr >= N || cc < 0 || cc >= N) continue;
-          reservado[rr][cc] = true;
-          const enBorde = r === 0 || r === 6 || c === 0 || c === 6;
-          const enCentro = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-          const dentro7 = r >= 0 && r <= 6 && c >= 0 && c <= 6;
-          m[rr][cc] = dentro7 && (enBorde || enCentro);
-        }
-      }
-    };
+  abrirQrVistaActual():void{
+ const row=document.querySelector<HTMLTableRowElement>('.msst-area table tbody tr:not(.onesst-row-hidden)');
+ if(row)this.abrirFichaDesdeFila(row,true);else this.mensajeNotificacion.set('Seleccione un expediente o decisión de acceso confirmada para consultar su QR.');
+}
 
-    ponerFinder(0, 0);
-    ponerFinder(0, N - 7);
-    ponerFinder(N - 7, 0);
+  abrirQrDesdeFicha360():void{
+ const s=this.fichaSnapshot();if(!s){this.mensajeNotificacion.set('Seleccione un expediente confirmado para consultar su QR.');return;}
+ const url=new URL(location.href);url.hash='/workflow?expedienteId='+s.expedienteId;
+ this.credencialQrActual.set({codigo:s.codigoExpediente,titular:s.subject.label,subtitulo:s.titulo,empresa:this.session.empresaNombre(),
+ modulo:s.codigoCaso+' / '+s.subtipo,estado:s.estadoGeneral,vigencia:'Estado consultado: '+s.fechaUltimoMovimiento,urlVerificacion:url.href,qrPaths:this.generarPathsQrSvg(url.href)});this.modalQrAbierto.set(true);
+}
 
-    // Patrón de alineación 5×5 en (16, 16)
-    for (let r = -2; r <= 2; r++) {
-      for (let c = -2; c <= 2; c++) {
-        const rr = 18 + r;
-        const cc = 18 + c;
-        reservado[rr][cc] = true;
-        m[rr][cc] = Math.abs(r) === 2 || Math.abs(c) === 2 || (r === 0 && c === 0);
-      }
-    }
-
-    // Patrones de sincronismo (timing patterns)
-    for (let i = 8; i < N - 8; i++) {
-      reservado[6][i] = true;
-      m[6][i] = i % 2 === 0;
-      reservado[i][6] = true;
-      m[i][6] = i % 2 === 0;
-    }
-
-    // Semilla determinista a partir del contenido del QR
-    const limpio = (texto || 'ONESST-2026').trim();
-    let h1 = 2166136261;
-    let h2 = 16777619;
-    for (let i = 0; i < limpio.length; i++) {
-      const code = limpio.charCodeAt(i);
-      h1 ^= code;
-      h1 = Math.imul(h1, 16777619);
-      h2 = (Math.imul(h2, 31) + code * (i + 1)) | 0;
-    }
-
-    let bitIdx = 0;
-    for (let r = 0; r < N; r++) {
-      for (let c = 0; c < N; c++) {
-        if (reservado[r][c]) continue;
-        const charCode = limpio.charCodeAt(bitIdx % limpio.length);
-        const mix = (h1 >>> (bitIdx % 24)) ^ (h2 >>> ((r * 7 + c * 13) % 20)) ^ (charCode * (r + 3) * (c + 5));
-        m[r][c] = (mix & 1) === 1;
-        bitIdx++;
-      }
-    }
-
-    let path = '';
-    for (let r = 0; r < N; r++) {
-      for (let c = 0; c < N; c++) {
-        if (m[r][c]) {
-          path += `M${c},${r}h1v1h-1z`;
-        }
-      }
-    }
-    return path;
-  }
-
-  abrirQrVistaActual(): void {
-    if (typeof document !== 'undefined') {
-      const primeraFila = document.querySelector<HTMLTableRowElement>('.msst-area table tbody tr:not(.onesst-row-hidden)');
-      if (primeraFila) {
-        this.abrirFichaDesdeFila(primeraFila, true);
-        return;
-      }
-    }
-    const codigo = `SST-${this.moduloActivo().replace('_', '')}-2026`;
-    const payload = `ONESST|${this.session.empresaNombre()}|${this.migas().titulo}|${codigo}|VIGENTE`;
-    this.credencialQrActual.set({
-      codigo,
-      titular: this.migas().titulo,
-      subtitulo: `${this.insightActual().norma} — ${this.insightActual().indicador}`,
-      empresa: `${this.session.empresaNombre()} · ${this.session.usuarioNombre()}`,
-      modulo: this.migas().ruta.join(' › '),
-      estado: 'VERIFICADO · ACTIVO',
-      vigencia: '31/12/2026',
-      urlVerificacion: `https://onesst.io/v/${codigo}`,
-      qrPaths: this.generarPathsQrSvg(payload)
-    });
-    this.modalQrAbierto.set(true);
-  }
-
-  abrirQrDesdeFicha360(): void {
-    const f = this.fichaRegistro360();
-    if (!f) return;
-    const subtitulo = f.campos.slice(0, 3).map(c => `${c.etiqueta}: ${c.valor}`).join(' · ');
-    const payload = `ONESST|${f.codigoAuditoria}|${f.titulo}|${f.estadoActual}`;
-    this.credencialQrActual.set({
-      codigo: f.codigoAuditoria,
-      titular: f.titulo,
-      subtitulo: subtitulo || f.modulo,
-      empresa: `${this.session.empresaNombre()} · ${this.session.usuarioNombre()}`,
-      modulo: f.modulo,
-      estado: f.estadoActual,
-      vigencia: '31/12/2026 · Ley N.° 29783 / ISO 45001',
-      urlVerificacion: `https://onesst.io/v/${f.codigoAuditoria}`,
-      qrPaths: this.generarPathsQrSvg(payload)
-    });
-    this.modalQrAbierto.set(true);
-  }
-
-  abrirQrDesdeGarita(): void {
-    const g = this.garitaResultado();
-    if (!g) return;
-    const codigo = `GAR-${(this.garitaFiltro || '45892103').replace(/[^a-zA-Z0-9]/g, '')}-26`;
-    const payload = `ONESST|GARITA|${this.garitaFiltro}|${g.nombre}|${g.estado}`;
-    this.credencialQrActual.set({
-      codigo,
-      titular: g.nombre,
-      subtitulo: `Control de Acceso en Garita · Documento / Placa: ${this.garitaFiltro}`,
-      empresa: g.empresa,
-      modulo: 'Gestión de Contratistas › Control de Garita y PETAR',
-      estado: g.estado,
-      vigencia: g.vigencia,
-      urlVerificacion: `https://onesst.io/garita/${codigo}`,
-      qrPaths: this.generarPathsQrSvg(payload)
-    });
-    this.modalQrAbierto.set(true);
-  }
+  abrirQrDesdeGarita():void{
+ const d=this.accessDecision();if(!d)return;const payload=JSON.stringify({decisionId:d.decisionId,expectedVersion:d.version,expiresAt:d.expiresAt});
+ this.credencialQrActual.set({codigo:d.decisionId,titular:d.subjectLabel,subtitulo:'Decisión consultada. Requiere registro vigente en servidor.',empresa:d.empresaNombre,
+ modulo:'Control de acceso',estado:d.habilitado?'HABILITADO':'DENEGADO',vigencia:d.expiresAt,urlVerificacion:'Decisión '+d.decisionId,qrPaths:this.generarPathsQrSvg(payload)});this.modalQrAbierto.set(true);
+}
 
   descargarQrSvg(): void {
     const cred = this.credencialQrActual();
@@ -2803,7 +2487,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   }
 
   // ==========================================================================
-  // Motor de Impresión Corporativa ISO 45001 / Ley N.° 29783 (100 % Funcional)
+  // Impresión de la consulta visible; la conformidad corresponde al expediente del servidor.
   // ==========================================================================
   imprimirVistaActual(): void {
     if (typeof document === 'undefined') return;
@@ -2829,10 +2513,10 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
         <div class="kpi-box"><span>OBSERVADOS / CRÍTICOS</span><strong style="color:#d97706;">${a.observados}</strong></div>
       </div>
     `;
-    const codigoDoc = `FOR-SST-${this.moduloActivo().replace('_', '')}-2026`;
+    const codigoDoc=this.fichaSnapshot()?.codigoExpediente??this.migas().titulo;
     const qrPaths = this.generarPathsQrSvg(`PRINT|${codigoDoc}|${this.migas().titulo}`);
     this.ejecutarImpresionHtml(
-      `Reporte Oficial: ${this.migas().titulo}`,
+      `Vista de consulta: ${this.migas().titulo}`,
       `${this.migas().ruta.join(' › ')} · ${this.insightActual().norma}`,
       codigoDoc,
       resumenHtml + htmlTablas,
@@ -2852,7 +2536,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     const cuerpo = `
       <div class="kpi-row">
         <div class="kpi-box"><span>CÓDIGO TRAZABILIDAD</span><strong>${this.escaparXml(f.codigoAuditoria)}</strong></div>
-        <div class="kpi-box"><span>ETAPA WORKFLOW</span><strong>Paso ${f.etapaActual} de 5</strong></div>
+        <div class="kpi-box"><span>ETAPA WORKFLOW</span><strong>Paso ${f.etapaActual}</strong></div>
         <div class="kpi-box"><span>ESTADO ACTUAL</span><strong>${this.escaparXml(f.estadoActual)}</strong></div>
         <div class="kpi-box"><span>NORMATIVA</span><strong>${this.escaparXml(this.insightActual().norma)}</strong></div>
       </div>
@@ -2949,7 +2633,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
   <div class="firmas">
     <div class="firma-box"><strong>Elaborado / Emitido por</strong><br>${this.escaparXml(this.session.usuarioNombre())}</div>
     <div class="firma-box"><strong>Revisado por Supervisión SSOMA</strong><br>Control Operativo OneSST</div>
-    <div class="firma-box"><strong>Conformidad ISO 45001 / Ley 29783</strong><br>${this.escaparXml(this.session.empresaNombre())}</div>
+    <div class="firma-box"><strong>Consulta de registros</strong><br>${this.escaparXml(this.session.empresaNombre())}</div>
   </div>
 </body>
 </html>`;
@@ -2975,7 +2659,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
         iframe!.contentWindow?.focus();
         iframe!.contentWindow?.print();
       }, 180);
-      this.mensajeNotificacion.set(`Documento oficial «${titulo}» (${codigoDoc}) generado y enviado a impresión.`);
+      this.mensajeNotificacion.set(`Vista de consulta «${titulo}» (${codigoDoc}) generado y enviado a impresión.`);
     } else {
       window.print();
     }
@@ -3006,175 +2690,32 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     this.abrirFichaDesdeFila(tr, false);
   }
 
-  private abrirFichaDesdeFila(tr: HTMLTableRowElement, abrirDirectoQr: boolean): void {
-    const tabla = tr.closest('table');
-    if (!tabla) return;
+  private abrirFichaDesdeFila(tr:HTMLTableRowElement,abrirDirectoQr:boolean):void{
+ const tabla=tr.closest('table');if(!tabla)return;
+ const headers=Array.from(tabla.querySelectorAll('thead th')).map(h=>(h.textContent??'').trim());
+ const campos:CampoFicha360[]=Array.from(tr.querySelectorAll('td')).map((td,i)=>({etiqueta:headers[i]??String(i+1),valor:(td.textContent??'').trim()})).filter(c=>c.valor&&!/acci|opci/i.test(c.etiqueta));
+ if(!campos.length)return;
+ this.fichaRegistro360.set({titulo:campos[0].valor,modulo:this.migas().ruta.join(' › '),codigoAuditoria:'',etapaActual:0,estadoActual:'Sin expediente seleccionado',observado:false,qrPaths:'',campos});
+ this.bitacoraRegistroActual.set([]);this.fichaSnapshot.set(null);this.fichaExpedienteId=0;
+ this.workflowApi.list().subscribe({next:r=>this.fichaExpedientes.set(r.expedientes),error:e=>this.mensajeNotificacion.set(workflowFailure(e).message)});
+ this.modalFicha360Abierto.set(true);if(abrirDirectoQr)this.mensajeNotificacion.set('Seleccione el expediente confirmado para abrir su QR de consulta.');
+}
+onFichaSnapshot(snapshot:WorkflowSnapshot):void{
+ this.fichaSnapshot.set(snapshot);const f=this.fichaRegistro360();if(!f)return;
+ const url=new URL(location.href);url.hash='/workflow?expedienteId='+snapshot.expedienteId;
+ this.fichaRegistro360.set({...f,codigoAuditoria:snapshot.codigoExpediente,etapaActual:snapshot.etapaActual,estadoActual:snapshot.estadoGeneral,qrPaths:this.generarPathsQrSvg(url.href)});
+ this.bitacoraRegistroActual.set(snapshot.history.map(e=>({fecha:e.occurredAtUtc,etapa:e.toStageCode,accion:e.actionCode,responsable:e.actorDisplayName,estadoResultante:e.toStateCode})));
+}
 
-    this.filaSeleccionadaDom = tr;
+  avanzarEtapaFicha360():void{this.irAWorkflowInteractivo();}
 
-    const cabeceras = Array.from(tabla.querySelectorAll('thead th')).map(th =>
-      (th.textContent || '').replace(/\s+/g, ' ').trim()
-    );
-    const celdas = Array.from(tr.querySelectorAll('td')).map(td => {
-      const clon = td.cloneNode(true) as HTMLElement;
-      clon.querySelectorAll('button, a.btn').forEach(b => b.remove());
-      return (clon.textContent || '').replace(/\s+/g, ' ').trim();
-    });
+  irAEtapaFicha360(_paso:number):void{this.irAWorkflowInteractivo();}
 
-    const campos: CampoFicha360[] = [];
-    for (let i = 0; i < celdas.length; i++) {
-      const etq = cabeceras[i] || `Campo ${i + 1}`;
-      const val = celdas[i];
-      if (!val || etq.toLowerCase().includes('acci') || etq.toLowerCase().includes('opci')) continue;
-      campos.push({ etiqueta: etq, valor: val });
-    }
+  cambiarEstadoFicha360(_nuevoEstado:string,_nuevaEtapa:number,_descripcionAccion:string):void{this.irAWorkflowInteractivo();}
 
-    if (campos.length < 2) return;
+  private cargarBitacoraRegistro(_codigo:string,_estadoInicial:string,_etapaInicial:number):EventoBitacoraWorkflow[]{return this.bitacoraRegistroActual();}
 
-    const identificador = campos[1]?.valor || campos[0]?.valor || 'Registro SST';
-    const hashSemilla = Math.abs(
-      identificador.split('').reduce((acc, ch) => ((acc << 5) - acc + ch.charCodeAt(0)) | 0, 0)
-    ).toString(16).toUpperCase().slice(0, 6).padStart(6, '0');
-    const codigoAuditoria = `SST-${hashSemilla}-2026`;
-
-    const idxEstado = cabeceras.findIndex(h => /ESTADO|APTITUD|SITUACI|RESULTADO|VIGENCIA|CONDICI|PASE|SEMÁFORO/i.test(h));
-    const textoEstado = (this.textoEstadoFila(tr, idxEstado) || 'REGISTRADO').replace(/\s+/g, ' ').trim();
-    const claseEstado = this.clasificarEstado(textoEstado);
-    const etapaInicial = claseEstado === 'ok' ? 4 : claseEstado === 'proceso' ? 2 : claseEstado === 'critico' ? 2 : 1;
-
-    const bitacora = this.cargarBitacoraRegistro(codigoAuditoria, textoEstado, etapaInicial);
-    this.bitacoraRegistroActual.set(bitacora);
-
-    const ultimoEvento = bitacora[0];
-    const estadoMostrado = ultimoEvento?.estadoResultante || textoEstado;
-    const observado = this.clasificarEstado(estadoMostrado) === 'critico';
-
-    this.fichaRegistro360.set({
-      titulo: identificador,
-      modulo: `${this.migas().ruta.join(' › ')}`,
-      codigoAuditoria,
-      etapaActual: etapaInicial,
-      estadoActual: estadoMostrado,
-      observado,
-      qrPaths: this.generarPathsQrSvg(`ONESST|${codigoAuditoria}|${identificador}|${estadoMostrado}`),
-      campos
-    });
-
-    if (abrirDirectoQr) {
-      this.abrirQrDesdeFicha360();
-    } else {
-      this.modalFicha360Abierto.set(true);
-    }
-  }
-
-  avanzarEtapaFicha360(): void {
-    const f = this.fichaRegistro360();
-    if (!f) return;
-    const sig = f.etapaActual >= 5 ? 5 : f.etapaActual + 1;
-    this.irAEtapaFicha360(sig);
-  }
-
-  irAEtapaFicha360(paso: number): void {
-    const etapa = this.workflowProcesoActual().find(e => e.paso === paso);
-    const estadosPorPaso: Record<number, string> = {
-      1: 'REGISTRADO',
-      2: 'EN PROCESO / REVISIÓN',
-      3: 'APROBADO / CONFORME',
-      4: 'HABILITADO CON QR ACTIVO',
-      5: 'CERRADO Y AUDITADO'
-    };
-    this.cambiarEstadoFicha360(
-      estadosPorPaso[paso] || 'APROBADO',
-      paso,
-      `Transición a Etapa ${paso}: ${etapa?.titulo || 'Validación SST'}`
-    );
-  }
-
-  cambiarEstadoFicha360(nuevoEstado: string, nuevaEtapa: number, descripcionAccion: string): void {
-    const f = this.fichaRegistro360();
-    if (!f) return;
-
-    const etapaObj = this.workflowProcesoActual().find(e => e.paso === nuevaEtapa);
-    const nombreEtapa = etapaObj ? `Etapa ${nuevaEtapa} (${etapaObj.titulo})` : `Etapa ${nuevaEtapa}`;
-    const observado = this.clasificarEstado(nuevoEstado) === 'critico';
-
-    // Actualiza en vivo la etiqueta de estado en la fila de la tabla DOM
-    if (this.filaSeleccionadaDom) {
-      const badge = this.filaSeleccionadaDom.querySelector<HTMLElement>('.label, .badge');
-      if (badge) {
-        badge.textContent = nuevoEstado;
-        badge.classList.remove('label-success', 'label-warning', 'label-danger', 'label-info', 'label-primary');
-        badge.classList.add(observado ? 'label-danger' : nuevaEtapa === 2 ? 'label-warning' : 'label-success');
-      }
-    }
-
-    // Actualiza también el campo de estado dentro de la Ficha 360°
-    const camposActualizados = f.campos.map(c =>
-      /ESTADO|APTITUD|SITUACI|RESULTADO|PASE|SEMÁFORO/i.test(c.etiqueta) ? { ...c, valor: nuevoEstado } : c
-    );
-
-    const nuevoEvento: EventoBitacoraWorkflow = {
-      fecha: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      etapa: nombreEtapa,
-      accion: descripcionAccion,
-      responsable: this.session.usuarioNombre(),
-      estadoResultante: nuevoEstado
-    };
-    const nuevaBitacora = [nuevoEvento, ...this.bitacoraRegistroActual()].slice(0, 8);
-    this.bitacoraRegistroActual.set(nuevaBitacora);
-    this.guardarBitacoraRegistro(f.codigoAuditoria, nuevaBitacora);
-
-    // F08: Persistir la transición de workflow y Ficha 360 en el servidor SQL Server
-    this.api.callAjaxPost('/workflow/transicion', {
-      codigo: f.codigoAuditoria,
-      tipo: 'FICHA_360',
-      etapa: nuevaEtapa,
-      estado: nuevoEstado,
-      accion: descripcionAccion,
-      usuario: this.session.usuarioNombre()
-    }).subscribe({
-      next: () => {},
-      error: (err) => console.warn('Aviso: Transición persistida localmente; pendiente de sincronización SQL:', err)
-    });
-
-    this.fichaRegistro360.set({
-      ...f,
-      etapaActual: nuevaEtapa,
-      estadoActual: nuevoEstado,
-      observado,
-      qrPaths: this.generarPathsQrSvg(`ONESST|${f.codigoAuditoria}|${f.titulo}|${nuevoEstado}`),
-      campos: camposActualizados
-    });
-
-    this.etapaWorkflowActiva.set(nuevaEtapa);
-    this.recalcularAnaliticaVista();
-    this.mensajeNotificacion.set(`Workflow actualizado: «${f.titulo}» pasó a ${nombreEtapa} (${nuevoEstado}).`);
-  }
-
-  private cargarBitacoraRegistro(codigo: string, estadoInicial: string, etapaInicial: number): EventoBitacoraWorkflow[] {
-    try {
-      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_BITACORA_WF) : null;
-      const mapa = raw ? (JSON.parse(raw) as Record<string, EventoBitacoraWorkflow[]>) : {};
-      if (mapa[codigo]?.length) return mapa[codigo];
-    } catch { /* ignorar */ }
-    const etapaObj = this.workflowProcesoActual().find(e => e.paso === etapaInicial);
-    return [{
-      fecha: 'Registro inicial',
-      etapa: `Etapa ${etapaInicial} (${etapaObj?.titulo || 'Control SST'})`,
-      accion: 'Verificación automática en repositorio corporativo OneSST',
-      responsable: 'Sistema OneSST',
-      estadoResultante: estadoInicial
-    }];
-  }
-
-  private guardarBitacoraRegistro(codigo: string, eventos: EventoBitacoraWorkflow[]): void {
-    try {
-      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_BITACORA_WF) : null;
-      const mapa = raw ? (JSON.parse(raw) as Record<string, EventoBitacoraWorkflow[]>) : {};
-      mapa[codigo] = eventos;
-      localStorage.setItem(STORAGE_BITACORA_WF, JSON.stringify(mapa));
-    } catch { /* ignorar */ }
-  }
+  private guardarBitacoraRegistro(_codigo:string,_eventos:EventoBitacoraWorkflow[]):void{throw new Error('La bitácora solo se modifica mediante una operación confirmada por el servidor.');}
 
   exportarFicha360Csv(): void {
     const f = this.fichaRegistro360();
@@ -3194,36 +2735,21 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  abrirModalGaritaRapida(): void {
-    this.garitaFiltro = '45892103';
-    this.ejecutarConsultaGarita();
-    this.modalGaritaAbierto.set(true);
-  }
+  abrirModalGaritaRapida():void{this.garitaFiltro='';this.clearAccessDecision();this.loadAccessCatalog();this.modalGaritaAbierto.set(true);}
+  clearAccessDecision():void{this.garitaResultado.set(null);this.accessDecision.set(null);}
+  private loadAccessCatalog():void{this.accessApi.catalogs().subscribe({next:c=>this.accessCatalog.set(c),error:e=>this.mensajeNotificacion.set(apiErrorMessage(e))});}
 
-  ejecutarConsultaGarita(): void {
-    const q = this.garitaFiltro.trim() || '45892103';
-    this.api.callAjaxPost<Record<string, any>>('/garita/consulta', { filtro: q, codigo: q }).subscribe({
-      next: (res) => {
-        const hab = res?.['habilitado'] === true;
-        this.garitaResultado.set({
-          nombre: String(res?.['data']?.['nombre'] || res?.['nombre'] || `Sujeto / Unidad (${q})`),
-          empresa: String(res?.['data']?.['empresa'] || res?.['empresa'] || 'GRUPO ELIAS-29 S.A.C'),
-          estado: String(res?.['data']?.['estado'] || res?.['estado'] || (hab ? 'HABILITADO — PASE AUTORIZADO' : 'DENEGADO / NO AUTORIZADO')),
-          vigencia: String(res?.['data']?.['vigencia'] || res?.['vigencia'] || (hab ? '31/12/2026' : 'RESTRINGIDO')),
-          habilitado: hab
-        });
-      },
-      error: () => {
-        this.garitaResultado.set({
-          nombre: `NO AUTORIZADO (${q})`,
-          empresa: 'ACCESO DENEGADO',
-          estado: 'DENEGADO — ERROR DE COMUNICACIÓN O SUJETO NO ACREDITADO',
-          vigencia: 'VENCIDO / BLOQUEADO',
-          habilitado: false
-        });
-      }
-    });
-  }
+  ejecutarConsultaGarita():void{
+ if(!this.garitaFiltro.trim()){this.mensajeNotificacion.set('Ingrese el documento o placa exactos.');return;}
+ this.garitaResultado.set(null);this.accessDecision.set(null);
+ try{this.accessApi.evaluate(this.garitaSubjectType,this.garitaFiltro,this.garitaDirection,this.garitaProjectId,this.garitaZoneId).subscribe({
+ next:d=>{this.accessDecision.set(d);this.garitaResultado.set({nombre:d.subjectLabel,empresa:d.empresaNombre,estado:(d.habilitado?'HABILITADO':'DENEGADO')+(d.motivos.length?' · '+d.motivos.join('; '):''),vigencia:d.expiresAt,habilitado:d.habilitado});},
+ error:e=>this.mensajeNotificacion.set(apiErrorMessage(e))});}catch(e){this.mensajeNotificacion.set(apiErrorMessage(e));}
+}
+registrarMovimientoGarita():void{
+ const d=this.accessDecision();if(!d)return;
+ this.accessApi.register(d).subscribe({next:()=>{this.mensajeNotificacion.set('Movimiento confirmado por el servidor.');this.accessDecision.set(null);},error:e=>this.mensajeNotificacion.set(apiErrorMessage(e))});
+}
 
   abrirModalMiPerfil(): void {
     this.menuPerfilAbierto.set(false);
@@ -3238,42 +2764,10 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     this.modalCambioClaveAbierto.set(true);
   }
 
-  guardarCambioClave(): void {
-    const n = this.claveNueva.trim();
-    const c = this.claveConfirmar.trim();
-    if (!n) {
-      this.mensajeNotificacion.set('Por favor, ingresa tu nueva contraseña.');
-      return;
-    }
-    // PR-02 & F15: Exigir mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número
-    const cumpleComplejidad = n.length >= 8 && /[A-Z]/.test(n) && /[a-z]/.test(n) && /[0-9]/.test(n);
-    if (!cumpleComplejidad) {
-      this.mensajeNotificacion.set('La nueva contraseña debe tener mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número.');
-      return;
-    }
-    if (n !== c) {
-      this.mensajeNotificacion.set('La confirmación de la contraseña no coincide con la nueva contraseña.');
-      return;
-    }
-
-    this.api.callAjaxPost<Record<string, any>>('/login/actualizar_clave/save', {
-      passwordActual: this.claveActual.trim(),
-      password: n,
-      confirmacion: c
-    }).subscribe({
-      next: (resp) => {
-        if (resp?.['CODE_RESPONSE'] === '05' || resp?.['codeResponse'] === '05') {
-          this.modalCambioClaveAbierto.set(false);
-          this.mensajeNotificacion.set('Contraseña actualizada correctamente en tu cuenta OneSST.');
-        } else {
-          this.mensajeNotificacion.set(String(resp?.['mensajeRespuesta'] || 'No se pudo actualizar la contraseña. Verifica los datos ingresados.'));
-        }
-      },
-      error: (err) => {
-        this.mensajeNotificacion.set(err?.message || 'Error de comunicación al actualizar la contraseña.');
-      }
-    });
-  }
+  guardarCambioClave():void{
+ if(!this.claveActual||!this.claveNueva||this.claveNueva!==this.claveConfirmar){this.mensajeNotificacion.set('Complete la contraseña actual y confirme la nueva contraseña.');return;}
+ this.session.changePassword(this.claveActual,this.claveNueva,this.claveConfirmar).subscribe({next:()=>{this.claveActual='';this.claveNueva='';this.claveConfirmar='';this.modalCambioClaveAbierto.set(false);void this.router.navigate(['/login']);},error:e=>this.mensajeNotificacion.set(apiErrorMessage(e))});
+}
 
   irAInicio(): void {
     this.seleccionarPorKey('M03:3A');
@@ -3283,9 +2777,7 @@ export class ContratistaPortalComponent implements OnInit, OnDestroy {
     this.router.navigate(['/workflow']);
   }
 
-  cerrarSesion(): void {
-    this.menuPerfilAbierto.set(false);
-    this.session.removeAllSession();
-    this.router.navigate(['/login']);
-  }
+  cerrarSesion():void{
+ this.session.logout().subscribe({next:()=>{this.menuPerfilAbierto.set(false);void this.router.navigate(['/login']);},error:e=>this.mensajeNotificacion.set(apiErrorMessage(e))});
+}
 }

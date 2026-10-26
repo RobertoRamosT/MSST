@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/contract-tests",
+    "rootDir": "./src",
+    "types": [
+      "node"
+    ],
+    "skipLibCheck": false
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true,
+    "strictInjectionParameters": true,
+    "compilationMode": "full"
+  },
+  "files": [
+    "src/app/core/services/workflow-api.service.spec.ts"
+  ],
+  "include": []
+}

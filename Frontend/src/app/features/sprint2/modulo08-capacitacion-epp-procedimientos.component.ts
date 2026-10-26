@@ -1,3 +1,6 @@
+import { isGuid } from '../../core/services/workflow-api.service';
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,49 +10,46 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface CursoCapacitacionItem {
   id: number;
-  modalidad: 'PRESENCIAL' | 'VIRTUAL_LMS' | 'MIXTO_BLENDED';
-  nombre: string;
-  instructor: string;
-  duracionHoras: number;
-  notaMinima: number;
-  fechaProgramada: string;
-  totalInscritos: number;
-  totalAprobados: number;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL_LMS' | 'MIXTO_BLENDED' | null;
+  nombre: string | null;
+  instructor: string | null;
+  duracionHoras: number | null;
+  notaMinima: number | null;
+  fechaProgramada: string | null;
+  totalInscritos: number | null;
+  totalAprobados: number | null;
 }
 
-export interface PreguntaExamenLms {
-  idPregunta: number;
-  enunciado: string;
-  opciones: string[];
-  indiceCorrecto: number;
-  seleccionado: number;
-}
 
 export interface EquipoEppItem {
   id: number;
-  codigo: string;
-  nombre: string;
-  tipoProteccion: string;
-  vidaUtilDias: number;
-  stock: number;
-  norma: string;
+  codigo: string | null;
+  nombre: string | null;
+  tipoProteccion: string | null;
+  vidaUtilDias: number | null;
+  stock: number | null;
+  norma: string | null;
 }
 
 export interface ProcedimientoSeguridadItem {
   id: number;
-  codigo: string;
-  nombre: string;
-  version: string;
-  area: string;
-  archivoUrl: string;
-  fechaVigencia: string;
+  codigo: string | null;
+  nombre: string | null;
+  version:string;
+  documentVersion:string|null;
+  area: string | null;
+  archivoUrl: string | null;
+  fechaVigencia: string | null;
 }
 
 @Component({
   selector: 'msst-modulo08-recursos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera del Módulo 08 -->
@@ -171,8 +171,8 @@ export interface ProcedimientoSeguridadItem {
                       <td>{{ c.fechaProgramada }}</td>
                       <td><strong>{{ c.totalInscritos }} Insc. / {{ c.totalAprobados }} Aprob.</strong></td>
                       <td>
-                        <button class="btn btn-xs btn-primary" (click)="iniciarSimuladorExamen(c)">
-                          <i class="fa fa-play"></i> Rendir Evaluación Online
+                        <button class="btn btn-xs btn-primary" (click)="abrirProcesoCapacitacion(c)">
+                          <i class="fa fa-play"></i> Ver proceso de capacitación
                         </button>
                       </td>
                     </tr>
@@ -181,49 +181,7 @@ export interface ProcedimientoSeguridadItem {
               </table>
             </div>
 
-            <!-- Simulador de Evaluación Online Calificable -->
-            @if (cursoEvaluacionActiva(); as cursoEval) {
-              <div class="panel panel-info" style="border-width: 2px;">
-                <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
-                  <h4 class="panel-title">
-                    <i class="fa fa-check-square-o"></i> Simulador de Evaluación Online Calificable (LMS): <strong>{{ cursoEval.nombre }}</strong>
-                  </h4>
-                  <span class="badge">Nota Mínima Aprobatoria: {{ cursoEval.notaMinima }} / 20</span>
-                </div>
-                <div class="panel-body">
-                  @for (preg of preguntasExamen(); track preg.idPregunta) {
-                    <div style="background: #f9fbfd; border: 1px solid #dde6f0; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                      <div style="font-weight: bold; color: #004B87; margin-bottom: 8px;">
-                        {{ preg.idPregunta }}. {{ preg.enunciado }}
-                      </div>
-                      <div class="row">
-                        @for (op of preg.opciones; track op; let idx = $index) {
-                          <div class="col-md-4">
-                            <label style="font-weight: normal; cursor: pointer;">
-                              <input type="radio" [name]="'preg_' + preg.idPregunta" [value]="idx" [(ngModel)]="preg.seleccionado">
-                              {{ op }}
-                            </label>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                    <div>
-                      @if (resultadoExamenTexto()) {
-                        <span class="label" [ngClass]="examenAprobado() ? 'label-success' : 'label-danger'" style="font-size: 13px; padding: 6px 12px;">
-                          {{ resultadoExamenTexto() }}
-                        </span>
-                      }
-                    </div>
-                    <button class="btn btn-sm btn-success" (click)="calificarExamenOnline(cursoEval)">
-                      <i class="fa fa-calculator"></i> Calificar Evaluación Online y Registrar Nota
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
+            <p>Las evaluaciones y su aprobación se registran en el expediente de capacitación.</p><button class="btn btn-primary" (click)="workflowSelectionOpen.set(true)">Abrir expediente de capacitación</button>
           </div>
         </div>
       }
@@ -260,12 +218,12 @@ export interface ProcedimientoSeguridadItem {
                       <td><code>{{ e.norma }}</code></td>
                       <td style="text-align:center;">{{ e.vidaUtilDias }} días</td>
                       <td style="text-align:center;">
-                        <span class="label" [ngClass]="e.stock > 20 ? 'label-success' : 'label-warning'" style="font-size: 12px;">
+                        <span class="label" [ngClass]="(e.stock !== null && e.stock > 20) ? 'label-success' : 'label-warning'" style="font-size: 12px;">
                           {{ e.stock }} unid.
                         </span>
                       </td>
                       <td>
-                        <button class="btn btn-xs btn-primary" (click)="despacharUnidadEpp(e)" [disabled]="e.stock <= 0">
+                        <button class="btn btn-xs btn-primary" (click)="despacharUnidadEpp(e)" [disabled]="e.stock === null || e.stock <= 0">
                           <i class="fa fa-hand-lizard-o"></i> Registrar Entrega (-1)
                         </button>
                       </td>
@@ -307,7 +265,7 @@ export interface ProcedimientoSeguridadItem {
                         <tr [ngClass]="{ 'info': procSeleccionado()?.id === p.id }">
                           <td><strong>{{ p.codigo }}</strong></td>
                           <td><strong>{{ p.nombre }}</strong></td>
-                          <td><span class="badge">{{ p.version }}</span></td>
+                          <td><span class="badge">{{ p.documentVersion }}</span></td>
                           <td>{{ p.area }}</td>
                           <td>{{ p.fechaVigencia }}</td>
                           <td>
@@ -330,16 +288,16 @@ export interface ProcedimientoSeguridadItem {
               <div class="panel panel-info">
                 <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
                   <h4 class="panel-title"><i class="fa fa-file-pdf-o"></i> Visor Documental OneSST: {{ procSel.codigo }}</h4>
-                  <a class="btn btn-xs btn-default" [href]="'/sst/evidencia/ver?codigo=' + procSel.codigo" target="_blank">
+                  @if(urlVisorProcedimiento()){<a class="btn btn-xs btn-default" [href]="urlVisorProcedimiento()" target="_blank" rel="noopener">
                     <i class="fa fa-external-link"></i> Abrir Pestaña
-                  </a>
+                  </a>}
                 </div>
                 <div class="panel-body" style="padding: 0; height: 340px;">
-                  <iframe
+                  @if(urlVisorProcedimiento()){<iframe
                     [src]="urlVisorProcedimiento()"
                     style="width: 100%; height: 100%; border: none;"
                     title="Visor Procedimiento OneSST">
-                  </iframe>
+                  </iframe>}@else{<p>Este registro no tiene una evidencia persistida verificable. Cargue el documento en su expediente.</p>}
                 </div>
               </div>
             }
@@ -469,7 +427,7 @@ export interface ProcedimientoSeguridadItem {
                 </div>
                 <div class="col-md-3 form-group">
                   <label>Versión:</label>
-                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoProcedimiento.version">
+                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoProcedimiento.documentVersion">
                 </div>
                 <div class="col-md-4 form-group">
                   <label>Vigencia Hasta:</label>
@@ -499,6 +457,9 @@ export interface ProcedimientoSeguridadItem {
   `
 })
 export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -525,183 +486,48 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
   readonly mostrarModalEpp = signal<boolean>(false);
   readonly mostrarModalProcedimiento = signal<boolean>(false);
 
-  readonly cursos = signal<CursoCapacitacionItem[]>([
-    {
-      id: 1,
-      modalidad: 'VIRTUAL_LMS',
-      nombre: 'Inducción General de Seguridad y Salud en el Trabajo (Homologación Holcim)',
-      instructor: 'Ing. Carlos Mendoza (Aula Virtual LMS)',
-      duracionHoras: 4,
-      notaMinima: 16,
-      fechaProgramada: '24/10/2026',
-      totalInscritos: 145,
-      totalAprobados: 140
-    },
-    {
-      id: 2,
-      modalidad: 'MIXTO_BLENDED',
-      nombre: 'Aislamiento y Bloqueo de Energías Peligrosas — Sistema LOTOTO',
-      instructor: 'Ing. Roberto Elias',
-      duracionHoras: 6,
-      notaMinima: 16,
-      fechaProgramada: '28/10/2026',
-      totalInscritos: 68,
-      totalAprobados: 64
-    },
-    {
-      id: 3,
-      modalidad: 'PRESENCIAL',
-      nombre: 'Trabajos de Alto Riesgo: Espacios Confinados y Atmósferas Peligrosas',
-      instructor: 'Cmdte. Luis Paredes (Brigada HAZMAT)',
-      duracionHoras: 8,
-      notaMinima: 16,
-      fechaProgramada: '04/11/2026',
-      totalInscritos: 42,
-      totalAprobados: 39
-    }
-  ]);
+  readonly cursos = signal<CursoCapacitacionItem[]>([]);
 
-  readonly cursoEvaluacionActiva = signal<CursoCapacitacionItem | null>(this.cursos()[0]);
-  readonly resultadoExamenTexto = signal<string>('');
-  readonly examenAprobado = signal<boolean>(true);
 
-  readonly preguntasExamen = signal<PreguntaExamenLms[]>([
-    {
-      idPregunta: 1,
-      enunciado: 'Según la Ley N° 29783 y el estándar corporativo Holcim, ¿cuál es el primer escalón prioritario en la Jerarquía de Controles de Riesgos?',
-      opciones: [
-        'A) Entrega de Equipos de Protección Personal (EPP)',
-        'B) Eliminación física del peligro en la fuente',
-        'C) Señalización y controles administrativos'
-      ],
-      indiceCorrecto: 1,
-      seleccionado: 1
-    },
-    {
-      idPregunta: 2,
-      enunciado: 'Antes de intervenir un equipo rotatorio en molienda (Procedimiento LOTOTO), ¿qué verificación es obligatoria tras colocar el candado personal?',
-      opciones: [
-        'A) Prueba de Energía Cero (intento controlado de arranque local)',
-        'B) Avisar únicamente por radio al operador de turno',
-        'C) Retirar las guardas sin desenergizar el tablero'
-      ],
-      indiceCorrecto: 0,
-      seleccionado: 0
-    },
-    {
-      idPregunta: 3,
-      enunciado: '¿A partir de qué desnivel se considera Trabajo en Altura que exige Permiso Escrito de Trabajo de Alto Riesgo (PETAR) y arnés certificado?',
-      opciones: [
-        'A) A partir de 3.50 metros',
-        'B) A partir de 1.80 metros sobre el nivel inferior',
-        'C) Solo en techos exteriores'
-      ],
-      indiceCorrecto: 1,
-      seleccionado: 1
-    }
-  ]);
 
-  readonly equiposEpp = signal<EquipoEppItem[]>([
-    {
-      id: 1,
-      codigo: 'EPP-CAS-001',
-      nombre: 'Casco Dieléctrico Tipo I Clase E con Ratchet y Barbiquejo de 4 Puntos 3M',
-      tipoProteccion: 'PROTECCIÓN CABEZA',
-      vidaUtilDias: 365,
-      stock: 120,
-      norma: 'ANSI/ISEA Z89.1-2019'
-    },
-    {
-      id: 2,
-      codigo: 'EPP-ARN-002',
-      nombre: 'Arnés de Cuerpo Completo 4 Anillos en D + Línea Doble con Absorbedor de Impacto',
-      tipoProteccion: 'PROTECCIÓN CONTRA CAÍDAS',
-      vidaUtilDias: 730,
-      stock: 48,
-      norma: 'ANSI Z359.11 / EN 361'
-    },
-    {
-      id: 3,
-      codigo: 'EPP-RES-003',
-      nombre: 'Respirador Reutilizable Media Cara Silicona 3M 7502 + Cartuchos Polvo/Gases P100',
-      tipoProteccion: 'PROTECCIÓN RESPIRATORIA',
-      vidaUtilDias: 180,
-      stock: 95,
-      norma: 'NIOSH 42 CFR 84'
-    },
-    {
-      id: 4,
-      codigo: 'EPP-BOT-004',
-      nombre: 'Botín de Seguridad Dieléctrico con Puntera Composite y Planta Antiperforante',
-      tipoProteccion: 'PROTECCIÓN MANOS / PIES',
-      vidaUtilDias: 365,
-      stock: 84,
-      norma: 'ASTM F2413-18 / NTP ISO 20345'
-    }
-  ]);
+  readonly equiposEpp = signal<EquipoEppItem[]>([]);
 
-  readonly procedimientos = signal<ProcedimientoSeguridadItem[]>([
-    {
-      id: 1,
-      codigo: 'PETS-MAN-001',
-      nombre: 'Procedimiento Escrito de Trabajo Seguro: Bloqueo y Etiquetado de Energía (LOTOTO)',
-      version: 'v5.0',
-      area: 'Mantenimiento Mecánico y Eléctrico Planta',
-      archivoUrl: '/sst/evidencia/ver?codigo=PETS-MAN-001',
-      fechaVigencia: '31/12/2027'
-    },
-    {
-      id: 2,
-      codigo: 'PETS-OPE-002',
-      nombre: 'Procedimiento de Ingreso y Limpieza de Silos y Espacios Confinados',
-      version: 'v4.2',
-      area: 'Operaciones Clinker y Molienda',
-      archivoUrl: '/sst/evidencia/ver?codigo=PETS-OPE-002',
-      fechaVigencia: '30/06/2027'
-    },
-    {
-      id: 3,
-      codigo: 'EST-HSE-003',
-      nombre: 'Estándar Corporativo de Permisos de Trabajo de Alto Riesgo (PETAR Digital)',
-      version: 'v6.0',
-      area: 'Todas las Unidades y Empresas Contratistas',
-      archivoUrl: '/sst/evidencia/ver?codigo=EST-HSE-003',
-      fechaVigencia: '31/12/2028'
-    }
-  ]);
+  readonly procedimientos = signal<ProcedimientoSeguridadItem[]>([]);
 
-  readonly procSeleccionado = signal<ProcedimientoSeguridadItem | null>(this.procedimientos()[0]);
+  readonly procSeleccionado = signal<ProcedimientoSeguridadItem | null>(null);
 
-  readonly urlVisorProcedimiento = computed<SafeResourceUrl>(() => {
+  readonly urlVisorProcedimiento = computed<SafeResourceUrl|null>(() => {
     const proc = this.procSeleccionado();
-    const codigo = proc ? proc.codigo : 'PETS-MAN-001';
-    return this.sanitizer.bypassSecurityTrustResourceUrl(`/sst/evidencia/ver?codigo=${encodeURIComponent(codigo)}`);
+    const value=proc?.archivoUrl;
+    const match=typeof value==='string'?/^\/sst\/evidence\/([0-9a-f-]{36})\/content$/i.exec(value):null;
+    const id=isGuid(value)?value:match&&isGuid(match[1])?match[1]:null;
+    return id?this.sanitizer.bypassSecurityTrustResourceUrl('/sst/evidence/'+id+'/content'):null;
   });
 
   nuevoCurso = {
-    modalidad: 'VIRTUAL_LMS' as CursoCapacitacionItem['modalidad'],
+    modalidad: '' as CursoCapacitacionItem['modalidad'],
     nombre: '',
-    instructor: 'Ing. Carlos Mendoza',
-    duracionHoras: 4,
-    notaMinima: 16,
-    fechaProgramada: '15/11/2026'
+    instructor: '',
+    duracionHoras: 0,
+    notaMinima: 0,
+    fechaProgramada: ''
   };
 
   nuevoEpp = {
-    codigo: 'EPP-GUA-005',
+    codigo: '',
     nombre: '',
-    tipoProteccion: 'PROTECCIÓN MANOS / PIES',
-    norma: 'EN 388:2016 (4X43C)',
-    vidaUtilDias: 60,
-    stock: 150
+    tipoProteccion: '',
+    norma: '',
+    vidaUtilDias: 0,
+    stock: 0
   };
 
   nuevoProcedimiento = {
-    codigo: 'PETS-IZA-004',
+    codigo: '',
     nombre: '',
-    version: 'v1.0',
-    area: 'Operaciones y Montaje Electromecánico',
-    fechaVigencia: '31/12/2027'
+    documentVersion: '',
+    area: '',
+    fechaVigencia: ''
   };
 
   readonly totalAprobadosGeneral = computed(() =>
@@ -717,153 +543,31 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/capacitacion/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['nombre']) {
-          const desdeSql: CursoCapacitacionItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (10 + idx),
-            modalidad: (String(r['modalidad'] || 'VIRTUAL_LMS').toUpperCase().includes('PRES') ? 'PRESENCIAL' : 'VIRTUAL_LMS'),
-            nombre: String(r['nombre'] || ''),
-            instructor: String(r['instructor'] || 'Instructor SST'),
-            duracionHoras: Number(r['duracionHoras']) || 4,
-            notaMinima: Number(r['notaMinima']) || 16,
-            fechaProgramada: String(r['fechaProgramada'] || '28/10/2026'),
-            totalInscritos: Number(r['totalInscritos']) || 50,
-            totalAprobados: Number(r['totalAprobados']) || 48
-          }));
-          this.cursos.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.nombre === a.nombre))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/capacitacion/lista', { ...{} }).subscribe({next:(response)=>{try{this.cursos.set(confirmedList<CursoCapacitacionItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"modalidad","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"instructor","kind":"string","optional":false,"nullable":true},{"name":"duracionHoras","kind":"number","optional":false,"nullable":true},{"name":"notaMinima","kind":"number","optional":false,"nullable":true},{"name":"fechaProgramada","kind":"string","optional":false,"nullable":true},{"name":"totalInscritos","kind":"number","optional":false,"nullable":true},{"name":"totalAprobados","kind":"number","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/equiposeguridad/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['codigo']) {
-          const desdeSql: EquipoEppItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (20 + idx),
-            codigo: String(r['codigo'] || `EPP-0${idx + 1}`),
-            nombre: String(r['nombre'] || ''),
-            tipoProteccion: String(r['tipoProteccion'] || 'PROTECCIÓN PERSONAL'),
-            vidaUtilDias: Number(r['vidaUtilDias']) || 180,
-            stock: Number(r['stock']) || 50,
-            norma: String(r['norma'] || 'ANSI / EN')
-          }));
-          this.equiposEpp.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.codigo === a.codigo))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/equiposeguridad/lista', { ...{} }).subscribe({next:(response)=>{try{this.equiposEpp.set(confirmedList<EquipoEppItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"tipoProteccion","kind":"string","optional":false,"nullable":true},{"name":"vidaUtilDias","kind":"number","optional":false,"nullable":true},{"name":"stock","kind":"number","optional":false,"nullable":true},{"name":"norma","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/procedimientoseguridad/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['codigo']) {
-          const desdeSql: ProcedimientoSeguridadItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (30 + idx),
-            codigo: String(r['codigo'] || `PETS-0${idx + 1}`),
-            nombre: String(r['nombre'] || ''),
-            version: String(r['version'] || 'v1.0'),
-            area: String(r['area'] || 'Planta Industrial'),
-            archivoUrl: String(r['archivoUrl'] || `/sst/evidencia/ver?codigo=${r['codigo']}`),
-            fechaVigencia: String(r['fechaVigencia'] || '31/12/2027')
-          }));
-          this.procedimientos.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.codigo === a.codigo))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/procedimientoseguridad/lista', { ...{} }).subscribe({next:(response)=>{try{this.procedimientos.set(confirmedList<ProcedimientoSeguridadItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"documentVersion","kind":"string","optional":false,"nullable":true},{"name":"area","kind":"string","optional":false,"nullable":true},{"name":"archivoUrl","kind":"string","optional":false,"nullable":true},{"name":"fechaVigencia","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  iniciarSimuladorExamen(curso: CursoCapacitacionItem): void {
-    this.cursoEvaluacionActiva.set(curso);
-    this.resultadoExamenTexto.set('');
-  }
+  abrirProcesoCapacitacion(_curso:CursoCapacitacionItem):void{this.workflowSelectionOpen.set(true);}
 
-  calificarExamenOnline(curso: CursoCapacitacionItem): void {
-    const pregs = this.preguntasExamen();
-    const aciertos = pregs.filter(p => Number(p.seleccionado) === p.indiceCorrecto).length;
-    const notaSobre20 = Math.round((aciertos / pregs.length) * 20);
-    const aprobado = notaSobre20 >= curso.notaMinima;
-
-    this.examenAprobado.set(aprobado);
-    this.resultadoExamenTexto.set(
-      aprobado
-        ? `¡APROBADO! Puntaje Obtenido: ${notaSobre20} / 20 (${aciertos}/${pregs.length} respuestas correctas). Certificado emitido.`
-        : `DESAPROBADO (${notaSobre20} / 20). Requiere nota mínima ${curso.notaMinima}. Revise las respuestas.`
-    );
-
-    if (aprobado) {
-      this.cursos.update(list =>
-        list.map(c => c.id === curso.id ? { ...c, totalAprobados: c.totalAprobados + 1, totalInscritos: Math.max(c.totalInscritos, c.totalAprobados + 1) } : c)
-      );
-      this.mostrarAviso(`Evaluación Online calificada con nota ${notaSobre20}/20 para el curso "${curso.nombre}".`);
-    }
-  }
 
   guardarNuevoCurso(): void {
     if (!this.nuevoCurso.nombre.trim()) return;
-    this.api.callAjaxPost('/capacitacion/insert', { ...this.nuevoCurso, idEmpresa: 773 }).subscribe({
-      next: (res) => this.agregarCursoLocal(Number(res?.['idGenerado']) || (Date.now() % 1000)),
-      error: () => this.agregarCursoLocal(Date.now() % 1000)
-    });
+    this.api.callAjaxPost('/capacitacion/insert', { ...this.nuevoCurso, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalCurso.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarCursoLocal(id: number): void {
-    const item: CursoCapacitacionItem = {
-      id,
-      modalidad: this.nuevoCurso.modalidad,
-      nombre: this.nuevoCurso.nombre,
-      instructor: this.nuevoCurso.instructor,
-      duracionHoras: Number(this.nuevoCurso.duracionHoras) || 4,
-      notaMinima: Number(this.nuevoCurso.notaMinima) || 16,
-      fechaProgramada: this.nuevoCurso.fechaProgramada,
-      totalInscritos: 25,
-      totalAprobados: 0
-    };
-    this.cursos.update(list => [item, ...list]);
-    this.mostrarModalCurso.set(false);
-    this.mostrarAviso(`Curso "${item.nombre}" registrado en el Programa Anual.`);
-  }
+
 
   guardarNuevoEpp(): void {
     if (!this.nuevoEpp.nombre.trim()) return;
-    this.api.callAjaxPost('/equiposeguridad/insert', { ...this.nuevoEpp, idEmpresa: 773 }).subscribe({
-      next: (res) => this.agregarEppLocal(Number(res?.['idGenerado']) || Date.now()),
-      error: () => this.agregarEppLocal(Date.now())
-    });
+    this.api.callAjaxPost('/equiposeguridad/insert', { ...this.nuevoEpp, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalEpp.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarEppLocal(id: number): void {
-    const item: EquipoEppItem = {
-      id,
-      codigo: this.nuevoEpp.codigo,
-      nombre: this.nuevoEpp.nombre,
-      tipoProteccion: this.nuevoEpp.tipoProteccion,
-      norma: this.nuevoEpp.norma,
-      vidaUtilDias: Number(this.nuevoEpp.vidaUtilDias) || 180,
-      stock: Number(this.nuevoEpp.stock) || 50
-    };
-    this.equiposEpp.update(list => [item, ...list]);
-    this.mostrarModalEpp.set(false);
-    this.mostrarAviso(`EPP "${item.codigo}" registrado en el Kardex de Seguridad.`);
-  }
 
-  despacharUnidadEpp(epp: EquipoEppItem): void {
-    if (epp.stock <= 0) return;
-    this.equiposEpp.update(list =>
-      list.map(e => e.id === epp.id ? { ...e, stock: e.stock - 1 } : e)
-    );
-    this.mostrarAviso(`Entrega de 1 unidad de "${epp.nombre}" (${epp.codigo}) registrada en Kardex EPP.`);
-  }
+
+  despacharUnidadEpp(_epp:EquipoEppItem):void{this.workflowSelectionOpen.set(true);}
 
   seleccionarProcedimientoVisor(proc: ProcedimientoSeguridadItem): void {
     this.procSeleccionado.set(proc);
@@ -871,27 +575,10 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
 
   guardarNuevoProcedimiento(): void {
     if (!this.nuevoProcedimiento.nombre.trim()) return;
-    this.api.callAjaxPost('/procedimientoseguridad/insert', { ...this.nuevoProcedimiento, idEmpresa: 773 }).subscribe({
-      next: (res) => this.agregarProcedimientoLocal(Number(res?.['idGenerado']) || Date.now()),
-      error: () => this.agregarProcedimientoLocal(Date.now())
-    });
+    this.api.callAjaxPost('/procedimientoseguridad/insert', { ...this.nuevoProcedimiento, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalProcedimiento.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarProcedimientoLocal(id: number): void {
-    const item: ProcedimientoSeguridadItem = {
-      id,
-      codigo: this.nuevoProcedimiento.codigo,
-      nombre: this.nuevoProcedimiento.nombre,
-      version: this.nuevoProcedimiento.version,
-      area: this.nuevoProcedimiento.area,
-      archivoUrl: `/sst/evidencia/ver?codigo=${this.nuevoProcedimiento.codigo}`,
-      fechaVigencia: this.nuevoProcedimiento.fechaVigencia
-    };
-    this.procedimientos.update(list => [item, ...list]);
-    this.procSeleccionado.set(item);
-    this.mostrarModalProcedimiento.set(false);
-    this.mostrarAviso(`Procedimiento "${item.codigo}" publicado en el Repositorio Documental.`);
-  }
+
 
   private mostrarAviso(msg: string): void {
     this.notificacion.set(msg);

@@ -70,7 +70,7 @@ export const MENU_MODULOS_MSST: MsstMenuItem[] = [
     destacado: true,
     hijos: [
       { key: 'M03:3A', nombre: 'Homologación y Empresas', icono: 'fa-certificate', modulo: 'MOD_03', tab: '3A' },
-      { key: 'M03:3B', nombre: 'Proyectos y Matrices', icono: 'fa-folder-open', modulo: 'MOD_03', tab: '3B', alerta: 1 },
+      { key: 'M03:3B', nombre: 'Proyectos y Matrices', icono: 'fa-folder-open', modulo: 'MOD_03', tab: '3B' },
       { key: 'M03:3C', nombre: 'Personal y Flota Vehicular', icono: 'fa-users', modulo: 'MOD_03', tab: '3C' },
       { key: 'M03:3D', nombre: 'Legajo Documental, PETAR y Garita', icono: 'fa-shield', modulo: 'MOD_03', tab: '3D' }
     ]
@@ -81,7 +81,7 @@ export const MENU_MODULOS_MSST: MsstMenuItem[] = [
     icono: 'fa-calendar-check-o',
     modulo: 'MOD_04',
     hijos: [
-      { key: 'M04:BANDEJA', nombre: 'Bandeja y Firma Digital', icono: 'fa-inbox', modulo: 'MOD_04', tab: 'BANDEJA', alerta: 2 },
+      { key: 'M04:BANDEJA', nombre: 'Bandeja y Firma Digital', icono: 'fa-inbox', modulo: 'MOD_04', tab: 'BANDEJA' },
       { key: 'M04:CALENDARIO', nombre: 'Calendario Anual PASST', icono: 'fa-calendar', modulo: 'MOD_04', tab: 'CALENDARIO' },
       { key: 'M04:AUTOSERVICIO', nombre: 'Autoservicio y Reportes', icono: 'fa-hand-pointer-o', modulo: 'MOD_04', tab: 'AUTOSERVICIO' }
     ]

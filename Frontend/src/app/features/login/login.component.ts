@@ -1,17 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { GosstApiService } from '../../core/services/gosst-api.service';
+import { apiErrorMessage, GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
 
-interface PerfilDemo {
-  etiqueta: string;
-  rol: string;
-  user: string;
-  pass: string;
-  icono: string;
-}
 
 @Component({
   selector: 'msst-login',
@@ -45,16 +38,16 @@ interface PerfilDemo {
 
             <div class="onesst-kpis">
               <div class="onesst-kpi">
-                <strong>24/7</strong>
+                <strong>Accesos</strong>
                 <span>Control en Garita</span>
               </div>
               <div class="onesst-kpi">
-                <strong>100 %</strong>
-                <span>Cero Papel</span>
+                <strong>Evidencias</strong>
+                <span>Documentos registrados</span>
               </div>
               <div class="onesst-kpi">
                 <strong>ISO 45001</strong>
-                <span>Cumplimiento</span>
+                <span>Gestión de requisitos</span>
               </div>
             </div>
           </div>
@@ -136,127 +129,11 @@ interface PerfilDemo {
               </div>
             }
 
-            <!-- Accesos rápidos limpios y discretos -->
-            <div class="onesst-quick-bar">
-              <button type="button" class="onesst-quick-action" (click)="abrirModalGarita()">
-                <i class="fa fa-id-card-o"></i> Consulta Garita
-              </button>
-              <span class="onesst-sep">·</span>
-              <button type="button" class="onesst-quick-action" (click)="abrirModalVisitante()">
-                <i class="fa fa-user-plus"></i> Pase de Visita
-              </button>
-              <span class="onesst-sep">·</span>
-              <button type="button" class="onesst-quick-action" (click)="mostrarPerfiles.set(!mostrarPerfiles())">
-                <i class="fa fa-sliders"></i> Perfiles
-              </button>
-            </div>
-
-            @if (mostrarPerfiles()) {
-              <div class="onesst-profiles-drawer">
-                @for (p of perfilesDisponibles; track p.user) {
-                  <button
-                    type="button"
-                    class="onesst-role-chip"
-                    [class.activo]="userName === p.user"
-                    (click)="seleccionarPerfil(p)">
-                    <i class="fa {{ p.icono }}"></i> {{ p.etiqueta }}
-                  </button>
-                }
-              </div>
-            }
+            <p>Inicie sesión para consultar el control de acceso y registrar visitas.</p>
           </form>
         </section>
 
       </main>
-
-      <!-- Modal 1: Consulta Rápida de Habilitación en Garita -->
-      @if (modalGarita()) {
-        <div class="onesst-modal-backdrop" (click)="modalGarita.set(false)">
-          <div class="onesst-modal" (click)="$event.stopPropagation()">
-            <div class="onesst-modal-header">
-              <h4><i class="fa fa-shield"></i> Consulta de Habilitación en Garita (DNI / Placa)</h4>
-              <button type="button" class="onesst-close" (click)="modalGarita.set(false)">&times;</button>
-            </div>
-            <div class="onesst-modal-body">
-              <div style="display:flex; gap:10px; margin-bottom:14px;">
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Buscar por DNI (ej. 45892103), Nombre o Placa (ej. BKM-842)..."
-                  [(ngModel)]="filtroGarita">
-                <button type="button" class="btn btn-primary" (click)="filtroGarita = ''">
-                  <i class="fa fa-refresh"></i> Todos
-                </button>
-              </div>
-              <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>Tipo</th>
-                      <th>DNI / Placa</th>
-                      <th>Colaborador / Unidad</th>
-                      <th>SCTR / SOAT</th>
-                      <th>Estado Garita</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of resultadosGaritaFiltrados(); track item.codigo) {
-                      <tr>
-                        <td><span class="label" [ngClass]="item.tipo === 'TRABAJADOR' ? 'label-info' : 'label-primary'">{{ item.tipo }}</span></td>
-                        <td><strong>{{ item.codigo }}</strong></td>
-                        <td>{{ item.nombre }}</td>
-                        <td><span class="label label-success">VIGENTE</span></td>
-                        <td>
-                          <span class="label" [ngClass]="item.habilitado ? 'label-success' : 'label-danger'">
-                            {{ item.habilitado ? 'HABILITADO' : 'OBSERVADO' }}
-                          </span>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Modal 2: Pase de Visita / Personal Externo -->
-      @if (modalVisitante()) {
-        <div class="onesst-modal-backdrop" (click)="modalVisitante.set(false)">
-          <div class="onesst-modal" (click)="$event.stopPropagation()">
-            <div class="onesst-modal-header">
-              <h4><i class="fa fa-id-card-o"></i> Pase de Ingreso — Personal Externo y Visitantes</h4>
-              <button type="button" class="onesst-close" (click)="modalVisitante.set(false)">&times;</button>
-            </div>
-            <div class="onesst-modal-body">
-              <div class="row">
-                <div class="col-sm-4">
-                  <label>DNI / Documento</label>
-                  <input type="text" class="form-control" [(ngModel)]="nuevoVisitanteDni" placeholder="Ej. 43219876">
-                </div>
-                <div class="col-sm-8">
-                  <label>Nombres y Apellidos / Empresa</label>
-                  <input type="text" class="form-control" [(ngModel)]="nuevoVisitanteNombre" placeholder="Ej. Ing. Carlos Mendoza — Auditor">
-                </div>
-              </div>
-              <div style="margin-top: 14px; display:flex; justify-content:space-between; align-items:center;">
-                <button type="button" class="btn btn-default btn-sm" (click)="modalVisitante.set(false)">
-                  Cancelar
-                </button>
-                <button type="button" class="btn btn-success" (click)="registrarPaseVisitante()">
-                  <i class="fa fa-check"></i> Generar Pase
-                </button>
-              </div>
-              @if (mensajeVisitante()) {
-                <div class="alert alert-success" style="margin-top:12px; padding:10px 14px;">
-                  <i class="fa fa-check-circle"></i> {{ mensajeVisitante() }}
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-      }
 
       <!-- Modal 3: Recuperar Contraseña -->
       @if (modalRecuperar()) {
@@ -267,16 +144,7 @@ interface PerfilDemo {
               <button type="button" class="onesst-close" (click)="modalRecuperar.set(false)">&times;</button>
             </div>
             <div class="onesst-modal-body">
-              <p style="color:#475569; margin-bottom:12px;">
-                Ingresa tu usuario o correo corporativo para enviarte el enlace de recuperación:
-              </p>
-              <input type="text" class="form-control" [(ngModel)]="usuarioRecuperar" placeholder="Ej. holcim.contratista">
-              <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
-                <button type="button" class="btn btn-default" (click)="modalRecuperar.set(false)">Cancelar</button>
-                <button type="button" class="btn btn-primary" (click)="solicitarRecuperacion()">
-                  <i class="fa fa-paper-plane"></i> Enviar
-                </button>
-              </div>
+              <p>Solicite la recuperación de su cuenta a un administrador autorizado de su empresa.</p><button type="button" class="btn btn-primary" (click)="modalRecuperar.set(false)">Entendido</button>
               @if (mensajeRecuperar()) {
                 <div class="alert alert-info" style="margin-top:12px; padding:10px 14px;">
                   <i class="fa fa-info-circle"></i> {{ mensajeRecuperar() }}
@@ -778,142 +646,39 @@ interface PerfilDemo {
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
+  ngOnInit():void{void this.session.refresh();}
   private readonly api = inject(GosstApiService);
   private readonly session = inject(GosstSessionService);
   private readonly router = inject(Router);
 
-  userName = 'holcim.contratista';
-  password = '20608094068';
+  userName = '';
+  password = '';
 
   readonly mostrarClave = signal(false);
-  readonly mostrarPerfiles = signal(false);
   readonly cargando = signal(false);
   readonly mensajeError = signal('');
 
-  readonly modalGarita = signal(false);
-  readonly modalVisitante = signal(false);
   readonly modalRecuperar = signal(false);
 
-  filtroGarita = '';
-  readonly itemsGarita = signal<Array<{ tipo: string; codigo: string; nombre: string; habilitado: boolean }>>([
-    { tipo: 'TRABAJADOR', codigo: '45892103', nombre: 'JUAN CARLOS QUISPE MENDOZA — Supervisor SSOMA', habilitado: true },
-    { tipo: 'TRABAJADOR', codigo: '71204958', nombre: 'MIGUEL ANGEL ROJAS HUAMAN — Soldador Homologado 6G', habilitado: true },
-    { tipo: 'TRABAJADOR', codigo: '46781239', nombre: 'LUIS ALBERTO GUTIERREZ PALOMINO — Montajista Altura', habilitado: true },
-    { tipo: 'VEHICULO', codigo: 'BKM-842', nombre: 'CAMIONETA TOYOTA HILUX 4X4 — GRUPO ELIAS-29 S.A.C', habilitado: true },
-    { tipo: 'VEHICULO', codigo: 'GRU-50T-01', nombre: 'GRÚA TELESCÓPICA LIEBHERR 50T — Izaje Crítico', habilitado: true }
-  ]);
-
-  nuevoVisitanteDni = '';
-  nuevoVisitanteNombre = '';
-  readonly mensajeVisitante = signal('');
-
-  usuarioRecuperar = '';
   readonly mensajeRecuperar = signal('');
 
-  readonly perfilesDisponibles: PerfilDemo[] = [
-    { etiqueta: 'Contratista Holcim', rol: 'Empresa Contratista SSOMA', user: 'holcim.contratista', pass: '20608094068', icono: 'fa-building-o' },
-    { etiqueta: 'Admin SST', rol: 'Administrador Corporativo SST', user: 'admin.sst', pass: 'Admin2026', icono: 'fa-shield' },
-    { etiqueta: 'Jefe SST', rol: 'Jefe Corporativo SST', user: 'roberto.ramos', pass: 'Holcim2026', icono: 'fa-user-secret' },
-    { etiqueta: 'Médico Ocup.', rol: 'Médico Ocupacional', user: 'medico.ocupacional', pass: 'Salud2026', icono: 'fa-user-md' },
-    { etiqueta: 'Garita', rol: 'Control de Acceso Garita', user: 'garita.condorcocha', pass: 'Garita2026', icono: 'fa-id-badge' }
-  ];
 
   toggleClave(): void {
     this.mostrarClave.update(v => !v);
   }
 
-  seleccionarPerfil(p: PerfilDemo): void {
-    this.userName = p.user;
-    this.password = p.pass;
-    this.mensajeError.set('');
-  }
-
-  abrirModalGarita(): void {
-    this.modalGarita.set(true);
-    this.api.callAjaxPost('/contratista/trabajador/lista', {}).subscribe({
-      next: (res) => {
-        const lista = Array.isArray(res?.['list']) ? res['list'] : [];
-        if (lista.length) {
-          const mapeados = lista.map((r: Record<string, any>) => ({
-            tipo: 'TRABAJADOR',
-            codigo: String(r['numeroDocumento'] || r['dni'] || ''),
-            nombre: `${r['nombreCompleto'] || r['nombre'] || ''} — ${r['puestoTrabajo'] || 'Operaciones'}`,
-            habilitado: Boolean(r['habilitadoIngreso'] ?? true)
-          }));
-          this.itemsGarita.set(mapeados);
-        }
-      }
-    });
-  }
-
-  resultadosGaritaFiltrados() {
-    const q = this.filtroGarita.trim().toLowerCase();
-    if (!q) return this.itemsGarita();
-    return this.itemsGarita().filter(
-      i => i.codigo.toLowerCase().includes(q) || i.nombre.toLowerCase().includes(q) || i.tipo.toLowerCase().includes(q)
-    );
-  }
-
-  abrirModalVisitante(): void {
-    this.mensajeVisitante.set('');
-    this.modalVisitante.set(true);
-  }
-
-  registrarPaseVisitante(): void {
-    if (!this.nuevoVisitanteDni.trim() || !this.nuevoVisitanteNombre.trim()) return;
-    const nombreCompleto = `${this.nuevoVisitanteDni.trim()} - ${this.nuevoVisitanteNombre.trim()}`;
-    this.api.callAjaxPost('/visitante/insert', {
-      periodo: new Date().toISOString().slice(0, 10),
-      nombre: nombreCompleto
-    }).subscribe({
-      next: () => {
-        this.mensajeVisitante.set(`Pase de ingreso registrado y habilitado en garita para: ${nombreCompleto}`);
-        this.nuevoVisitanteDni = '';
-        this.nuevoVisitanteNombre = '';
-      }
-    });
-  }
-
-  solicitarRecuperacion(): void {
-    const u = this.usuarioRecuperar.trim() || this.userName;
-    this.api.callAjaxPost('/public/solicitud_cambiar_clave', { userName: u }).subscribe({
-      next: () => {
-        this.mensajeRecuperar.set(`Se ha enviado el enlace de restablecimiento para el usuario "${u}".`);
-      }
-    });
-  }
+  solicitarRecuperacion():void{
+ this.mensajeRecuperar.set('La recuperación de credenciales requiere un administrador autorizado. No se confirmó ningún envío de correo ni cambio de contraseña.');
+}
 
   ingresar(): void {
-    if (!this.userName.trim() || !this.password.trim()) {
-      this.mensajeError.set('Debe completar todos los campos activos.');
-      return;
-    }
-
-    this.cargando.set(true);
-    this.mensajeError.set('');
-
-    this.api.login({ userName: this.userName.trim(), password: this.password.trim() }).subscribe({
-      next: (data) => {
-        this.cargando.set(false);
-        const code = data['CODE_RESPONSE'];
-        if (code === '01') {
-          this.session.guardarSesionLogin(data);
-          this.router.navigate(['/contratista']);
-        } else if (code === '02') {
-          this.mensajeError.set('Usuario y/o contraseña incorrectos.');
-        } else if (code === '03') {
-          this.mensajeError.set('El usuario está bloqueado temporalmente; inténtelo en 2 minutos.');
-        } else if (code === '11') {
-          this.mensajeError.set('El usuario ingresado no existe.');
-        } else {
-          this.mensajeError.set(data['mensajeRespuesta'] || 'Credenciales inválidas.');
-        }
-      },
-      error: () => {
-        this.cargando.set(false);
-        this.mensajeError.set('No fue posible conectar con el servicio de autenticación OneSST.');
-      }
+    if (this.cargando()) return;
+    if (!this.userName.trim() || !this.password) {this.mensajeError.set('Ingrese su usuario y contraseña.');return;}
+    this.cargando.set(true);this.mensajeError.set('');
+    this.session.login(this.userName.trim(),this.password).subscribe({
+      next:()=>{this.password='';this.cargando.set(false);void this.router.navigate(['/contratista']);},
+      error:(error:unknown)=>{this.cargando.set(false);this.mensajeError.set(apiErrorMessage(error));}
     });
   }
 }

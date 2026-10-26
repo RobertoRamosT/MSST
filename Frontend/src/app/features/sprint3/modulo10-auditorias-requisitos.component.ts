@@ -1,41 +1,45 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface AuditoriaSstItem {
   id: number;
-  codigo: string;
-  tipo: 'AUDITORIA' | 'DIAGNOSTICO';
-  normaEstandar: string;
-  nombre: string;
-  entidad: string;
-  cumplimiento: number;
-  ncMayores: number;
-  ncMenores: number;
-  fecha: string;
-  estado: 'APROBADO_CERRADO' | 'EN_SEGUIMIENTO_SAC';
+  codigo: string | null;
+  tipo: 'AUDITORIA' | 'DIAGNOSTICO' | null;
+  normaEstandar: string | null;
+  nombre: string | null;
+  entidad: string | null;
+  cumplimiento: number | null;
+  ncMayores: number | null;
+  ncMenores: number | null;
+  fecha: string | null;
+  estado: 'APROBADO_CERRADO' | 'EN_SEGUIMIENTO_SAC' | null;
 }
 
 export interface RequisitoLegalItem {
   id: number;
-  codigoNorma: string;
-  tituloNorma: string;
-  articuloObligacion: string;
-  entidadFiscalizadora: string;
-  cumplimiento: number;
-  evidenciaCumplimiento: string;
-  fechaEvaluacion: string;
-  estado: 'CUMPLE_100' | 'EN_PROCESO';
+  codigoNorma: string | null;
+  tituloNorma: string | null;
+  articuloObligacion: string | null;
+  entidadFiscalizadora: string | null;
+  cumplimiento: number | null;
+  evidenciaCumplimiento: string | null;
+  fechaEvaluacion: string | null;
+  estado: 'CUMPLE_100' | 'EN_PROCESO' | null;
 }
 
 @Component({
   selector: 'msst-modulo10-auditorias',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera Corporativa Módulo 10 -->
@@ -173,7 +177,7 @@ export interface RequisitoLegalItem {
                       <td>
                         <div class="progress" style="margin-bottom: 0; height: 18px; background: #e2e8f0;">
                           <div class="progress-bar"
-                               [ngClass]="a.cumplimiento >= 90 ? 'progress-bar-success' : 'progress-bar-info'"
+                               [ngClass]="(a.cumplimiento !== null && a.cumplimiento >= 90) ? 'progress-bar-success' : 'progress-bar-info'"
                                [style.width.%]="a.cumplimiento"
                                style="line-height: 18px; font-size: 11px; font-weight: bold;">
                             {{ a.cumplimiento }}%
@@ -413,11 +417,13 @@ export interface RequisitoLegalItem {
   `
 })
 export class Modulo10AuditoriasRequisitosComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
 
-  readonly pestana = signal<'AUDITORIAS' | 'REQUISITOS' | 'VISOR'>('AUDITORIAS');
+  readonly pestana = signal<'AUDITORIAS' | 'REQUISITOS'>('AUDITORIAS');
 
   /** Pestaña solicitada desde el submenú del sidebar (menú lateral 1:1 con GOSST). */
 
@@ -434,7 +440,6 @@ export class Modulo10AuditoriasRequisitosComponent implements OnInit {
     }
 
   });
-  readonly paginaVisorActiva = signal<'auditoria.html' | 'requisitos.html'>('auditoria.html');
   readonly notificacion = signal<string>('');
 
   readonly mostrarModalAuditoria = signal<boolean>(false);
@@ -444,104 +449,30 @@ export class Modulo10AuditoriasRequisitosComponent implements OnInit {
   filtroTipoAuditoria = 'TODOS';
   filtroRequisito = '';
 
-  readonly auditorias = signal<AuditoriaSstItem[]>([
-    {
-      id: 1,
-      codigo: 'AUD-MINTRA-2026-01',
-      tipo: 'AUDITORIA',
-      normaEstandar: 'Ley N° 29783 / D.S. 014-2013-TR',
-      nombre: 'Auditoría Periódica del Sistema de Gestión de SST por Auditor Acreditado MINTRA',
-      entidad: 'SGS del Perú S.A.C. / Auditor MINTRA',
-      cumplimiento: 96.5,
-      ncMayores: 0,
-      ncMenores: 2,
-      fecha: '14/10/2026',
-      estado: 'APROBADO_CERRADO'
-    },
-    {
-      id: 2,
-      codigo: 'AUD-ISO-45001-02',
-      tipo: 'AUDITORIA',
-      normaEstandar: 'ISO 45001:2018 Cláusulas 4 a 10',
-      nombre: 'Auditoría Externa de Seguimiento Anual Sistema Integrado de Gestión HSE',
-      entidad: 'AENOR / Bureau Veritas Certificación',
-      cumplimiento: 98.0,
-      ncMayores: 0,
-      ncMenores: 1,
-      fecha: '19/10/2026',
-      estado: 'APROBADO_CERRADO'
-    },
-    {
-      id: 3,
-      codigo: 'DIAG-LB-29783-03',
-      tipo: 'DIAGNOSTICO',
-      normaEstandar: 'R.M. N° 050-2013-TR (Lista de Verificación)',
-      nombre: 'Estudio de Línea Base del Sistema de Gestión de Seguridad y Salud en el Trabajo',
-      entidad: 'Comité Paritario CSST y Jefatura Corporativa HSE',
-      cumplimiento: 95.0,
-      ncMayores: 0,
-      ncMenores: 3,
-      fecha: '05/10/2026',
-      estado: 'EN_SEGUIMIENTO_SAC'
-    }
-  ]);
+  readonly auditorias = signal<AuditoriaSstItem[]>([]);
 
-  readonly requisitosLegales = signal<RequisitoLegalItem[]>([
-    {
-      id: 1,
-      codigoNorma: 'Ley N° 29783 / D.S. 005-2012-TR',
-      tituloNorma: 'Ley de Seguridad y Salud en el Trabajo y su Reglamento',
-      articuloObligacion: 'Art. 29 y 42: Constitución y funcionamiento paritario del Comité de SST y Programa Anual',
-      entidadFiscalizadora: 'SUNAFIL / MINTRA',
-      cumplimiento: 100,
-      evidenciaCumplimiento: 'Libro de Actas de Instalación CSST 2026 y elecciones virtuales verificadas',
-      fechaEvaluacion: '15/10/2026',
-      estado: 'CUMPLE_100'
-    },
-    {
-      id: 2,
-      codigoNorma: 'D.S. N° 024-2016-EM / D.S. 023-2017-EM',
-      tituloNorma: 'Reglamento de Seguridad y Salud Ocupacional en Minería y Operaciones Conexas',
-      articuloObligacion: 'Art. 130 al 136: Permiso Escrito para Trabajos de Alto Riesgo (PETAR) y bloqueo LOTOTO',
-      entidadFiscalizadora: 'OSINERGMIN / SUNAFIL',
-      cumplimiento: 100,
-      evidenciaCumplimiento: 'Formatos PETAR firmados digitalmente en Módulo 03 y matrices IPERC aprobadas',
-      fechaEvaluacion: '18/10/2026',
-      estado: 'CUMPLE_100'
-    },
-    {
-      id: 3,
-      codigoNorma: 'R.M. N° 375-2008-TR',
-      tituloNorma: 'Norma Básica de Ergonomía y de Procedimiento de Evaluación de Riesgo Disergonómico',
-      articuloObligacion: 'Título III y IV: Manipulación manual de cargas (<25 kg) y pausas activas en puestos operativos',
-      entidadFiscalizadora: 'SUNAFIL / CENSOPAS',
-      cumplimiento: 95,
-      evidenciaCumplimiento: 'Informe de Monitoreo Ergonómico Anual 2026 y ayudas mecánicas en almacén',
-      fechaEvaluacion: '20/10/2026',
-      estado: 'CUMPLE_100'
-    }
-  ]);
+  readonly requisitosLegales = signal<RequisitoLegalItem[]>([]);
 
   nuevaAuditoria = {
-    codigo: 'AUD-INT-2026-04',
-    tipo: 'AUDITORIA' as AuditoriaSstItem['tipo'],
-    normaEstandar: 'ISO 45001:2018 / Ley N° 29783',
+    codigo: '',
+    tipo: '' as AuditoriaSstItem['tipo'],
+    normaEstandar: '',
     nombre: '',
-    entidad: 'Equipo Auditor Interno Certificado HSE',
-    cumplimiento: 97,
+    entidad: '',
+    cumplimiento: 0,
     ncMayores: 0,
-    ncMenores: 1,
-    fecha: '25/10/2026'
+    ncMenores: 0,
+    fecha: ''
   };
 
   nuevoRequisito = {
-    codigoNorma: 'R.M. N° 312-2011-MINSA',
-    tituloNorma: 'Protocolos de Exámenes Médico Ocupacionales y Guías de Diagnóstico',
+    codigoNorma: '',
+    tituloNorma: '',
     articuloObligacion: '',
-    entidadFiscalizadora: 'DIGESA / MINSA / SUNAFIL',
-    cumplimiento: 100,
-    evidenciaCumplimiento: 'Matriz de EMO vigentes y custodia médica confidencial en Módulo 09',
-    fechaEvaluacion: '24/10/2026'
+    entidadFiscalizadora: '',
+    cumplimiento: 0,
+    evidenciaCumplimiento: '',
+    fechaEvaluacion: ''
   };
 
   readonly promedioCumplimientoAuditoria = computed(() => {
@@ -558,66 +489,22 @@ export class Modulo10AuditoriasRequisitosComponent implements OnInit {
     return Math.round((sum / list.length) * 10) / 10;
   });
 
-  readonly urlVisorSeguro = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.paginaVisorActiva()}`)
-  );
 
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/auditoria/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['codigo']) {
-          const desdeSql: AuditoriaSstItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (10 + idx),
-            codigo: String(r['codigo'] || `AUD-2026-0${idx + 1}`),
-            tipo: (String(r['tipo'] || 'AUDITORIA').toUpperCase().includes('DIAG') ? 'DIAGNOSTICO' : 'AUDITORIA'),
-            normaEstandar: String(r['normaEstandar'] || 'Ley N° 29783 / ISO 45001:2018'),
-            nombre: String(r['nombre'] || 'Auditoría del Sistema de Gestión SST'),
-            entidad: String(r['entidad'] || 'Auditor Acreditado MINTRA'),
-            cumplimiento: r['cumplimiento'] !== undefined && r['cumplimiento'] !== null ? Number(r['cumplimiento']) : 0,
-            ncMayores: Number(r['ncMayores']) || 0,
-            ncMenores: Number(r['ncMenores']) || 0,
-            fecha: String(r['fecha'] || '20/10/2026'),
-            estado: String(r['estado'] || '').toUpperCase().includes('CERRADO') ? 'APROBADO_CERRADO' : 'EN_SEGUIMIENTO_SAC'
-          }));
-          this.auditorias.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.codigo === a.codigo))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/auditoria/lista', { ...{} }).subscribe({next:(response)=>{try{this.auditorias.set(confirmedList<AuditoriaSstItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"tipo","kind":"string","optional":false,"nullable":true},{"name":"normaEstandar","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"entidad","kind":"string","optional":false,"nullable":true},{"name":"cumplimiento","kind":"number","optional":false,"nullable":true},{"name":"ncMayores","kind":"number","optional":false,"nullable":true},{"name":"ncMenores","kind":"number","optional":false,"nullable":true},{"name":"fecha","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/requisitos/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const reqList = res?.['list'];
-        if (Array.isArray(reqList) && reqList.length > 0) {
-          const reqData: RequisitoLegalItem[] = reqList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            codigoNorma: String(r['codigoNorma'] || r['norma'] || `REQ-LEG-0${i + 1}`),
-            tituloNorma: String(r['tituloNorma'] || r['titulo'] || 'Reglamento de Seguridad y Salud en el Trabajo'),
-            articuloObligacion: String(r['articuloObligacion'] || r['articulo'] || 'Disposición reglamentaria'),
-            entidadFiscalizadora: String(r['entidadFiscalizadora'] || r['entidad'] || 'SUNAFIL / MINTRA'),
-            cumplimiento: Number(r['cumplimiento']) || 100,
-            evidenciaCumplimiento: String(r['evidenciaCumplimiento'] || r['evidencia'] || 'Registro archivado'),
-            fechaEvaluacion: String(r['fechaEvaluacion'] || r['fecha'] || '20/10/2026'),
-            estado: String(r['estado'] || '').toUpperCase().includes('PROCESO') ? 'EN_PROCESO' : 'CUMPLE_100'
-          }));
-          this.requisitosLegales.set(reqData);
-        }
-      }
-    });
+    this.api.callAjaxPost('/requisitos/lista', { ...{} }).subscribe({next:(response)=>{try{this.requisitosLegales.set(confirmedList<RequisitoLegalItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigoNorma","kind":"string","optional":false,"nullable":true},{"name":"tituloNorma","kind":"string","optional":false,"nullable":true},{"name":"articuloObligacion","kind":"string","optional":false,"nullable":true},{"name":"entidadFiscalizadora","kind":"string","optional":false,"nullable":true},{"name":"cumplimiento","kind":"number","optional":false,"nullable":true},{"name":"evidenciaCumplimiento","kind":"string","optional":false,"nullable":true},{"name":"fechaEvaluacion","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   auditoriasFiltradas(): AuditoriaSstItem[] {
     const q = this.filtroAuditoria.trim().toLowerCase();
     return this.auditorias().filter(a => {
       const okTipo = this.filtroTipoAuditoria === 'TODOS' || a.tipo === this.filtroTipoAuditoria;
-      const okTexto = !q || a.codigo.toLowerCase().includes(q) || a.nombre.toLowerCase().includes(q) || a.entidad.toLowerCase().includes(q) || a.normaEstandar.toLowerCase().includes(q);
+      const okTexto = !q || (a.codigo??'').toLowerCase().includes(q) || (a.nombre??'').toLowerCase().includes(q) || (a.entidad??'').toLowerCase().includes(q) || (a.normaEstandar??'').toLowerCase().includes(q);
       return okTipo && okTexto;
     });
   }
@@ -626,110 +513,34 @@ export class Modulo10AuditoriasRequisitosComponent implements OnInit {
     const q = this.filtroRequisito.trim().toLowerCase();
     if (!q) return this.requisitosLegales();
     return this.requisitosLegales().filter(r =>
-      r.codigoNorma.toLowerCase().includes(q) || r.tituloNorma.toLowerCase().includes(q) || r.articuloObligacion.toLowerCase().includes(q) || r.entidadFiscalizadora.toLowerCase().includes(q)
+      (r.codigoNorma??'').toLowerCase().includes(q) || (r.tituloNorma??'').toLowerCase().includes(q) || (r.articuloObligacion??'').toLowerCase().includes(q) || (r.entidadFiscalizadora??'').toLowerCase().includes(q)
     );
   }
 
   guardarNuevaAuditoria(): void {
     if (!this.nuevaAuditoria.nombre.trim()) return;
-    this.api.callAjaxPost('/auditoria/insert', { ...this.nuevaAuditoria, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarAuditoriaLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarAuditoriaLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/auditoria/insert', { ...this.nuevaAuditoria, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalAuditoria.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarAuditoriaLocal(id: number): void {
-    const item: AuditoriaSstItem = {
-      id,
-      codigo: this.nuevaAuditoria.codigo,
-      tipo: this.nuevaAuditoria.tipo,
-      normaEstandar: this.nuevaAuditoria.normaEstandar,
-      nombre: this.nuevaAuditoria.nombre,
-      entidad: this.nuevaAuditoria.entidad,
-      cumplimiento: Number(this.nuevaAuditoria.cumplimiento) || 95,
-      ncMayores: Number(this.nuevaAuditoria.ncMayores) || 0,
-      ncMenores: Number(this.nuevaAuditoria.ncMenores) || 0,
-      fecha: this.nuevaAuditoria.fecha,
-      estado: 'APROBADO_CERRADO'
-    };
-    this.auditorias.update(list => [item, ...list]);
-    this.mostrarModalAuditoria.set(false);
-    this.mostrarAviso(`Auditoría "${item.codigo}" registrada correctamente en OneSST.`);
-  }
 
-  aprobarAuditoria(item: AuditoriaSstItem): void {
-    this.api.callAjaxPost('/auditoria/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.auditorias.update(list => list.map(a => a.id === item.id ? { ...a, estado: 'APROBADO_CERRADO' } : a));
-        this.mostrarAviso(`Informe de auditoría "${item.codigo}" aprobado y cerrado.`);
-      },
-      error: (err) => {
-        this.mostrarAviso(`Error al aprobar auditoría: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
-  }
+
+  aprobarAuditoria(item: AuditoriaSstItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarAuditoria(item: AuditoriaSstItem): void {
-    this.api.callAjaxPost('/auditoria/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.auditorias.update(list => list.filter(a => a.id !== item.id));
-        this.mostrarAviso(`Auditoría "${item.codigo}" eliminada.`);
-      },
-      error: (err) => {
-        this.mostrarAviso(`Error al eliminar auditoría: ${err?.message || 'Fallo en el servidor.'}`);
-      }
-    });
+    this.api.callAjaxPost('/auditoria/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   guardarNuevoRequisito(): void {
     if (!this.nuevoRequisito.articuloObligacion.trim()) return;
-    this.api.callAjaxPost('/requisitos/insert', { ...this.nuevoRequisito, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarRequisitoLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarRequisitoLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/requisitos/insert', { ...this.nuevoRequisito, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalRequisito.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarRequisitoLocal(id: number): void {
-    const item: RequisitoLegalItem = {
-      id,
-      codigoNorma: this.nuevoRequisito.codigoNorma,
-      tituloNorma: this.nuevoRequisito.tituloNorma,
-      articuloObligacion: this.nuevoRequisito.articuloObligacion,
-      entidadFiscalizadora: this.nuevoRequisito.entidadFiscalizadora,
-      cumplimiento: Number(this.nuevoRequisito.cumplimiento) || 100,
-      evidenciaCumplimiento: this.nuevoRequisito.evidenciaCumplimiento,
-      fechaEvaluacion: this.nuevoRequisito.fechaEvaluacion,
-      estado: 'CUMPLE_100'
-    };
-    this.requisitosLegales.update(list => [item, ...list]);
-    this.mostrarModalRequisito.set(false);
-    this.mostrarAviso(`Requisito legal "${item.codigoNorma}" incorporado en la Matriz Legal.`);
-  }
 
-  aprobarRequisito(item: RequisitoLegalItem): void {
-    this.api.callAjaxPost('/requisitos/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.requisitosLegales.update(list => list.map(r => r.id === item.id ? { ...r, cumplimiento: 100, estado: 'CUMPLE_100' } : r));
-        this.mostrarAviso(`Cumplimiento al 100% verificado para "${item.codigoNorma}".`);
-      },
-      error: () => {
-        this.requisitosLegales.update(list => list.map(r => r.id === item.id ? { ...r, cumplimiento: 100, estado: 'CUMPLE_100' } : r));
-        this.mostrarAviso(`Cumplimiento al 100% verificado para "${item.codigoNorma}".`);
-      }
-    });
-  }
+
+  aprobarRequisito(item: RequisitoLegalItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarRequisito(item: RequisitoLegalItem): void {
-    this.api.callAjaxPost('/requisitos/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.requisitosLegales.update(list => list.filter(r => r.id !== item.id));
-        this.mostrarAviso(`Requisito legal #${item.id} eliminado.`);
-      },
-      error: () => {
-        this.requisitosLegales.update(list => list.filter(r => r.id !== item.id));
-        this.mostrarAviso(`Requisito legal #${item.id} eliminado.`);
-      }
-    });
+    this.api.callAjaxPost('/requisitos/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   exportarCsvAuditorias(): void {

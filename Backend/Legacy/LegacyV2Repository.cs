@@ -1,0 +1,115 @@
+using System.Data;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Msst.Backend.Data;
+using Msst.Backend.Database;
+using Msst.Backend.Evidence;
+namespace Msst.Backend.Legacy;
+
+public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpContextAccessor contexts, IEvidenceReader evidenceReader)
+{
+ public async Task<LegacyV2Envelope> ExecuteAsync(string route, string json, CancellationToken ct)
+ {
+  var actor=RequestScope.Require(contexts.HttpContext);
+  using var document=JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+  RequestScope.CheckPayloadScope(document.RootElement,actor);
+  var action=LegacyProjection.ResolverAccionCrud(route);
+  var module=LegacyProjection.ResolverModuloCrud(route,"");
+  if(string.IsNullOrWhiteSpace(module)) throw new ApiDomainException(404,"ENDPOINT_NOT_IMPLEMENTED","La ruta no corresponde a una operación disponible.");
+  var mutation=!string.IsNullOrEmpty(action);
+  if(action is "APROBAR" or "RECHAZAR" or "VOTAR")
+   throw new ApiDomainException(422,"WORKFLOW_ACTION_REQUIRED","Realice esta decisión desde su expediente y acción autorizada.");
+  RequestScope.Permission(contexts.HttpContext,module=="contratista_garita"&&!mutation?"access:read":"legacy:"+module+(mutation ? ":write" : ":read"));
+  await using var verifiedEvidence=await VerifyEvidenceAsync(document.RootElement,actor,module,action,evidenceReader,ct);
+  await using var connection=database.CreateConnection(); await connection.OpenAsync(ct);
+  await using(var command=new SqlCommand("SELECT COUNT(*) FROM dbo.Sys_EndpointCatalogo WHERE RutaRelativa=@Route;",connection))
+  {command.Parameters.AddWithValue("@Route",route);if(Convert.ToInt32(await command.ExecuteScalarAsync(ct))==0)
+    throw new ApiDomainException(404,"ENDPOINT_NOT_REGISTERED","La operación no está registrada en el catálogo vigente.");}
+  LegacyV2Envelope response;
+  if(mutation)
+  {
+   await using var command=new SqlCommand("dbo.usp_Msst_LegacyV2",connection){CommandType=CommandType.StoredProcedure};
+   command.Parameters.AddWithValue("@Modulo",module);command.Parameters.AddWithValue("@Accion",action!);
+   command.Parameters.AddWithValue("@ActorId",actor.UserId);command.Parameters.AddWithValue("@EmpresaId",actor.EmpresaId);
+   command.Parameters.AddWithValue("@PayloadJson",document.RootElement.GetRawText());
+   var raw=Convert.ToString(await command.ExecuteScalarAsync(ct)) ?? throw new InvalidDataException("Sin recibo.");
+   response=JsonSerializer.Deserialize(raw,LegacyV2JsonContext.Default.LegacyV2Envelope) ?? throw new InvalidDataException("Recibo inválido.");
+   if(response.CodeResponse!="05" || response.StatusCode!="01") return response;
+   if(response.Snapshot is null || response.Snapshot.Record.Count==0 || response.Snapshot.Version.Length==0 || response.RequestId is null)
+    throw new InvalidDataException("Falta la instantánea persistida.");
+  }
+  else response=new(){CodeResponse="05",StatusCode="01",Message="Consulta confirmada."};
+  var query=LegacyProjection.ObtenerConsultaPorRuta(route,module);
+  if(string.IsNullOrEmpty(query)) throw new ApiDomainException(404,"ENDPOINT_NOT_IMPLEMENTED","El módulo no tiene una consulta implementada.");
+  query=await ScopeAsync(connection,query,actor,ct);
+  await using(var command=new SqlCommand(query,connection))
+  {
+   command.Parameters.AddWithValue("@ActorEmpresa",actor.EmpresaId);
+   if(query.Contains("@ActorContractor",StringComparison.Ordinal))command.Parameters.AddWithValue("@ActorContractor",actor.ContratistaId ?? 0);
+   await using var reader=await command.ExecuteReaderAsync(ct);
+   while(await reader.ReadAsync(ct))
+   {
+    var row=new Dictionary<string,object?>(StringComparer.Ordinal);
+    for(var i=0;i<reader.FieldCount;i++){
+     var value=reader.IsDBNull(i)?null:reader.GetValue(i);
+     row[reader.GetName(i)]=value switch{
+      byte[] bytes=>Convert.ToBase64String(bytes),DateTime date=>date.ToString("O",System.Globalization.CultureInfo.InvariantCulture),Guid guid=>guid.ToString(),
+      null or int or long or short or byte or decimal or bool or string or double or float=>value,
+      _=>throw new InvalidDataException("Tipo SQL fuera del contrato.")};
+    }response.List.Add(row);
+   }
+  }
+  response.Lista=response.List;response.Total=response.List.Count;
+  if(response.List.Count>0)response.Data=response.List[0];
+  if(route.Contains("conductor",StringComparison.OrdinalIgnoreCase))response.DriverDocuments=response.List;
+  // El recibo conserva exactamente el registro/version de su transacción, también en replay.
+  // La lista actual se devuelve aparte: no mezclar un registro posterior con la versión del recibo.
+  return response;
+ }
+ private static async Task<Stream?> VerifyEvidenceAsync(JsonElement document,RequestActor actor,string module,string? action,IEvidenceReader reader,CancellationToken ct)
+ {
+  if(action!="INSERT" || module is not ("contratista_documento" or "contratista_documento_conductor"))return null;
+  if(!document.TryGetProperty("evidenceId",out var property)||!Guid.TryParse(property.GetString(),out var id))
+   throw new ApiDomainException(422,"EVIDENCE_REQUIRED","Seleccione un archivo persistido en su expediente.");
+  return await reader.OpenReadAsync(actor.UserId,actor.EmpresaId,id,ct);
+ }
+ public Task<LegacyV2Envelope> GetMedicalCatalogAsync(CancellationToken ct) => MedicalCatalogAsync("CATALOG","{}",ct);
+ public Task<LegacyV2Envelope> GetMedicalAdminCatalogAsync(CancellationToken ct) => MedicalCatalogAsync("CATALOG_ADMIN","{}",ct);
+ public Task<LegacyV2Envelope> GetMedicalTypesAsync(CancellationToken ct) => MedicalCatalogAsync("CATALOG_TYPES","{}",ct);
+ public Task<LegacyV2Envelope> SaveMedicalCatalogAsync(string json,CancellationToken ct) => MedicalCatalogAsync("CATALOG_SAVE",json,ct);
+ private async Task<LegacyV2Envelope> MedicalCatalogAsync(string operation,string json,CancellationToken ct)
+ {
+  var actor=RequestScope.Require(contexts.HttpContext);
+  RequestScope.Permission(contexts.HttpContext,operation=="CATALOG"?"medical:read":"medical:catalog:write");
+  using var payload=JsonDocument.Parse(json);
+  RequestScope.CheckPayloadScope(payload.RootElement,actor);
+  await using var connection=database.CreateConnection();await connection.OpenAsync(ct);
+  await using var command=new SqlCommand("dbo.usp_Msst_LegacyV2",connection){CommandType=CommandType.StoredProcedure};
+  command.Parameters.AddWithValue("@Modulo","medical");command.Parameters.AddWithValue("@Accion",operation);
+  command.Parameters.AddWithValue("@ActorId",actor.UserId);command.Parameters.AddWithValue("@EmpresaId",actor.EmpresaId);
+  command.Parameters.AddWithValue("@PayloadJson",payload.RootElement.GetRawText());
+  var raw=Convert.ToString(await command.ExecuteScalarAsync(ct))??throw new InvalidDataException("Falta el recibo de catálogo.");
+  return JsonSerializer.Deserialize(raw,LegacyV2JsonContext.Default.LegacyV2Envelope)??throw new InvalidDataException("Catálogo inválido.");
+ }
+ private static async Task<string> ScopeAsync(SqlConnection connection,string query,RequestActor actor,CancellationToken ct)
+ {
+  var m=Regex.Match(query,@"\bFROM\s+dbo\.([A-Za-z_0-9]+)(?:\s+([A-Za-z_0-9]+))?",RegexOptions.IgnoreCase);
+  if(!m.Success)throw new InvalidDataException("Consulta sin origen autorizado.");
+  var table=m.Groups[1].Value;var alias=m.Groups[2].Value;
+  if(string.IsNullOrEmpty(alias)||new[]{"WHERE","LEFT","INNER","RIGHT","ORDER","JOIN"}.Contains(alias,StringComparer.OrdinalIgnoreCase))alias=table;
+  var columns=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+  await using(var command=new SqlCommand("SELECT name FROM sys.columns WHERE object_id=OBJECT_ID(@Table);",connection))
+  {command.Parameters.AddWithValue("@Table","dbo."+table);await using var reader=await command.ExecuteReaderAsync(ct);while(await reader.ReadAsync(ct))columns.Add(reader.GetString(0));}
+  var prefix="["+alias+"].";var rules=new List<string>();
+  if(columns.Contains("MsstDeleted"))rules.Add(prefix+"[MsstDeleted]=0");
+  if(columns.Contains("IdEmpresa"))rules.Add(prefix+"[IdEmpresa]=@ActorEmpresa");
+  else if(columns.Contains("IdEmpresaCliente"))rules.Add(prefix+"[IdEmpresaCliente]=@ActorEmpresa");
+  else if(columns.Contains("IdContratista"))rules.Add("EXISTS(SELECT 1 FROM dbo.Ctr_Contratista scopeCtr WHERE scopeCtr.IdContratista="+prefix+"[IdContratista] AND scopeCtr.IdEmpresaCliente=@ActorEmpresa)");
+  else throw new ApiDomainException(403,"CONTEXT_SCOPE_UNAVAILABLE","No se pudo confirmar el ámbito de la consulta.");
+  if(actor.ContratistaId.HasValue&&columns.Contains("IdContratista"))rules.Add(prefix+"[IdContratista]=@ActorContractor");
+  if(columns.Contains("MsstVersion"))query=query[..m.Index]+", "+prefix+"[MsstVersion] AS version "+query[m.Index..];
+  var order=Regex.Match(query,@"\bORDER\s+BY\b",RegexOptions.IgnoreCase);var end=order.Success?order.Index:query.TrimEnd().TrimEnd(';').Length;
+  var before=query[..end].TrimEnd();
+  return before+(Regex.IsMatch(before,@"\bWHERE\b",RegexOptions.IgnoreCase)?" AND ":" WHERE ")+string.Join(" AND ",rules)+" "+query[end..];
+ }
+}

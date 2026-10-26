@@ -1,56 +1,60 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface ResiduoSolidoItem {
   id: number;
-  codigo: string;
-  tipo: 'RESIDUO' | 'MANIFIESTO';
-  nombre: string;
-  clasificacion: 'PELIGROSO' | 'NO_PELIGROSO' | 'RAEE';
-  cantidad: number;
-  unidad: 'KG' | 'TON';
-  operadorEoRs: string;
-  certificadoDisposicion: string;
-  fechaDisposicion: string;
-  estado: 'DISPOSICION_CERTIFICADA' | 'ALMACEN_CENTRAL';
+  codigo: string | null;
+  tipo: 'RESIDUO' | 'MANIFIESTO' | null;
+  nombre: string | null;
+  clasificacion: 'PELIGROSO' | 'NO_PELIGROSO' | 'RAEE' | null;
+  cantidad: number | null;
+  unidad: 'KG' | 'TON' | null;
+  operadorEoRs: string | null;
+  certificadoDisposicion: string | null;
+  fechaDisposicion: string | null;
+  estado: 'DISPOSICION_CERTIFICADA' | 'ALMACEN_CENTRAL' | null;
 }
 
 export interface FichaQuimicaMatpelItem {
   id: number;
-  codigo: string;
-  productoQuimico: string;
-  clasificacionSga: string;
-  nfpaSalud: number;
-  nfpaInflamabilidad: number;
-  nfpaReactividad: number;
-  nfpaEspecifico: string;
-  cantidadAlmacenada: number;
-  unidad: string;
-  areaUso: string;
-  fichaPdfUrl: string;
-  estado: 'HOMOLOGADO_MSDS' | 'EN_EVALUACION';
+  codigo: string | null;
+  productoQuimico: string | null;
+  clasificacionSga: string | null;
+  nfpaSalud: number | null;
+  nfpaInflamabilidad: number | null;
+  nfpaReactividad: number | null;
+  nfpaEspecifico: string | null;
+  cantidadAlmacenada: number | null;
+  unidad: string | null;
+  areaUso: string | null;
+  fichaPdfUrl: string | null;
+  estado: 'HOMOLOGADO_MSDS' | 'EN_EVALUACION' | null;
 }
 
 export interface HuellaCarbonoGeiItem {
   id: number;
-  codigo: string;
-  alcanceGei: 'ALCANCE_1' | 'ALCANCE_2' | 'ALCANCE_3' | 'MITIGACION';
-  fuenteEmision: string;
-  emisionesTco2e: number;
-  metaReduccionPorc: number;
-  periodoReporte: string;
-  estadoVerificacion: 'VERIFICADO_ISO_14064' | 'EN_CALCULO';
+  codigo: string | null;
+  alcanceGei: 'ALCANCE_1' | 'ALCANCE_2' | 'ALCANCE_3' | 'MITIGACION' | null;
+  fuenteEmision: string | null;
+  emisionesTco2e: number | null;
+  metaReduccionPorc: number | null;
+  periodoReporte: string | null;
+  estadoVerificacion: 'VERIFICADO_ISO_14064' | 'EN_CALCULO' | null;
 }
 
 @Component({
   selector: 'msst-modulo11-ambiente',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera Corporativa Módulo 11 -->
@@ -103,9 +107,9 @@ export interface HuellaCarbonoGeiItem {
             </div>
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #17a2b8; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
-                <div style="font-size: 11px; color: #666;">META DESCARBONIZACIÓN NET-ZERO</div>
-                <div style="font-size: 20px; font-weight: bold; color: #17a2b8;">100% Verificado</div>
-                <div style="font-size: 11px; color: #888;">Huella de Carbono Perú — MINAM</div>
+                <div style="font-size: 11px; color: #666;">CONTROL DE HUELLA DE CARBONO</div>
+                <div style="font-size: 20px; font-weight: bold; color: #17a2b8;">Consulte los registros</div>
+                <div style="font-size: 11px; color: #888;">La verificación corresponde al expediente</div>
               </div>
             </div>
           </div>
@@ -560,11 +564,13 @@ export interface HuellaCarbonoGeiItem {
   `
 })
 export class Modulo11MedioAmbienteComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
 
-  readonly pestana = signal<'RESIDUOS' | 'FICHAS_QUIMICAS' | 'HUELLA_CARBONO' | 'VISOR'>('RESIDUOS');
+  readonly pestana = signal<'RESIDUOS' | 'FICHAS_QUIMICAS' | 'HUELLA_CARBONO'>('RESIDUOS');
 
   /** Pestaña solicitada desde el submenú del sidebar (menú lateral 1:1 con GOSST). */
 
@@ -581,7 +587,6 @@ export class Modulo11MedioAmbienteComponent implements OnInit {
     }
 
   });
-  readonly paginaVisorActiva = signal<'residuos.html' | 'fichaquimica.html' | 'huella_carbono.html'>('residuos.html');
   readonly notificacion = signal<string>('');
 
   readonly mostrarModalResiduo = signal<boolean>(false);
@@ -593,159 +598,42 @@ export class Modulo11MedioAmbienteComponent implements OnInit {
   filtroFichaQuimica = '';
   filtroHuella = '';
 
-  readonly residuos = signal<ResiduoSolidoItem[]>([
-    {
-      id: 1,
-      codigo: 'MAN-EORS-2026-001',
-      tipo: 'MANIFIESTO',
-      nombre: 'Aceites Usados, Filtros Contaminados con Hidrocarburos y Trapos Impregnados',
-      clasificacion: 'PELIGROSO',
-      cantidad: 1450,
-      unidad: 'KG',
-      operadorEoRs: 'Befesa Perú S.A. / Séché Group (EO-RS-0041-MINAM)',
-      certificadoDisposicion: 'CERT-DISP-88412',
-      fechaDisposicion: '16/10/2026',
-      estado: 'DISPOSICION_CERTIFICADA'
-    },
-    {
-      id: 2,
-      codigo: 'RES-IND-2026-002',
-      tipo: 'RESIDUO',
-      nombre: 'Chatarra Ferrosa Estructural y Repuestos Metálicos de Molienda para Valorización',
-      clasificacion: 'NO_PELIGROSO',
-      cantidad: 18.5,
-      unidad: 'TON',
-      operadorEoRs: 'Aceros y Reciclaje Industrial S.A.C. (EO-RS-0119-MINAM)',
-      certificadoDisposicion: 'CERT-VAL-99201',
-      fechaDisposicion: '19/10/2026',
-      estado: 'DISPOSICION_CERTIFICADA'
-    },
-    {
-      id: 3,
-      codigo: 'MAN-RAEE-2026-003',
-      tipo: 'MANIFIESTO',
-      nombre: 'Baterías Industriales, Luminarias Fluorescentes y Tarjetas Electrónicas PLC (RAEE)',
-      clasificacion: 'RAEE',
-      cantidad: 320,
-      unidad: 'KG',
-      operadorEoRs: 'Comimtel Recycling S.A.C. (EO-RS Autorizada MINAM)',
-      certificadoDisposicion: 'CERT-RAEE-55104',
-      fechaDisposicion: '21/10/2026',
-      estado: 'DISPOSICION_CERTIFICADA'
-    }
-  ]);
+  readonly residuos = signal<ResiduoSolidoItem[]>([]);
 
-  readonly fichasQuimicas = signal<FichaQuimicaMatpelItem[]>([
-    {
-      id: 1,
-      codigo: 'MSDS-QUI-001',
-      productoQuimico: 'Ácido Clorhídrico al 37% Grado Analítico (Laboratorio Control de Calidad)',
-      clasificacionSga: 'Corrosivo Categoría 1B / Toxicidad Aguda',
-      nfpaSalud: 3,
-      nfpaInflamabilidad: 0,
-      nfpaReactividad: 1,
-      nfpaEspecifico: 'COR',
-      cantidadAlmacenada: 120,
-      unidad: 'L',
-      areaUso: 'Laboratorio Químico y Rayos X Planta',
-      fichaPdfUrl: '/sst/evidencia/ver?codigo=MSDS-QUI-001',
-      estado: 'HOMOLOGADO_MSDS'
-    },
-    {
-      id: 2,
-      codigo: 'MSDS-LUB-002',
-      productoQuimico: 'Aceite Sintético de Engranajes Industriales Mobilgear SHC XMP 320',
-      clasificacionSga: 'Hidrocarburo Sintético No Inflamable',
-      nfpaSalud: 1,
-      nfpaInflamabilidad: 1,
-      nfpaReactividad: 0,
-      nfpaEspecifico: 'NINGUNO',
-      cantidadAlmacenada: 1800,
-      unidad: 'L',
-      areaUso: 'Reductores Principales de Molinos de Bolas y Horno',
-      fichaPdfUrl: '/sst/evidencia/ver?codigo=MSDS-LUB-002',
-      estado: 'HOMOLOGADO_MSDS'
-    },
-    {
-      id: 3,
-      codigo: 'MSDS-GAS-003',
-      productoQuimico: 'Gas Acetileno Disuelto Industrial para Oxicorte (UN 1001)',
-      clasificacionSga: 'Gas Extremadamente Inflamable Categoría 1',
-      nfpaSalud: 1,
-      nfpaInflamabilidad: 4,
-      nfpaReactividad: 3,
-      nfpaEspecifico: 'GAS',
-      cantidadAlmacenada: 24,
-      unidad: 'CILINDROS',
-      areaUso: 'Taller Central de Mantenimiento Mecánico',
-      fichaPdfUrl: '/sst/evidencia/ver?codigo=MSDS-GAS-003',
-      estado: 'HOMOLOGADO_MSDS'
-    }
-  ]);
+  readonly fichasQuimicas = signal<FichaQuimicaMatpelItem[]>([]);
 
-  readonly huellaCarbono = signal<HuellaCarbonoGeiItem[]>([
-    {
-      id: 1,
-      codigo: 'GEI-A1-2026',
-      alcanceGei: 'ALCANCE_1',
-      fuenteEmision: 'Combustión Estacionaria en Horno Rotatorio y Flota Pesada de Cantera',
-      emisionesTco2e: 1240,
-      metaReduccionPorc: 15,
-      periodoReporte: '2026-Q3',
-      estadoVerificacion: 'VERIFICADO_ISO_14064'
-    },
-    {
-      id: 2,
-      codigo: 'GEI-A2-2026',
-      alcanceGei: 'ALCANCE_2',
-      fuenteEmision: 'Consumo de Energía Eléctrica Renovable Certificada (SEIN - Subestación)',
-      emisionesTco2e: 410,
-      metaReduccionPorc: 25,
-      periodoReporte: '2026-Q3',
-      estadoVerificacion: 'VERIFICADO_ISO_14064'
-    },
-    {
-      id: 3,
-      codigo: 'GEI-MIT-2026',
-      alcanceGei: 'MITIGACION',
-      fuenteEmision: 'Coprocesamiento Energético (Geocycle) y Sustitución de Factor Clinker',
-      emisionesTco2e: 380,
-      metaReduccionPorc: 30,
-      periodoReporte: '2026-Q3',
-      estadoVerificacion: 'VERIFICADO_ISO_14064'
-    }
-  ]);
+  readonly huellaCarbono = signal<HuellaCarbonoGeiItem[]>([]);
 
   nuevoResiduo = {
-    codigo: 'MAN-EORS-2026-004',
-    tipo: 'MANIFIESTO' as ResiduoSolidoItem['tipo'],
+    codigo: '',
+    tipo: '' as ResiduoSolidoItem['tipo'],
     nombre: '',
-    clasificacion: 'PELIGROSO' as ResiduoSolidoItem['clasificacion'],
-    cantidad: 450,
-    unidad: 'KG' as ResiduoSolidoItem['unidad'],
-    operadorEoRs: 'Befesa Perú S.A. (EO-RS-0041-MINAM)'
+    clasificacion: '' as ResiduoSolidoItem['clasificacion'],
+    cantidad: 0,
+    unidad: '' as ResiduoSolidoItem['unidad'],
+    operadorEoRs: ''
   };
 
   nuevaFichaQuimica = {
-    codigo: 'MSDS-SOL-004',
+    codigo: '',
     productoQuimico: '',
-    clasificacionSga: 'Líquido Inflamable Categoría 2',
-    nfpaSalud: 2,
-    nfpaInflamabilidad: 3,
+    clasificacionSga: '',
+    nfpaSalud: 0,
+    nfpaInflamabilidad: 0,
     nfpaReactividad: 0,
-    nfpaEspecifico: 'NINGUNO',
-    cantidadAlmacenada: 200,
-    unidad: 'L',
-    areaUso: 'Mantenimiento Eléctrico e Instrumentación'
+    nfpaEspecifico: '',
+    cantidadAlmacenada: 0,
+    unidad: '',
+    areaUso: ''
   };
 
   nuevaHuella = {
-    codigo: 'GEI-A3-2026',
-    alcanceGei: 'ALCANCE_3' as HuellaCarbonoGeiItem['alcanceGei'],
+    codigo: '',
+    alcanceGei: '' as HuellaCarbonoGeiItem['alcanceGei'],
     fuenteEmision: '',
-    emisionesTco2e: 195,
-    metaReduccionPorc: 18,
-    periodoReporte: '2026-Q4'
+    emisionesTco2e: 0,
+    metaReduccionPorc: 0,
+    periodoReporte: ''
   };
 
   readonly totalEmisionesNetas = computed(() => {
@@ -755,92 +643,23 @@ export class Modulo11MedioAmbienteComponent implements OnInit {
     }, 0);
   });
 
-  readonly urlVisorSeguro = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.paginaVisorActiva()}`)
-  );
 
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/residuo/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['codigo']) {
-          const desdeSql: ResiduoSolidoItem[] = list
-            .filter((r: Record<string, any>) => String(r['subModulo'] || 'RESIDUO').includes('RES'))
-            .map((r: Record<string, any>, idx: number) => ({
-              id: Number(r['id']) || (10 + idx),
-              codigo: String(r['codigo'] || `RES-0${idx + 1}`),
-              tipo: 'MANIFIESTO',
-              nombre: String(r['nombre'] || ''),
-              clasificacion: (String(r['clasificacion'] || 'PELIGROSO').toUpperCase().includes('NO') ? 'NO_PELIGROSO' : 'PELIGROSO'),
-              cantidad: r['cantidad'] !== undefined && r['cantidad'] !== null ? Number(r['cantidad']) : 0,
-              unidad: (String(r['unidad'] || 'KG').toUpperCase() === 'TON' ? 'TON' : 'KG'),
-              operadorEoRs: String(r['operadorEoRs'] || 'Operador EO-RS'),
-              certificadoDisposicion: r['certificadoDisposicion'] ? String(r['certificadoDisposicion']) : 'PENDIENTE',
-              fechaDisposicion: String(r['fecha'] || '20/10/2026'),
-              estado: String(r['estado'] || '').toUpperCase().includes('CERT') ? 'DISPOSICION_CERTIFICADA' : 'ALMACEN_CENTRAL'
-            }));
-          if (desdeSql.length > 0) {
-            this.residuos.update(actuales => [
-              ...desdeSql,
-              ...actuales.filter(a => !desdeSql.some(s => s.codigo === a.codigo))
-            ]);
-          }
-        }
-      }
-    });
+    this.api.callAjaxPost('/residuo/lista', { ...{} }).subscribe({next:(response)=>{try{this.residuos.set(confirmedList<ResiduoSolidoItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"tipo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"clasificacion","kind":"string","optional":false,"nullable":true},{"name":"cantidad","kind":"number","optional":false,"nullable":true},{"name":"unidad","kind":"string","optional":false,"nullable":true},{"name":"operadorEoRs","kind":"string","optional":false,"nullable":true},{"name":"certificadoDisposicion","kind":"string","optional":false,"nullable":true},{"name":"fechaDisposicion","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/fichaquimica/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const fList = res?.['list'];
-        if (Array.isArray(fList) && fList.length > 0 && fList[0]['codigo']) {
-          const fData: FichaQuimicaMatpelItem[] = fList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            codigo: String(r['codigo'] || `MATPEL-0${i + 1}`),
-            productoQuimico: String(r['nombre'] || r['productoQuimico'] || 'Reactivo Industrial'),
-            clasificacionSga: String(r['clasificacionSga'] || 'Líquido Inflamable Cat. 2'),
-            nfpaSalud: Number(r['salud']) || 2,
-            nfpaInflamabilidad: Number(r['inflamabilidad']) || 3,
-            nfpaReactividad: Number(r['reactividad']) || 0,
-            nfpaEspecifico: 'NINGUNO',
-            cantidadAlmacenada: Number(r['cantidad']) || 200,
-            unidad: 'GAL',
-            areaUso: String(r['area'] || 'Planta de Mantenimiento'),
-            fichaPdfUrl: String(r['hojaMsdsUrl'] || '/sst/evidencia/ver?codigo=DOC-PASST-2026'),
-            estado: 'HOMOLOGADO_MSDS' as const
-          }));
-          this.fichasQuimicas.set(fData);
-        }
-      }
-    });
-    this.api.callAjaxPost('/huella-carbono/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const hList = res?.['list'];
-        if (Array.isArray(hList) && hList.length > 0) {
-          const hData: HuellaCarbonoGeiItem[] = hList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            codigo: String(r['codigo'] || `GEI-2026-0${i + 1}`),
-            alcanceGei: 'ALCANCE_1' as const,
-            fuenteEmision: String(r['fuente'] || 'Consumo Diésel B5 en Hornos'),
-            emisionesTco2e: Number(r['co2']) || 120.5,
-            metaReduccionPorc: 15.0,
-            periodoReporte: String(r['periodo'] || 'OCTUBRE 2026'),
-            estadoVerificacion: 'VERIFICADO_ISO_14064' as const
-          }));
-          this.huellaCarbono.set(hData);
-        }
-      }
-    });
+    this.api.callAjaxPost('/fichaquimica/lista', { ...{} }).subscribe({next:(response)=>{try{this.fichasQuimicas.set(confirmedList<FichaQuimicaMatpelItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"productoQuimico","kind":"string","optional":false,"nullable":true},{"name":"clasificacionSga","kind":"string","optional":false,"nullable":true},{"name":"nfpaSalud","kind":"number","optional":false,"nullable":true},{"name":"nfpaInflamabilidad","kind":"number","optional":false,"nullable":true},{"name":"nfpaReactividad","kind":"number","optional":false,"nullable":true},{"name":"nfpaEspecifico","kind":"string","optional":false,"nullable":true},{"name":"cantidadAlmacenada","kind":"number","optional":false,"nullable":true},{"name":"unidad","kind":"string","optional":false,"nullable":true},{"name":"areaUso","kind":"string","optional":false,"nullable":true},{"name":"fichaPdfUrl","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
+    this.api.callAjaxPost('/huella-carbono/lista', { ...{} }).subscribe({next:(response)=>{try{this.huellaCarbono.set(confirmedList<HuellaCarbonoGeiItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"alcanceGei","kind":"string","optional":false,"nullable":true},{"name":"fuenteEmision","kind":"string","optional":false,"nullable":true},{"name":"emisionesTco2e","kind":"number","optional":false,"nullable":true},{"name":"metaReduccionPorc","kind":"number","optional":false,"nullable":true},{"name":"periodoReporte","kind":"string","optional":false,"nullable":true},{"name":"estadoVerificacion","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   residuosFiltrados(): ResiduoSolidoItem[] {
     const q = this.filtroResiduo.trim().toLowerCase();
     return this.residuos().filter(r => {
       const okClas = this.filtroClasificacionResiduo === 'TODOS' || r.clasificacion === this.filtroClasificacionResiduo;
-      const okTexto = !q || r.codigo.toLowerCase().includes(q) || r.nombre.toLowerCase().includes(q) || r.operadorEoRs.toLowerCase().includes(q);
+      const okTexto = !q || (r.codigo??'').toLowerCase().includes(q) || (r.nombre??'').toLowerCase().includes(q) || (r.operadorEoRs??'').toLowerCase().includes(q);
       return okClas && okTexto;
     });
   }
@@ -849,7 +668,7 @@ export class Modulo11MedioAmbienteComponent implements OnInit {
     const q = this.filtroFichaQuimica.trim().toLowerCase();
     if (!q) return this.fichasQuimicas();
     return this.fichasQuimicas().filter(f =>
-      f.codigo.toLowerCase().includes(q) || f.productoQuimico.toLowerCase().includes(q) || f.areaUso.toLowerCase().includes(q)
+      (f.codigo??'').toLowerCase().includes(q) || (f.productoQuimico??'').toLowerCase().includes(q) || (f.areaUso??'').toLowerCase().includes(q)
     );
   }
 
@@ -857,166 +676,47 @@ export class Modulo11MedioAmbienteComponent implements OnInit {
     const q = this.filtroHuella.trim().toLowerCase();
     if (!q) return this.huellaCarbono();
     return this.huellaCarbono().filter(h =>
-      h.codigo.toLowerCase().includes(q) || h.fuenteEmision.toLowerCase().includes(q) || h.alcanceGei.toLowerCase().includes(q)
+      (h.codigo??'').toLowerCase().includes(q) || (h.fuenteEmision??'').toLowerCase().includes(q) || (h.alcanceGei??'').toLowerCase().includes(q)
     );
   }
 
   guardarNuevoResiduo(): void {
     if (!this.nuevoResiduo.nombre.trim()) return;
-    this.api.callAjaxPost('/residuo/insert', { ...this.nuevoResiduo, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarResiduoLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarResiduoLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/residuo/insert', { ...this.nuevoResiduo, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalResiduo.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarResiduoLocal(id: number): void {
-    const item: ResiduoSolidoItem = {
-      id,
-      codigo: this.nuevoResiduo.codigo,
-      tipo: this.nuevoResiduo.tipo,
-      nombre: this.nuevoResiduo.nombre,
-      clasificacion: this.nuevoResiduo.clasificacion,
-      cantidad: Number(this.nuevoResiduo.cantidad) || 100,
-      unidad: this.nuevoResiduo.unidad,
-      operadorEoRs: this.nuevoResiduo.operadorEoRs,
-      certificadoDisposicion: `CERT-DISP-${id}`,
-      fechaDisposicion: '24/10/2026',
-      estado: 'DISPOSICION_CERTIFICADA'
-    };
-    this.residuos.update(list => [item, ...list]);
-    this.mostrarModalResiduo.set(false);
-    this.mostrarAviso(`Manifiesto / Residuo "${item.codigo}" registrado correctamente en OneSST.`);
-  }
 
-  aprobarResiduo(item: ResiduoSolidoItem): void {
-    this.api.callAjaxPost('/residuo/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.residuos.update(list => list.map(r => r.id === item.id ? { ...r, estado: 'DISPOSICION_CERTIFICADA' } : r));
-        this.mostrarAviso(`Disposición final EO-RS certificada para "${item.codigo}".`);
-      },
-      error: () => {
-        this.residuos.update(list => list.map(r => r.id === item.id ? { ...r, estado: 'DISPOSICION_CERTIFICADA' } : r));
-        this.mostrarAviso(`Disposición final EO-RS certificada para "${item.codigo}".`);
-      }
-    });
-  }
+
+  aprobarResiduo(item: ResiduoSolidoItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarResiduo(item: ResiduoSolidoItem): void {
-    this.api.callAjaxPost('/residuo/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.residuos.update(list => list.filter(r => r.id !== item.id));
-        this.mostrarAviso(`Registro de residuo "${item.codigo}" eliminado.`);
-      },
-      error: () => {
-        this.residuos.update(list => list.filter(r => r.id !== item.id));
-        this.mostrarAviso(`Registro de residuo "${item.codigo}" eliminado.`);
-      }
-    });
+    this.api.callAjaxPost('/residuo/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   guardarNuevaFichaQuimica(): void {
     if (!this.nuevaFichaQuimica.productoQuimico.trim()) return;
-    this.api.callAjaxPost('/fichaquimica/insert', { ...this.nuevaFichaQuimica, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarFichaQuimicaLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarFichaQuimicaLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/fichaquimica/insert', { ...this.nuevaFichaQuimica, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalFichaQuimica.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarFichaQuimicaLocal(id: number): void {
-    const item: FichaQuimicaMatpelItem = {
-      id,
-      codigo: this.nuevaFichaQuimica.codigo,
-      productoQuimico: this.nuevaFichaQuimica.productoQuimico,
-      clasificacionSga: this.nuevaFichaQuimica.clasificacionSga,
-      nfpaSalud: Number(this.nuevaFichaQuimica.nfpaSalud) || 1,
-      nfpaInflamabilidad: Number(this.nuevaFichaQuimica.nfpaInflamabilidad) || 0,
-      nfpaReactividad: Number(this.nuevaFichaQuimica.nfpaReactividad) || 0,
-      nfpaEspecifico: this.nuevaFichaQuimica.nfpaEspecifico,
-      cantidadAlmacenada: Number(this.nuevaFichaQuimica.cantidadAlmacenada) || 50,
-      unidad: this.nuevaFichaQuimica.unidad,
-      areaUso: this.nuevaFichaQuimica.areaUso,
-      fichaPdfUrl: `/sst/evidencia/ver?codigo=${this.nuevaFichaQuimica.codigo}`,
-      estado: 'HOMOLOGADO_MSDS'
-    };
-    this.fichasQuimicas.update(list => [item, ...list]);
-    this.mostrarModalFichaQuimica.set(false);
-    this.mostrarAviso(`Sustancia MATPEL "${item.codigo}" registrada con Rombo NFPA 704.`);
-  }
 
-  aprobarFichaQuimica(item: FichaQuimicaMatpelItem): void {
-    this.api.callAjaxPost('/fichaquimica/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.fichasQuimicas.update(list => list.map(f => f.id === item.id ? { ...f, estado: 'HOMOLOGADO_MSDS' } : f));
-        this.mostrarAviso(`Hoja de Seguridad MSDS "${item.codigo}" homologada.`);
-      },
-      error: () => {
-        this.fichasQuimicas.update(list => list.map(f => f.id === item.id ? { ...f, estado: 'HOMOLOGADO_MSDS' } : f));
-        this.mostrarAviso(`Hoja de Seguridad MSDS "${item.codigo}" homologada.`);
-      }
-    });
-  }
+
+  aprobarFichaQuimica(item: FichaQuimicaMatpelItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarFichaQuimica(item: FichaQuimicaMatpelItem): void {
-    this.api.callAjaxPost('/fichaquimica/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.fichasQuimicas.update(list => list.filter(f => f.id !== item.id));
-        this.mostrarAviso(`Ficha química "${item.codigo}" eliminada.`);
-      },
-      error: () => {
-        this.fichasQuimicas.update(list => list.filter(f => f.id !== item.id));
-        this.mostrarAviso(`Ficha química "${item.codigo}" eliminada.`);
-      }
-    });
+    this.api.callAjaxPost('/fichaquimica/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   guardarNuevaHuella(): void {
     if (!this.nuevaHuella.fuenteEmision.trim()) return;
-    this.api.callAjaxPost('/huella-carbono/insert', { ...this.nuevaHuella, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarHuellaLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarHuellaLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/huella-carbono/insert', { ...this.nuevaHuella, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalHuella.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarHuellaLocal(id: number): void {
-    const item: HuellaCarbonoGeiItem = {
-      id,
-      codigo: this.nuevaHuella.codigo,
-      alcanceGei: this.nuevaHuella.alcanceGei,
-      fuenteEmision: this.nuevaHuella.fuenteEmision,
-      emisionesTco2e: Number(this.nuevaHuella.emisionesTco2e) || 100,
-      metaReduccionPorc: Number(this.nuevaHuella.metaReduccionPorc) || 15,
-      periodoReporte: this.nuevaHuella.periodoReporte,
-      estadoVerificacion: 'VERIFICADO_ISO_14064'
-    };
-    this.huellaCarbono.update(list => [item, ...list]);
-    this.mostrarModalHuella.set(false);
-    this.mostrarAviso(`Registro de Huella de Carbono "${item.codigo}" guardado.`);
-  }
 
-  aprobarHuella(item: HuellaCarbonoGeiItem): void {
-    this.api.callAjaxPost('/huella-carbono/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.huellaCarbono.update(list => list.map(h => h.id === item.id ? { ...h, estadoVerificacion: 'VERIFICADO_ISO_14064' } : h));
-        this.mostrarAviso(`Emisión GEI "${item.codigo}" verificada según ISO 14064.`);
-      },
-      error: () => {
-        this.huellaCarbono.update(list => list.map(h => h.id === item.id ? { ...h, estadoVerificacion: 'VERIFICADO_ISO_14064' } : h));
-        this.mostrarAviso(`Emisión GEI "${item.codigo}" verificada según ISO 14064.`);
-      }
-    });
-  }
+
+  aprobarHuella(item: HuellaCarbonoGeiItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarHuella(item: HuellaCarbonoGeiItem): void {
-    this.api.callAjaxPost('/huella-carbono/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.huellaCarbono.update(list => list.filter(h => h.id !== item.id));
-        this.mostrarAviso(`Registro GEI "${item.codigo}" eliminado.`);
-      },
-      error: () => {
-        this.huellaCarbono.update(list => list.filter(h => h.id !== item.id));
-        this.mostrarAviso(`Registro GEI "${item.codigo}" eliminado.`);
-      }
-    });
+    this.api.callAjaxPost('/huella-carbono/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   exportarCsvResiduos(): void {

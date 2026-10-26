@@ -1,15 +1,19 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 @Component({
   selector: 'msst-modulo02-organizacion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <!-- Encabezado Corporativo del Módulo 02 -->
     <div class="panel panel-primary" style="margin-bottom: 16px; border-color: #004B87;">
       <div class="panel-heading" style="background-color: #004B87; color: #fff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -578,9 +582,11 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
   `
 })
 export class Modulo02OrganizacionMdfComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   readonly tabActiva = signal<'EMPRESA' | 'MDF' | 'PUESTOS'>('EMPRESA');
 
@@ -601,106 +607,27 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
   });
   readonly mensajeExito = signal<string>('');
 
-  readonly empresaActual = signal({
-    idCompany: 773,
-    name: 'HOLCIM PERU S.A.',
-    ruc: '20100128218',
-    codigo: 'HOLCIM01',
-    color: '#004B87'
-  });
+  readonly empresaActual=signal({idCompany:0,name:'',ruc:'',codigo:'',color:''});
 
-  readonly unidades = signal<Record<string, any>[]>([
-    { id: 1, nombre: 'Planta Condorcocha (Tarma - Junín)', direccion: 'Carretera Central Km 198, La Unión Leticia' },
-    { id: 2, nombre: 'Planta Huachipa (Lima Este)', direccion: 'Av. Las Torres Mz. D Lote 4, Lurigancho-Chosica' },
-    { id: 3, nombre: 'Terminal Portuario & Concretera Callao', direccion: 'Av. Néstor Gambetta Km 8.5, Callao' }
-  ]);
+  readonly unidades = signal<Record<string, any>[]>([]);
 
-  readonly divisiones = signal<Record<string, any>[]>([
-    { id: 1, nombre: 'Gerencia de Operaciones Industriales y Clinker', idUnidad: 1 },
-    { id: 2, nombre: 'Gerencia de Mantenimiento Mecánico y Eléctrico', idUnidad: 1 },
-    { id: 3, nombre: 'Gerencia Corporativa HSE & Sostenibilidad', idUnidad: 2 },
-    { id: 4, nombre: 'División de Proyectos CAPEX y Contratistas', idUnidad: 1 }
-  ]);
+  readonly divisiones = signal<Record<string, any>[]>([]);
 
-  readonly areas = signal<Record<string, any>[]>([
-    { id: 1, nombre: 'Horno Rotatorio Waelz y Precalentador', idUnidad: 1, idDivision: 1 },
-    { id: 2, nombre: 'Molienda de Crudo, Carbón y Cemento', idUnidad: 1, idDivision: 1 },
-    { id: 3, nombre: 'Subestación Eléctrica 60kV y Sala CCM', idUnidad: 1, idDivision: 2 },
-    { id: 4, nombre: 'Cantera y Trituración Primaria', idUnidad: 1, idDivision: 1 },
-    { id: 5, nombre: 'Despacho de Bolsas y Granel (Silos)', idUnidad: 2, idDivision: 3 }
-  ]);
+  readonly areas = signal<Record<string, any>[]>([]);
 
   // Estado MDF
   filtroMdf = '';
-  readonly mdfLista = signal<Record<string, any>[]>([
-    {
-      id: 1,
-      codigo: 'MDF-001',
-      proceso: 'Producción de Clinker (Horno Waelz)',
-      actividad: 'Parada Mayor de Horno Rotatorio',
-      tarea: 'Demolición e instalación de ladrillos refractarios',
-      paso: 'Aplicación de bloqueo LOTO multipunto y ventilación forzada',
-      tipoActividad: 'NO RUTINARIA',
-      area: 'Horno Rotatorio Waelz',
-      puesto: 'Supervisor Mecánico / Refractarista',
-      codigoIperc: 'IPERC-2026-001'
-    },
-    {
-      id: 2,
-      codigo: 'MDF-002',
-      proceso: 'Mantenimiento Eléctrico de Planta',
-      actividad: 'Mantenimiento Preventivo en Subestación 60kV',
-      tarea: 'Pruebas de aislamiento y termografía en celdas de media tensión',
-      paso: 'Verificación de ausencia de tensión (5 Reglas de Oro)',
-      tipoActividad: 'RUTINARIA',
-      area: 'Subestación Eléctrica 60kV',
-      puesto: 'Técnico Electricista Liniero',
-      codigoIperc: 'IPERC-2026-002'
-    },
-    {
-      id: 3,
-      codigo: 'MDF-003',
-      proceso: 'Proyectos CAPEX y Montaje Estructural',
-      actividad: 'Montaje de Estructura Metálica en Silo de Clinker',
-      tarea: 'Izaje de vigas principales con grúa telescópica de 120 Ton',
-      paso: 'Delimitación de radio de giro, plan de izaje crítico y anemómetro',
-      tipoActividad: 'NO RUTINARIA',
-      area: 'Despacho y Silos',
-      puesto: 'Rigger Acreditado / Soldador 6G',
-      codigoIperc: 'IPERC-2026-003'
-    },
-    {
-      id: 4,
-      codigo: 'MDF-004',
-      proceso: 'Molienda y Transporte por Fajas',
-      actividad: 'Inspección y Cambio de Polines en Faja Transportadora',
-      tarea: 'Alineamiento de banda y ajuste de guardas de seguridad',
-      paso: 'Desenergización de motor principal y bloqueo de cuerda pull-cord',
-      tipoActividad: 'RUTINARIA',
-      area: 'Cantera y Trituración Primaria',
-      puesto: 'Operario de Mantenimiento Mecánico',
-      codigoIperc: 'IPERC-2026-004'
-    }
-  ]);
-  readonly mdfSeleccionado = signal<Record<string, any>>(this.mdfLista()[0]);
+  readonly mdfLista = signal<Record<string, any>[]>([]);
+  readonly mdfSeleccionado = signal<Record<string, any>>({});
 
   // Estado Puestos y Solicitudes
-  readonly puestos = signal<Record<string, any>[]>([
-    { id: 1, nombre: 'Supervisor SST de Campo', descripcion: 'Supervisión HSE de trabajos de alto riesgo (PETAR)', idArea: 1, eppAsignado: 'Casco ANSI Z89.1, Lentes Z87.1, Respirador Silicona, Botín Dieléctrico', perfilEmo: 'ALTURA + ESPACIO CONFINADO' },
-    { id: 2, nombre: 'Soldador Homologado 6G', descripcion: 'Soldadura estructural en caliente y oxicorte en planta', idArea: 2, eppAsignado: 'Careta facial soldador, Mandil cuero cromo, Escarpines, Respirador humos', perfilEmo: 'ALTURA + HUMOS METÁLICOS' },
-    { id: 3, nombre: 'Técnico Electricista de Media Tensión', descripcion: 'Maniobras en subestación y tableros CCM', idArea: 3, eppAsignado: 'Traje antiflama 40 cal/cm2, Guantes dieléctricos Clase 4, Banqueta aislante', perfilEmo: 'ELÉCTRICO + ALTURA' },
-    { id: 4, nombre: 'Operador de Grúa / Rigger', descripcion: 'Maniobras de izaje crítico de cargas pesadas', idArea: 5, eppAsignado: 'Casco con barbiquejo, Chaleco reflectivo, Radio trunking, Guantes badana', perfilEmo: 'PSICOSENSOMÉTRICO + ALTURA' }
-  ]);
+  readonly puestos = signal<Record<string, any>[]>([]);
 
-  readonly solicitudes = signal<Record<string, any>[]>([
-    { id: 1, codigo: 'SOL-2026-014', tipo: 'CREACIÓN PUESTO', detalle: 'Alta de Puesto: Inspector QA/QC Refractarios', solicitante: 'GRUPO ELIAS-29 S.A.C', fecha: '18/03/2026', estado: 'PENDIENTE' },
-    { id: 2, codigo: 'SOL-2026-015', tipo: 'HOMOLOGACIÓN EPP', detalle: 'Asignación de Arnés Kevlar Ignífugo para Soldadores', solicitante: 'Gerencia Mantenimiento', fecha: '19/03/2026', estado: 'APROBADO' },
-    { id: 3, codigo: 'SOL-2026-016', tipo: 'NUEVA TAREA MDF', detalle: 'Inclusión de Limpieza Criogénica en Tableros CCM', solicitante: 'Ing. Carlos Mendoza', fecha: '20/03/2026', estado: 'PENDIENTE' }
-  ]);
+  readonly solicitudes = signal<Record<string, any>[]>([]);
 
   // Modales
   readonly modalAreaAbierto = signal<boolean>(false);
-  formArea = { nombre: '', idUnidad: 1, idDivision: 1 };
+  formArea = { nombre: '', idUnidad: 0, idDivision: 0 };
 
   readonly modalMdfAbierto = signal<boolean>(false);
   formMdf = {
@@ -708,27 +635,21 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
     actividad: '',
     tarea: '',
     paso: '',
-    tipoActividad: 'RUTINARIA',
-    area: 'Horno Rotatorio Waelz',
-    puesto: 'Supervisor SST de Campo'
+    tipoActividad: '',
+    area: '',
+    puesto: ''
   };
 
   readonly modalPuestoAbierto = signal<boolean>(false);
   formPuesto = {
     nombre: '',
     descripcion: '',
-    idArea: 1,
-    perfilEmo: 'ALTURA ESTRUCTURAL + ESPACIO CONFINADO',
-    eppAsignado: 'Casco ANSI Z89.1, Lentes Z87.1, Arnés cuerpo completo, Botín punta acero'
+    idArea: 0,
+    perfilEmo: '',
+    eppAsignado: ''
   };
 
   // Visor 1:1
-  readonly visor1a1Abierto = signal<boolean>(false);
-  readonly visorArchivo = signal<string>('empresa.html');
-  readonly visorTitulo = signal<string>('Gestión de Empresas');
-  readonly visorUrlSegura = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.visorArchivo()}`)
-  );
 
   ngOnInit(): void {
     this.cargarEstructuraOrganizacional();
@@ -748,90 +669,40 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
   }
 
   cargarEstructuraOrganizacional(): void {
-    this.api.getEmpresaById(773).subscribe({
+    this.api.getEmpresaById().subscribe({
       next: (res) => {
         const emp = res?.['empresa'];
         if (emp && emp['name']) {
           this.empresaActual.set({
-            idCompany: emp['idCompany'] || 773,
+            idCompany: emp['idCompany'],
             name: emp['name'],
-            ruc: emp['ruc'] || '20100128218',
-            codigo: emp['codigo'] || 'HOLCIM01',
+            ruc: emp['ruc'] ?? '',
+            codigo: emp['codigo'] ?? '',
             color: emp['color'] || '#004B87'
           });
         }
       }
     });
 
-    this.api.callAjaxPost('/unidad/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['nombre']) {
-          this.unidades.set(list);
-        }
-      }
-    });
+    this.api.callAjaxPost('/unidad/lista', { ...{} }).subscribe({next:(response)=>{try{this.unidades.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/division/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['nombre']) {
-          this.divisiones.set(list);
-        }
-      }
-    });
+    this.api.callAjaxPost('/division/lista', { ...{} }).subscribe({next:(response)=>{try{this.divisiones.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/area/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['nombre']) {
-          this.areas.set(list);
-        }
-      }
-    });
+    this.api.callAjaxPost('/area/lista', { ...{} }).subscribe({next:(response)=>{try{this.areas.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/mdf/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['proceso']) {
-          this.mdfLista.set(list);
-          this.mdfSeleccionado.set(list[0]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/mdf/lista', { ...{} }).subscribe({next:(response)=>{try{this.mdfLista.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/puesto/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['nombre']) {
-          this.puestos.set(list);
-        }
-      }
-    });
+    this.api.callAjaxPost('/puesto/lista', { ...{} }).subscribe({next:(response)=>{try{this.puestos.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   abrirModalNuevaArea(): void {
-    this.formArea = { nombre: '', idUnidad: 1, idDivision: 1 };
+    this.formArea = { nombre: '', idUnidad: 0, idDivision: 0 };
     this.modalAreaAbierto.set(true);
   }
 
   guardarArea(): void {
     if (!this.formArea.nombre.trim()) return;
-    this.api.callAjaxPost('/area/insert', this.formArea).subscribe({
-      next: (res) => {
-        const nuevoId = res?.['idGenerado'] || (this.areas().length + 1);
-        const item = { id: nuevoId, ...this.formArea };
-        this.areas.update(arr => [...arr, item]);
-        this.modalAreaAbierto.set(false);
-        this.notificarExito(`Área "${item.nombre}" registrada en OneSST (#${nuevoId})`);
-      },
-      error: () => {
-        const item = { id: this.areas().length + 1, ...this.formArea };
-        this.areas.update(arr => [...arr, item]);
-        this.modalAreaAbierto.set(false);
-        this.notificarExito(`Área "${item.nombre}" agregada`);
-      }
-    });
+    this.api.callAjaxPost('/area/insert', this.formArea).subscribe({next:()=>{this.ngOnInit();this.modalAreaAbierto.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   abrirModalNuevoMdf(): void {
@@ -840,96 +711,36 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
       actividad: '',
       tarea: '',
       paso: '',
-      tipoActividad: 'RUTINARIA',
-      area: 'Horno Rotatorio Waelz',
-      puesto: 'Supervisor SST de Campo'
+      tipoActividad: '',
+      area: '',
+      puesto: ''
     };
     this.modalMdfAbierto.set(true);
   }
 
   guardarMdf(): void {
     if (!this.formMdf.proceso.trim()) return;
-    this.api.callAjaxPost('/mdf/insert', this.formMdf).subscribe({
-      next: (res) => {
-        const nextNum = this.mdfLista().length + 1;
-        const nuevo = {
-          id: res?.['idGenerado'] || nextNum,
-          codigo: `MDF-00${nextNum}`,
-          ...this.formMdf,
-          codigoIperc: `IPERC-2026-00${nextNum}`
-        };
-        this.mdfLista.update(arr => [nuevo, ...arr]);
-        this.mdfSeleccionado.set(nuevo);
-        this.modalMdfAbierto.set(false);
-        this.notificarExito(`Nodo MDF "${nuevo.codigo}" creado y vinculado a IPERC`);
-      },
-      error: () => {
-        const nextNum = this.mdfLista().length + 1;
-        const nuevo = {
-          id: nextNum,
-          codigo: `MDF-00${nextNum}`,
-          ...this.formMdf,
-          codigoIperc: `IPERC-2026-00${nextNum}`
-        };
-        this.mdfLista.update(arr => [nuevo, ...arr]);
-        this.modalMdfAbierto.set(false);
-        this.notificarExito(`Nodo MDF "${nuevo.codigo}" agregado`);
-      }
-    });
+    this.api.callAjaxPost('/mdf/insert', this.formMdf).subscribe({next:()=>{this.ngOnInit();this.modalMdfAbierto.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   abrirModalNuevoPuesto(): void {
     this.formPuesto = {
       nombre: '',
       descripcion: '',
-      idArea: 1,
-      perfilEmo: 'ALTURA ESTRUCTURAL + ESPACIO CONFINADO',
-      eppAsignado: 'Casco ANSI Z89.1, Lentes Z87.1, Arnés cuerpo completo, Botín punta acero'
+      idArea: 0,
+      perfilEmo: '',
+      eppAsignado: ''
     };
     this.modalPuestoAbierto.set(true);
   }
 
   guardarPuesto(): void {
     if (!this.formPuesto.nombre.trim()) return;
-    this.api.callAjaxPost('/puesto/insert', this.formPuesto).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || (this.puestos().length + 1);
-        const item = { id: idGen, ...this.formPuesto };
-        this.puestos.update(arr => [...arr, item]);
-        this.modalPuestoAbierto.set(false);
-        this.notificarExito(`Puesto "${item.nombre}" registrado en OneSST`);
-      },
-      error: () => {
-        const item = { id: this.puestos().length + 1, ...this.formPuesto };
-        this.puestos.update(arr => [...arr, item]);
-        this.modalPuestoAbierto.set(false);
-        this.notificarExito(`Puesto "${item.nombre}" registrado`);
-      }
-    });
+    this.api.callAjaxPost('/puesto/insert', this.formPuesto).subscribe({next:()=>{this.ngOnInit();this.modalPuestoAbierto.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  aprobarSolicitud(sol: Record<string, any>): void {
-    this.api.callAjaxPost('/empresa/solicitud/aprobar', { idSolicitud: sol['id'] }).subscribe({
-      next: () => {
-        this.solicitudes.update(arr =>
-          arr.map(x => (x['id'] === sol['id'] ? { ...x, estado: 'APROBADO' } : x))
-        );
-        this.notificarExito(`Solicitud ${sol['codigo']} aprobada satisfactoriamente`);
-      },
-      error: () => {
-        this.solicitudes.update(arr =>
-          arr.map(x => (x['id'] === sol['id'] ? { ...x, estado: 'APROBADO' } : x))
-        );
-        this.notificarExito(`Solicitud ${sol['codigo']} aprobada`);
-      }
-    });
-  }
+  aprobarSolicitud(sol: Record<string, any>): void {this.workflowSelectionOpen.set(true);}
 
-  abrirVisor1a1(archivo: string, titulo: string): void {
-    this.visorArchivo.set(archivo);
-    this.visorTitulo.set(titulo);
-    this.visor1a1Abierto.set(true);
-  }
 
   private notificarExito(msg: string): void {
     this.mensajeExito.set(msg);

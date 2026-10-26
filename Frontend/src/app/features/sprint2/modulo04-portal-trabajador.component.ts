@@ -1,3 +1,5 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,46 +8,49 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface PendienteTrabajadorItem {
   id: number;
-  codigo: string;
-  categoria: 'DOCUMENTO_SST' | 'ENTREGA_EPP' | 'CURSO_LMS' | 'COMITE_SST';
-  titulo: string;
-  descripcion: string;
-  fechaLimite: string;
-  prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
-  estadoFirma: 'PENDIENTE' | 'FIRMADO';
+  codigo: string | null;
+  categoria: 'DOCUMENTO_SST' | 'ENTREGA_EPP' | 'CURSO_LMS' | 'COMITE_SST' | null;
+  titulo: string | null;
+  descripcion: string | null;
+  fechaLimite: string | null;
+  prioridad: 'ALTA' | 'MEDIA' | 'BAJA' | null;
+  estadoFirma: 'PENDIENTE' | 'FIRMADO' | null;
   hashFirma?: string;
 }
 
 export interface ActividadSchedulerItem {
   id: number;
-  codigo: string;
-  titulo: string;
-  modulo: string;
-  tipoActividad: string;
-  mes: string;
-  fechaProgramada: string;
-  horaInicio: string;
-  responsable: string;
-  ubicacion: string;
-  avance: number;
-  estado: 'PROGRAMADO' | 'EN_EJECUCION' | 'EJECUTADO' | 'REPROGRAMADO';
+  codigo: string | null;
+  titulo: string | null;
+  modulo: string | null;
+  tipoActividad: string | null;
+  mes: string | null;
+  fechaProgramada: string | null;
+  horaInicio: string | null;
+  responsable: string | null;
+  ubicacion: string | null;
+  avance: number | null;
+  estado: 'PROGRAMADO' | 'EN_EJECUCION' | 'EJECUTADO' | 'REPROGRAMADO' | null;
 }
 
 export interface CapituloManualItem {
   id: number;
-  numero: string;
-  titulo: string;
-  moduloRef: string;
-  resumen: string;
+  numero: string | null;
+  titulo: string | null;
+  moduloRef: string | null;
+  resumen: string | null;
   pasosClave: string[];
-  paginaHtml: string;
+  paginaHtml: string | null;
 }
 
 @Component({
   selector: 'msst-modulo04-portal-trabajador',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera del Módulo 04 -->
@@ -99,8 +104,8 @@ export interface CapituloManualItem {
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #28a745; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">APTITUD MÉDICA OCUPACIONAL</div>
-                <div style="font-size: 20px; font-weight: bold; color: #28a745;">APTO VIGENTE</div>
-                <div style="font-size: 11px; color: #888;">Vence: 15/11/2026 (Clínica Internacional)</div>
+                <div style="font-size: 20px; font-weight: bold; color: #28a745;">Consultar dictamen registrado</div>
+                <div style="font-size: 11px; color: #888;">Consulte la vigencia confirmada en Salud Ocupacional</div>
               </div>
             </div>
             <div class="col-sm-3">
@@ -237,10 +242,10 @@ export interface CapituloManualItem {
               <div class="col-md-3">
                 <label style="font-size: 11px;">Filtrar por Mes Programado:</label>
                 <select class="form-control input-sm" [(ngModel)]="filtroMesCalendario">
-                  <option value="TODOS">Todos los Meses (Anual 2026)</option>
-                  <option value="OCTUBRE">Octubre 2026</option>
-                  <option value="NOVIEMBRE">Noviembre 2026</option>
-                  <option value="DICIEMBRE">Diciembre 2026</option>
+                  <option value="TODOS">Todos los Meses (Anual)</option>
+                  <option value="OCTUBRE">Octubre</option>
+                  <option value="NOVIEMBRE">Noviembre</option>
+                  <option value="DICIEMBRE">Diciembre</option>
                 </select>
               </div>
               <div class="col-md-3">
@@ -363,10 +368,10 @@ export interface CapituloManualItem {
               </div>
               <div class="panel-body" style="font-size: 12px;">
                 <p><strong>Colaborador:</strong> {{ session.usuarioNombre() }}</p>
-                <p><strong>Último EMO Periódico:</strong> 15/11/2025 — <span class="label label-success">APTO PARA TRABAJO EN ALTURA Y ESPACIOS CONFINADOS</span></p>
+                <p><strong>Último EMO Periódico:</strong> Sin fecha confirmada — <span class="label label-success">Sin dictamen confirmado en esta vista</span></p>
                 <p><strong>Grupo Sanguíneo:</strong> O Rh Positivo (+) | <strong>Restricciones:</strong> Uso obligatorio de protección auditiva doble en zona de chancado.</p>
-                <p><strong>Vacunación Ocupacional:</strong> Tétanos (3 dosis completas), Influenza 2026, Fiebre Amarilla.</p>
-                <a class="btn btn-xs btn-success" href="/sst/evidencia/ver?codigo=CERT-EMO-2026" target="_blank">
+                <p><strong>Vacunación Ocupacional:</strong> Consulte el registro clínico autorizado.</p>
+                <a class="btn btn-xs btn-success" (click)="workflowSelectionOpen.set(true)" target="_blank">
                   <i class="fa fa-download"></i> Descargar Certificado de Aptitud Médica (PDF)
                 </a>
               </div>
@@ -378,7 +383,7 @@ export interface CapituloManualItem {
             <div class="panel panel-primary">
               <div class="panel-heading" style="background-color: #004B87; display: flex; justify-content: space-between; align-items: center;">
                 <h4 class="panel-title"><i class="fa fa-book"></i> Guía Interactiva del Usuario OneSST</h4>
-                <span class="label label-info">Actualizado 2026</span>
+                <span class="label label-info">Información del repositorio</span>
               </div>
               <div class="panel-body">
                 <div class="input-group" style="margin-bottom: 12px;">
@@ -478,6 +483,9 @@ export interface CapituloManualItem {
   `
 })
 export class Modulo04PortalTrabajadorComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
 
@@ -499,10 +507,10 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
 
   });
   readonly fraseSeguridad = signal<string>('La seguridad no es negociable: cada trabajador regresa sano y salvo a casa.');
-  readonly autorFrase = signal<string>('HOLCIM PERÚ — Gestión Corporativa OneSST');
+  readonly autorFrase = signal<string>('');
   readonly mensajeExito = signal<string>('');
   readonly mostrarModalScheduler = signal<boolean>(false);
-  readonly reportesEnviadosCount = signal<number>(4);
+  readonly reportesEnviadosCount = signal<number>(0);
 
   filtroPendientes = '';
   filtroCategoriaPendiente = 'TODOS';
@@ -510,219 +518,29 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
   filtroModuloCalendario = 'TODOS';
   filtroManual = '';
 
-  readonly pendientes = signal<PendienteTrabajadorItem[]>([
-    {
-      id: 1,
-      codigo: 'DOC-RISST-2026',
-      categoria: 'DOCUMENTO_SST',
-      titulo: 'Entrega de Reglamento Interno de Seguridad y Salud en el Trabajo (RISST 2026)',
-      descripcion: 'Cargo obligatorio de recepción y lectura conforme al Art. 75 del D.S. 005-2012-TR.',
-      fechaLimite: '30/10/2026',
-      prioridad: 'ALTA',
-      estadoFirma: 'PENDIENTE'
-    },
-    {
-      id: 2,
-      codigo: 'DOC-IPERC-PUESTO-08',
-      categoria: 'DOCUMENTO_SST',
-      titulo: 'Recomendaciones de Seguridad y Matriz IPERC por Puesto de Trabajo',
-      descripcion: 'Anexo adjunto al contrato de trabajo con peligros y controles del puesto operativo.',
-      fechaLimite: '31/10/2026',
-      prioridad: 'ALTA',
-      estadoFirma: 'PENDIENTE'
-    },
-    {
-      id: 3,
-      codigo: 'EPP-CARGO-2026-041',
-      categoria: 'ENTREGA_EPP',
-      titulo: 'Cargo de Renovación de Casco Dielectrico 3M y Botines Punta Composite',
-      descripcion: 'Validación biométrica/digital de entrega en almacén central Planta Condorcocha.',
-      fechaLimite: '02/11/2026',
-      prioridad: 'MEDIA',
-      estadoFirma: 'PENDIENTE'
-    },
-    {
-      id: 4,
-      codigo: 'LMS-LOTOTO-2026',
-      categoria: 'CURSO_LMS',
-      titulo: 'Declaración Jurada de Aprobación Curso Aislamiento de Energía (LOTOTO)',
-      descripcion: 'Constancia de evaluación aprobada con nota 19/20 en el Aula Virtual SST.',
-      fechaLimite: '25/10/2026',
-      prioridad: 'MEDIA',
-      estadoFirma: 'FIRMADO',
-      hashFirma: 'SHA256-9F8A2C'
-    },
-    {
-      id: 5,
-      codigo: 'ACTA-CSST-2026-10',
-      categoria: 'COMITE_SST',
-      titulo: 'Acta de Reunión Ordinaria Mensual del Comité Paritario SST - Octubre 2026',
-      descripcion: 'Revisión y firma digital como miembro titular del CSST.',
-      fechaLimite: '28/10/2026',
-      prioridad: 'BAJA',
-      estadoFirma: 'FIRMADO',
-      hashFirma: 'SHA256-4B1E7D'
-    }
-  ]);
+  readonly pendientes = signal<PendienteTrabajadorItem[]>([]);
 
-  readonly actividadesCalendario = signal<ActividadSchedulerItem[]>([
-    {
-      id: 101,
-      codigo: 'PASST-2026-01',
-      titulo: 'Inspección Mensual de Sistemas Contra Incendios y Extintores PQS/CO2',
-      modulo: 'INSPECCIONES',
-      tipoActividad: 'Inspección Planeada Mensual',
-      mes: 'OCTUBRE',
-      fechaProgramada: '26/10/2026',
-      horaInicio: '08:30',
-      responsable: 'Ing. Carlos Mendoza (Jefe SST)',
-      ubicacion: 'Planta Condorcocha - Almacén y Molienda',
-      avance: 100,
-      estado: 'EJECUTADO'
-    },
-    {
-      id: 102,
-      codigo: 'PASST-2026-02',
-      titulo: 'Actualización Participativa de Matriz IPERC Línea de Clinkerización',
-      modulo: 'IPERC',
-      tipoActividad: 'Revisión Anual IPERC (Art. 57 Ley 29783)',
-      mes: 'OCTUBRE',
-      fechaProgramada: '28/10/2026',
-      horaInicio: '10:00',
-      responsable: 'Sup. Jorge Chávez / Comité SST',
-      ubicacion: 'Planta Condorcocha - Horno Principal',
-      avance: 75,
-      estado: 'EN_EJECUCION'
-    },
-    {
-      id: 103,
-      codigo: 'PASST-2026-03',
-      titulo: 'Simulacro Nacional Multipeligro y Respuesta de Brigada HAZMAT',
-      modulo: 'SIMULACRO',
-      tipoActividad: 'Simulacro de Emergencia Programado',
-      mes: 'NOVIEMBRE',
-      fechaProgramada: '05/11/2026',
-      horaInicio: '15:00',
-      responsable: 'Cmdte. Brigada Luis Paredes',
-      ubicacion: 'Todas las Sedes (Condorcocha y Huachipa)',
-      avance: 20,
-      estado: 'PROGRAMADO'
-    },
-    {
-      id: 104,
-      codigo: 'PASST-2026-04',
-      titulo: 'Sesión Ordinaria N° 11 del Comité de Seguridad y Salud en el Trabajo',
-      modulo: 'COMITE',
-      tipoActividad: 'Sesión Mensual CSST',
-      mes: 'NOVIEMBRE',
-      fechaProgramada: '12/11/2026',
-      horaInicio: '09:00',
-      responsable: 'Presidente CSST - Ing. Roberto Elias',
-      ubicacion: 'Sala de Directorio SST / Microsoft Teams',
-      avance: 0,
-      estado: 'PROGRAMADO'
-    },
-    {
-      id: 105,
-      codigo: 'PASST-2026-05',
-      titulo: 'Capacitación Específica: Trabajos en Caliente y Espacios Confinados (PETAR)',
-      modulo: 'CAPACITACION',
-      tipoActividad: 'Capacitación Presencial + Evaluación Online',
-      mes: 'DICIEMBRE',
-      fechaProgramada: '03/12/2026',
-      horaInicio: '14:00',
-      responsable: 'Ing. Elena Vargas (Instructora HSEQ)',
-      ubicacion: 'Auditorio Central Planta Huachipa',
-      avance: 0,
-      estado: 'PROGRAMADO'
-    }
-  ]);
+  readonly actividadesCalendario = signal<ActividadSchedulerItem[]>([]);
 
-  readonly capitulosManual = signal<CapituloManualItem[]>([
-    {
-      id: 1,
-      numero: '01',
-      titulo: 'Portal Principal del Trabajador, Firma Electrónica y Calendario PASST',
-      moduloRef: 'Módulo 04',
-      resumen: 'Guía operativa para revisar documentos pendientes, firmar cargos de EPP/RISST y consultar las actividades programadas en el calendario anual SST.',
-      pasosClave: [
-        'Acceder a la Bandeja de Pendientes y verificar el documento PDF.',
-        'Hacer clic en "Firmar Digitalmente" para estampar el sello criptográfico SHA-256.',
-        'Programar nuevas actividades en el Calendario anual mediante el botón Agendar Actividad.'
-      ],
-      paginaHtml: 'main.html'
-    },
-    {
-      id: 2,
-      numero: '02',
-      titulo: 'Gestión de Trabajadores Propios, Comité Paritario y Elección Virtual',
-      moduloRef: 'Módulo 05',
-      resumen: 'Administración de fichas de personal, tallas de EPP, seguimiento de acuerdos del Comité SST y sufragio electrónico secreto.',
-      pasosClave: [
-        'Filtrar colaboradores por DNI, área o puesto y actualizar sus tallas de casco, calzado y uniforme.',
-        'Registrar actas de reunión del Comité Paritario SST.',
-        'Emitir voto electrónico cifrado en procesos electorales vigentes.'
-      ],
-      paginaHtml: 'trabajador.html'
-    },
-    {
-      id: 3,
-      numero: '03',
-      titulo: 'Elaboración de Matriz IPERC, Inspecciones V2, OPT y Actos Subestándar',
-      moduloRef: 'Módulo 06',
-      resumen: 'Metodología para evaluar riesgos iniciales, aplicar jerarquía de controles (Eliminación, Sustitución, Ingeniería, Administrativo, EPP) y ejecutar inspecciones.',
-      pasosClave: [
-        'Seleccionar proceso, tarea, peligro y calcular el Nivel de Riesgo Inicial (Probabilidad x Severidad).',
-        'Definir controles y verificar la reducción al Nivel de Riesgo Residual.',
-        'Registrar Inspecciones V2, OPT y reportes de Actos/Condiciones Subestándar.'
-      ],
-      paginaHtml: 'iperc.html'
-    },
-    {
-      id: 4,
-      numero: '04',
-      titulo: 'Investigación de Accidentes / Incidentes y Motor de Acciones de Mejora',
-      moduloRef: 'Módulo 07',
-      resumen: 'Flujo completo de reporte preliminar 24h, análisis de causalidad (Causas Inmediatas y Básicas) y trazabilidad de planes de acción.',
-      pasosClave: [
-        'Registrar el evento indicando gravedad, días de descanso médico y relato detallado.',
-        'Determinar causas raíz y vincular medidas correctivas en el Motor Transversal.',
-        'Actualizar el porcentaje de avance hasta el cierre verificado al 100%.'
-      ],
-      paginaHtml: 'accidentes.html'
-    },
-    {
-      id: 5,
-      numero: '05',
-      titulo: 'Capacitaciones LMS, Kardex de EPP y Procedimientos PETS / Estándares',
-      moduloRef: 'Módulo 08',
-      resumen: 'Gestión del Programa Anual de Capacitaciones, evaluaciones calificables en línea, control de stock de EPP y repositorio documental PDF.',
-      pasosClave: [
-        'Inscribir personal en cursos del Programa Anual y rendir el Examen Online.',
-        'Controlar el stock y vida útil de equipos de protección personal según norma ANSI/EN.',
-        'Consultar procedimientos PETS vigentes con visor documental integrado.'
-      ],
-      paginaHtml: 'capacitacion.html'
-    }
-  ]);
+  readonly capitulosManual = signal<CapituloManualItem[]>([]);
 
   formAutoservicio = {
-    tipo: 'CONDICION_SUBESTANDAR',
-    ubicacion: 'Planta Condorcocha - Zona Chancado Primario',
+    tipo: '',
+    ubicacion: '',
     descripcion: '',
-    urgencia: 'ALTA'
+    urgencia: ''
   };
 
   nuevaActividad = {
-    codigo: 'PASST-2026-06',
+    codigo: '',
     titulo: '',
-    modulo: 'INSPECCIONES',
-    tipoActividad: 'Inspección Planeada de Seguridad',
-    mes: 'NOVIEMBRE',
-    fechaProgramada: '18/11/2026',
-    horaInicio: '09:00',
-    ubicacion: 'Planta Condorcocha - Área de Mantenimiento',
-    responsable: 'Ing. Carlos Mendoza'
+    modulo: '',
+    tipoActividad: '',
+    mes: '',
+    fechaProgramada: '',
+    horaInicio: '',
+    ubicacion: '',
+    responsable: ''
   };
 
   readonly totalPendientesSinFirmar = computed(() =>
@@ -741,7 +559,7 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
   }
 
   cargarDatosBackend(): void {
-    this.api.getEmpresaMensaje(773).subscribe({
+    this.api.getEmpresaMensaje().subscribe({
       next: (res) => {
         const list = res?.['list'];
         if (Array.isArray(list) && list.length > 0) {
@@ -751,14 +569,7 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
       }
     });
 
-    this.api.callAjaxPost('/scheduler/lista', { idEmpresa: 773, anio: 2026 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['titulo']) {
-          this.actividadesCalendario.set(list as ActividadSchedulerItem[]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/scheduler/lista', { ...{}, ...{} }).subscribe({next:(response)=>{try{this.actividadesCalendario.set(confirmedList<ActividadSchedulerItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"titulo","kind":"string","optional":false,"nullable":true},{"name":"modulo","kind":"string","optional":false,"nullable":true},{"name":"tipoActividad","kind":"string","optional":false,"nullable":true},{"name":"mes","kind":"string","optional":false,"nullable":true},{"name":"fechaProgramada","kind":"string","optional":false,"nullable":true},{"name":"horaInicio","kind":"string","optional":false,"nullable":true},{"name":"responsable","kind":"string","optional":false,"nullable":true},{"name":"ubicacion","kind":"string","optional":false,"nullable":true},{"name":"avance","kind":"number","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   pendientesFiltrados(): PendienteTrabajadorItem[] {
@@ -766,9 +577,9 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
     return this.pendientes().filter(item => {
       const coincideCat = this.filtroCategoriaPendiente === 'TODOS' || item.categoria === this.filtroCategoriaPendiente;
       const coincideTexto = !q ||
-        item.codigo.toLowerCase().includes(q) ||
-        item.titulo.toLowerCase().includes(q) ||
-        item.descripcion.toLowerCase().includes(q);
+        (item.codigo??'').toLowerCase().includes(q) ||
+        (item.titulo??'').toLowerCase().includes(q) ||
+        (item.descripcion??'').toLowerCase().includes(q);
       return coincideCat && coincideTexto;
     });
   }
@@ -785,142 +596,41 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
     const q = this.filtroManual.trim().toLowerCase();
     if (!q) return this.capitulosManual();
     return this.capitulosManual().filter(c =>
-      c.titulo.toLowerCase().includes(q) ||
-      c.resumen.toLowerCase().includes(q) ||
-      c.moduloRef.toLowerCase().includes(q)
+      (c.titulo??'').toLowerCase().includes(q) ||
+      (c.resumen??'').toLowerCase().includes(q) ||
+      (c.moduloRef??'').toLowerCase().includes(q)
     );
   }
 
-  async firmarPendiente(item: PendienteTrabajadorItem): Promise<void> {
-    const dni = '45892103';
-    const rawData = `${item.id}|${item.codigo}|${item.titulo}|${dni}|${new Date().toISOString()}`;
-    const hash = await this.generarHashSha256(rawData);
-    this.api.callAjaxPost('/trabajador/documento/firmar', {
-      idDocumento: item.id,
-      codigo: item.codigo,
-      hashFirma: hash,
-      dniFirmante: dni
-    }).subscribe({
-      next: () => {
-        this.actualizarEstadoFirmaLocal(item.id, hash);
-      },
-      error: (err) => {
-        // F14: En caso de fallo de transporte, conservar pendiente y comunicar el error
-        this.mostrarNotificacion(`Error al firmar: ${err?.message || 'No se pudo comunicar con el servidor para registrar la firma digital.'}`);
-      }
-    });
-  }
+  async firmarPendiente(item: PendienteTrabajadorItem): Promise<void> {this.workflowSelectionOpen.set(true);}
 
-  private actualizarEstadoFirmaLocal(id: number, hash: string): void {
-    this.pendientes.update(lista =>
-      lista.map(p => p.id === id ? { ...p, estadoFirma: 'FIRMADO', hashFirma: hash } : p)
-    );
-    this.mostrarNotificacion(`Documento firmado digitalmente con éxito. Sello criptográfico: ${hash}`);
-  }
 
-  async firmarTodosPendientes(): Promise<void> {
-    const dni = '45892103';
-    const rawData = `LOTE|${dni}|${new Date().toISOString()}`;
-    const hashLote = await this.generarHashSha256(rawData);
-    this.api.callAjaxPost('/trabajador/documento/firmarMasivo', {
-      hashLote,
-      dniFirmante: dni
-    }).subscribe({
-      next: () => this.aplicarFirmaMasiva(hashLote),
-      error: (err) => {
-        // F14: En caso de error, no marcar firmados
-        this.mostrarNotificacion(`Error en firma masiva: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
-  }
 
-  private async generarHashSha256(texto: string): Promise<string> {
-    try {
-      const msgBuffer = new TextEncoder().encode(texto);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return 'SHA256-' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16).toUpperCase();
-    } catch {
-      return 'SHA256-DIGITAL-' + Math.abs(texto.split('').reduce((a, b) => (a << 5) - a + b.charCodeAt(0), 0)).toString(16).toUpperCase();
-    }
-  }
+  async firmarTodosPendientes(): Promise<void> {this.workflowSelectionOpen.set(true);}
 
-  private aplicarFirmaMasiva(hashLote: string): void {
-    this.pendientes.update(lista =>
-      lista.map(p => p.estadoFirma === 'PENDIENTE' ? { ...p, estadoFirma: 'FIRMADO', hashFirma: hashLote } : p)
-    );
-    this.mostrarNotificacion(`Todos los documentos pendientes fueron firmados digitalmente (${hashLote}).`);
-  }
 
-  abrirModalScheduler(): void {
-    const nextNum = this.actividadesCalendario().length + 1;
-    this.nuevaActividad = {
-      codigo: `PASST-2026-0${nextNum}`,
-      titulo: '',
-      modulo: 'INSPECCIONES',
-      tipoActividad: 'Actividad Preventiva Programada',
-      mes: 'NOVIEMBRE',
-      fechaProgramada: '20/11/2026',
-      horaInicio: '09:30',
-      ubicacion: 'Planta Condorcocha',
-      responsable: 'Ing. Carlos Mendoza'
-    };
-    this.mostrarModalScheduler.set(true);
-  }
+
+  private aplicarFirmaMasiva(_hashLote:string):void{this.workflowSelectionOpen.set(true);}
+
+  abrirModalScheduler():void{this.nuevaActividad={codigo:'',titulo:'',modulo:'',tipoActividad:'',mes:'',fechaProgramada:'',horaInicio:'',ubicacion:'',responsable:''};this.mostrarModalScheduler.set(true);}
 
   guardarNuevaActividadScheduler(): void {
     if (!this.nuevaActividad.titulo.trim()) return;
     const payload = {
       ...this.nuevaActividad,
-      idEmpresa: 773,
+      ...{},
       avance: 0,
       estado: 'PROGRAMADO'
     };
 
-    this.api.callAjaxPost('/scheduler/insert', payload).subscribe({
-      next: (res) => {
-        const nuevoId = Number(res?.['idGenerado']) || (Date.now() % 100000);
-        this.agregarActividadLocal(nuevoId);
-      },
-      error: () => {
-        this.agregarActividadLocal(Date.now() % 100000);
-      }
-    });
+    this.api.callAjaxPost('/scheduler/insert', payload).subscribe({next:()=>{this.ngOnInit();this.mostrarModalScheduler.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarActividadLocal(id: number): void {
-    const nueva: ActividadSchedulerItem = {
-      id,
-      codigo: this.nuevaActividad.codigo,
-      titulo: this.nuevaActividad.titulo,
-      modulo: this.nuevaActividad.modulo,
-      tipoActividad: this.nuevaActividad.tipoActividad,
-      mes: this.nuevaActividad.mes,
-      fechaProgramada: this.nuevaActividad.fechaProgramada,
-      horaInicio: this.nuevaActividad.horaInicio,
-      responsable: this.nuevaActividad.responsable,
-      ubicacion: this.nuevaActividad.ubicacion,
-      avance: 0,
-      estado: 'PROGRAMADO'
-    };
-    this.actividadesCalendario.update(list => [nueva, ...list]);
-    this.mostrarModalScheduler.set(false);
-    this.mostrarNotificacion(`Actividad "${nueva.titulo}" agendada correctamente en OneSST.`);
-  }
 
-  marcarActividadEjecutada(act: ActividadSchedulerItem): void {
-    this.api.callAjaxPost('/scheduler/updateAvance', { id: act.id, avance: 100, estado: 'EJECUTADO' }).subscribe({
-      next: () => this.actualizarActividadLocal(act.id),
-      error: () => this.actualizarActividadLocal(act.id)
-    });
-  }
 
-  private actualizarActividadLocal(id: number): void {
-    this.actividadesCalendario.update(list =>
-      list.map(a => a.id === id ? { ...a, avance: 100, estado: 'EJECUTADO' } : a)
-    );
-    this.mostrarNotificacion('Actividad marcada al 100% (EJECUTADO) en el Programa Anual SST.');
-  }
+  marcarActividadEjecutada(act: ActividadSchedulerItem): void {this.workflowSelectionOpen.set(true);}
+
+
 
   enviarReporteAutoservicio(): void {
     if (!this.formAutoservicio.descripcion.trim()) return;
@@ -930,17 +640,10 @@ export class Modulo04PortalTrabajadorComponent implements OnInit {
       descripcion: this.formAutoservicio.descripcion,
       urgencia: this.formAutoservicio.urgencia,
       reportadoPor: this.session.usuarioNombre()
-    }).subscribe({
-      next: () => this.finalizarEnvioAutoservicio(),
-      error: () => this.finalizarEnvioAutoservicio()
-    });
+    }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private finalizarEnvioAutoservicio(): void {
-    this.reportesEnviadosCount.update(c => c + 1);
-    this.formAutoservicio.descripcion = '';
-    this.mostrarNotificacion('Reporte preventivo enviado desde el Autoservicio del Colaborador al Centro de Control SST.');
-  }
+  private finalizarEnvioAutoservicio():void{this.cargarDatosBackend();}
 
   private mostrarNotificacion(msg: string): void {
     this.mensajeExito.set(msg);

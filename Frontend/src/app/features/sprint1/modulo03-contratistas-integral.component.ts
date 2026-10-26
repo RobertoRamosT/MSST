@@ -1,9 +1,20 @@
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { GosstApiService } from '../../core/services/gosst-api.service';
+import { Router } from '@angular/router';
+import { apiErrorMessage, GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { EvidenceApiService, WorkflowApiService, WorkflowSnapshot, IntentKeys, asObject, isGuid, isSafeId } from '../../core/services/workflow-api.service';
+
+export function readM03ConfirmedRecord(raw:Record<string,any>,requestId:string,expectedId?:number):Record<string,any> {
+  if(typeof raw['requestId']!=='string'||raw['requestId'].toLowerCase()!==requestId.toLowerCase())throw new Error('El recibo corresponde a otra solicitud.');
+  const snapshot=asObject(raw['snapshot']),record=asObject(snapshot['record']);
+  if(typeof snapshot['version']!=='string'||!snapshot['version']||!isSafeId(record['id'])||
+    (expectedId!==undefined&&record['id']!==expectedId))throw new Error('No se confirmó el registro y su versión. Conserve los datos y consulte antes de repetir.');
+  return {...record,version:snapshot['version']};
+}
 
 @Component({
   selector: 'msst-modulo03-contratistas',
@@ -24,7 +35,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
           <button class="btn btn-xs btn-success" (click)="abrirModalNuevoContratista()">
-            <i class="fa fa-plus-circle"></i> + Homologar Contratista
+            <i class="fa fa-plus-circle"></i> + Registrar Contratista
           </button>
           <button class="btn btn-xs btn-info" (click)="abrirModalNuevoProyecto()">
             <i class="fa fa-folder-open"></i> + Nuevo Proyecto
@@ -94,16 +105,16 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
       <div class="row" style="margin-bottom: 15px;">
         <div class="col-md-3">
           <div style="background:#fff; padding:14px; border-radius:4px; border-left:4px solid #004B87; box-shadow:0 1px 3px rgba(0,0,0,.08);">
-            <div style="font-size:11px; color:#666;">CONTRATISTA PRINCIPAL ACTIVO</div>
-            <div style="font-size:15px; font-weight:bold; color:#004B87; margin-top:3px;">GRUPO ELIAS-29 S.A.C</div>
-            <div style="font-size:11px; color:#28a745;"><i class="fa fa-check-circle"></i> RUC: 20608094068 | ID: 3234</div>
+            <div style="font-size:11px; color:#666;">CONTRATISTAS CONSULTADOS</div>
+            <div style="font-size:15px; font-weight:bold; color:#004B87; margin-top:3px;">{{ contratistas().length }} Registros</div>
+            <div style="font-size:11px; color:#28a745;"><i class="fa fa-check-circle"></i> Ámbito de su sesión autorizada</div>
           </div>
         </div>
         <div class="col-md-3">
           <div style="background:#fff; padding:14px; border-radius:4px; border-left:4px solid #28a745; box-shadow:0 1px 3px rgba(0,0,0,.08);">
-            <div style="font-size:11px; color:#666;">SCORE DE HOMOLOGACIÓN SST</div>
-            <div style="font-size:22px; font-weight:bold; color:#28a745;">98.5% (APTO NIVEL A+)</div>
-            <div style="font-size:11px; color:#666;">Auditoría Ley 29783 / DS 024-2016-EM</div>
+            <div style="font-size:11px; color:#666;">EVALUACIÓN DE HOMOLOGACIÓN</div>
+            <div style="font-size:22px; font-weight:bold; color:#28a745;">Consultar expediente</div>
+            <div style="font-size:11px; color:#666;">Requisitos, evidencias y resultado registrado</div>
           </div>
         </div>
         <div class="col-md-3">
@@ -115,9 +126,9 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
         </div>
         <div class="col-md-3">
           <div style="background:#fff; padding:14px; border-radius:4px; border-left:4px solid #ffc107; box-shadow:0 1px 3px rgba(0,0,0,.08); display:flex; flex-direction:column; justify-content:space-between;">
-            <div style="font-size:11px; color:#666;">EMPRESAS HOMOLOGADAS ({{ contratistas().length }})</div>
+            <div style="font-size:11px; color:#666;">CONTRATISTAS REGISTRADAS ({{ contratistas().length }})</div>
             <button class="btn btn-sm btn-primary" style="margin-top:6px;" (click)="abrirModalNuevoContratista()">
-              <i class="fa fa-plus-circle"></i> Homologar Contratista
+              <i class="fa fa-plus-circle"></i> Registrar Contratista
             </button>
           </div>
         </div>
@@ -159,10 +170,10 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                           <small class="text-muted">{{ c['correo'] }} | {{ c['telefono'] }}</small>
                         </td>
                         <td>
-                          <strong style="color:#28a745; font-size:13px;">{{ c['porcentajeHomologacion'] }}%</strong>
+                          <strong style="color:#28a745; font-size:13px;">{{ c['porcentajeHomologacion'] === null || c['porcentajeHomologacion'] === undefined ? 'Sin evaluación registrada' : c['porcentajeHomologacion'] + '%' }}</strong>
                         </td>
                         <td>
-                          <span class="label label-success">{{ c['estadoHomologacion'] || 'HOMOLOGADO' }}</span>
+                          <span class="label label-success">{{ c['estadoHomologacion'] ?? 'Sin resultado de homologación' }}</span>
                         </td>
                       </tr>
                     }
@@ -202,13 +213,9 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
               </table>
 
               <div style="background:#f8f9fa; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:12px;">
-                <strong><i class="fa fa-list-ol"></i> Pilares de Cuestionario de Homologación:</strong>
-                <ul style="padding-left:18px; margin-top:6px; margin-bottom:0;">
-                  <li>Liderazgo y Compromiso del Sistema SGSST: <strong>100%</strong></li>
-                  <li>Política SST, Comité Paritario y RISST: <strong>98%</strong></li>
-                  <li>Matrices IPERC, PETS y Estándares Críticos: <strong>99%</strong></li>
-                  <li>Vigilancia Médica Ocupacional y SCTR: <strong>97%</strong></li>
-                </ul>
+                <strong>Requisitos de homologación</strong>
+                <p>Consulte el expediente para ver requisitos vigentes, sus evidencias y la evaluación realizada.</p>
+                <button type="button" class="btn btn-default btn-xs" (click)="abrirWorkflow()">Abrir expedientes</button>
               </div>
             </div>
           </div>
@@ -260,16 +267,9 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                     </td>
                     <td>{{ p['fechaInicio'] }} al {{ p['fechaFin'] }}</td>
                     <td>
-                      <div class="progress" style="margin-bottom:0; height:18px;">
-                        <div
-                          class="progress-bar progress-bar-success"
-                          role="progressbar"
-                          [style.width.%]="p['porcentajeCumplimiento'] || 95">
-                          {{ p['porcentajeCumplimiento'] || 95 }}%
-                        </div>
-                      </div>
+                      <span>{{ p['porcentajeCumplimiento'] === null || p['porcentajeCumplimiento'] === undefined ? 'Sin evaluación registrada' : p['porcentajeCumplimiento'] + '%' }}</span>
                     </td>
-                    <td><span class="label label-success">ACTIVO</span></td>
+                    <td><span class="label label-default">{{ p['estado'] }}</span></td>
                   </tr>
                 }
               </tbody>
@@ -316,7 +316,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                   <th>Aptitud Médica (EMO)</th>
                   <th>SCTR Salud/Pensión</th>
                   <th>Nota Inducción</th>
-                  <th>Pase Garita</th>
+                  <th>Evaluación de acceso</th>
                 </tr>
               </thead>
               <tbody>
@@ -326,14 +326,11 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                     <td><strong>{{ t['dni'] || t['numeroDocumento'] }}</strong></td>
                     <td><strong>{{ t['nombreCompleto'] || (t['nombres'] + ' ' + t['apellidoPaterno']) }}</strong></td>
                     <td>{{ t['puestoTrabajo'] }}</td>
-                    <td><span class="label label-success">{{ t['aptitudMedica'] || 'APTO' }}</span></td>
-                    <td><span class="text-success"><i class="fa fa-check-circle"></i> VIGENTE</span></td>
-                    <td><strong>{{ t['notaInduccion'] || 18 }} / 20</strong></td>
+                    <td><span class="label label-success">{{ t['aptitudMedica'] ?? 'Sin dictamen' }}</span></td>
+                    <td><span>Salud: {{ t['sctrSaludVigente'] === true ? 'Vigencia registrada' : 'Sin vigencia registrada' }} / Pensión: {{ t['sctrPensionVigente'] === true ? 'Vigencia registrada' : 'Sin vigencia registrada' }}</span></td>
+                    <td><strong>{{ t['notaInduccion'] ?? 'Sin resultado' }}</strong></td>
                     <td>
-                      <span class="label label-primary"><i class="fa fa-check"></i> HABILITADO INGRESO</span>
-                      <button type="button" class="btn btn-xs btn-info onesst-btn-qr" style="margin-left:5px;" title="Generar e Imprimir Fotocheck QR">
-                        <i class="fa fa-qrcode"></i> QR
-                      </button>
+                      <span class="label label-default">Evaluar con la política vigente en garita</span>
                     </td>
                   </tr>
                 }
@@ -374,13 +371,10 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                     <td><code>{{ v['placaCodigo'] || v['placa'] }}</code></td>
                     <td>{{ v['marca'] }} {{ v['modelo'] }}</td>
                     <td>{{ v['anioFabricacion'] }}</td>
-                    <td><span class="label label-success">VIGENTE</span></td>
-                    <td><span class="label label-success">APROBADO</span></td>
+                    <td>{{ v['soatVigente'] === true ? 'Vigencia registrada' : 'Sin vigencia registrada' }}</td>
+                    <td>{{ v['revisionTecnicaVigente'] === true ? 'Vigencia registrada' : 'Sin vigencia registrada' }}</td>
                     <td>
-                      <span class="label label-primary">AUTORIZADO PLANTA</span>
-                      <button type="button" class="btn btn-xs btn-info onesst-btn-qr" style="margin-left:5px;" title="Generar e Imprimir Pase Vehicular QR">
-                        <i class="fa fa-qrcode"></i> QR
-                      </button>
+                      <span class="label label-default">Evaluar con la política vigente en garita</span>
                     </td>
                   </tr>
                 }
@@ -427,14 +421,14 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                     <td>#{{ d['id'] }}</td>
                     <td><span class="label label-info">{{ d['nivel'] }}</span></td>
                     <td><strong>{{ d['nombreRequisito'] || d['nombre'] }}</strong></td>
-                    <td>{{ d['fechaEmision'] || '01/01/2026' }}</td>
+                    <td>{{ d['fechaEmision'] ?? 'Sin fecha' }}</td>
                     <td>{{ d['fechaVencimiento'] }}</td>
                     <td>
-                      <strong [style.color]="(d['puntajeValidacionIA'] || 95) >= 90 ? '#28a745' : '#d39e00'">
-                        <i class="fa fa-bolt"></i> {{ d['puntajeValidacionIA'] || 98.5 }}%
+                      <strong [style.color]="d['puntajeValidacionIA'] !== null && d['puntajeValidacionIA'] !== undefined && d['puntajeValidacionIA'] >= 90 ? '#28a745' : '#d39e00'">
+                        <i class="fa fa-bolt"></i> {{ d['puntajeValidacionIA'] ?? 'Sin evaluación' }}%
                       </strong>
                     </td>
-                    <td>{{ d['observacionRevision'] || 'Firma digital y vigencia verificadas por OCR/IA' }}</td>
+                    <td>{{ d['observacionRevision'] ?? 'Sin observación registrada' }}</td>
                     <td>
                       <span
                         class="label"
@@ -443,8 +437,8 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                       </span>
                     </td>
                     <td>
-                      <button class="btn btn-xs btn-success" (click)="dictaminarDocumento(d, 'APROBADO')" title="Aprobar Documento">
-                        <i class="fa fa-check"></i> Aprobar
+                      <button class="btn btn-xs btn-success" (click)="dictaminarDocumento(d, 'APROBADO')" title="Revisar evidencias del expediente">
+                        <i class="fa fa-tasks"></i> Revisar expediente
                       </button>
                       <button class="btn btn-xs btn-danger" style="margin-left:4px;" (click)="dictaminarDocumento(d, 'OBSERVADO')" title="Observar Documento">
                         <i class="fa fa-exclamation-circle"></i> Observar
@@ -522,22 +516,19 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                 <tbody>
                   @for (g of movimientosGarita(); track g['id']) {
                     <tr>
-                      <td><strong>{{ g['hora'] }}</strong></td>
+                      <td><strong>{{ g['fechaRegistro'] }}</strong></td>
                       <td>
                         <span class="label" [ngClass]="g['movimiento'] === 'INGRESO' ? 'label-primary' : 'label-info'">
                           {{ g['movimiento'] }}
                         </span>
                       </td>
-                      <td><code>{{ g['identificador'] }}</code></td>
+                      <td><code>{{ g['documentoOPlaca'] ?? g['identificador'] }}</code></td>
                       <td><strong>{{ g['nombre'] }}</strong></td>
                       <td>{{ g['garita'] }}</td>
                       <td>
-                        <span class="label" [ngClass]="g['semaforo'] === 'VERDE - AUTORIZADO' ? 'label-success' : 'label-danger'">
-                          {{ g['semaforo'] }}
+                        <span class="label" [ngClass]="g['autorizado'] === true ? 'label-success' : 'label-danger'">
+                          {{ g['autorizado'] === true ? 'Autorizado por la evaluación registrada' : 'Acceso no autorizado' }}
                         </span>
-                        <button type="button" class="btn btn-xs btn-default onesst-btn-qr" style="margin-left:4px;" title="Ver Pase QR de Garita">
-                          <i class="fa fa-qrcode"></i>
-                        </button>
                       </td>
                     </tr>
                   }
@@ -563,7 +554,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
             <div class="row">
               <div class="col-md-4 form-group">
                 <label>RUC (11 dígitos):</label>
-                <input type="text" class="form-control input-sm" maxlength="11" [(ngModel)]="formContratista.ruc" placeholder="20608094068">
+                <input type="text" class="form-control input-sm" maxlength="11" [(ngModel)]="formContratista.ruc" placeholder="RUC de la contratista">
               </div>
               <div class="col-md-8 form-group">
                 <label>Razón Social:</label>
@@ -591,7 +582,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
               </div>
               <div class="col-md-3 form-group">
                 <label>% Homologación:</label>
-                <input type="number" class="form-control input-sm" [(ngModel)]="formContratista.porcentajeHomologacion">
+                <p>La homologación se calcula a partir de la evaluación del expediente.</p>
               </div>
             </div>
           </div>
@@ -647,11 +638,11 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
               </div>
               <div class="col-md-4 form-group">
                 <label>Fecha Inicio:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formProyecto.fechaInicio" placeholder="25/03/2026">
+                <input type="date" class="form-control input-sm" [(ngModel)]="formProyecto.fechaInicio" placeholder="25/03/2026">
               </div>
               <div class="col-md-4 form-group">
                 <label>Fecha Fin:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formProyecto.fechaFin" placeholder="31/12/2026">
+                <input type="date" class="form-control input-sm" [(ngModel)]="formProyecto.fechaFin" placeholder="31/12/2026">
               </div>
             </div>
           </div>
@@ -682,8 +673,8 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
                 <input type="text" class="form-control input-sm" maxlength="12" [(ngModel)]="formTrabajador.dni" placeholder="45892136">
               </div>
               <div class="col-md-8 form-group">
-                <label>Nombres y Apellidos Completos:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formTrabajador.nombreCompleto" placeholder="JUAN CARLOS QUISPE MENDOZA">
+                <label>Nombres:</label>
+                <input type="text" class="form-control input-sm" [(ngModel)]="formTrabajador.nombres" placeholder="JUAN CARLOS QUISPE MENDOZA"><label>Apellido paterno:</label><input type="text" class="form-control input-sm" [(ngModel)]="formTrabajador.apellidoPaterno"><label>Apellido materno:</label><input type="text" class="form-control input-sm" [(ngModel)]="formTrabajador.apellidoMaterno">
               </div>
             </div>
             <div class="row">
@@ -693,14 +684,11 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
               </div>
               <div class="col-md-3 form-group">
                 <label>Aptitud EMO:</label>
-                <select class="form-control input-sm" [(ngModel)]="formTrabajador.aptitudMedica">
-                  <option value="APTO">APTO</option>
-                  <option value="APTO CON RESTRICCIÓN">APTO C/RESTRICCIÓN</option>
-                </select>
+                <p>El dictamen médico se consulta en la evaluación autorizada del trabajador.</p>
               </div>
               <div class="col-md-3 form-group">
                 <label>Nota Inducción:</label>
-                <input type="number" class="form-control input-sm" min="14" max="20" [(ngModel)]="formTrabajador.notaInduccion">
+                <p>La inducción se acredita con el resultado registrado del curso.</p>
               </div>
             </div>
           </div>
@@ -779,27 +767,27 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
           <div class="panel-body">
             <div class="row">
               <div class="col-md-5 form-group">
-                <label>Nivel del Documento:</label>
-                <select class="form-control input-sm" [(ngModel)]="formDocumento.nivel">
-                  <option value="EMPRESA">EMPRESA</option>
-                  <option value="PROYECTO">PROYECTO</option>
-                  <option value="TRABAJADOR">TRABAJADOR</option>
-                  <option value="VEHÍCULO">VEHÍCULO</option>
+                <label>Expediente autorizado:</label>
+                <select class="form-control input-sm" [(ngModel)]="formDocumento.expedienteId" (ngModelChange)="seleccionarExpedienteDocumento()">
+                  <option [ngValue]="null">Seleccione</option>
+                  @for (item of expedientesDocumentales(); track item.expedienteId) {<option [ngValue]="item.expedienteId">{{ item.codigoExpediente }} · {{ item.subject.label }}</option>}
                 </select>
               </div>
               <div class="col-md-7 form-group">
-                <label>Nombre del Requisito Documental:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formDocumento.nombreRequisito" placeholder="Ej. Póliza SCTR Salud y Pensión Mes Marzo 2026">
+                <label>Requisito del expediente:</label>
+                <select class="form-control input-sm" [(ngModel)]="formDocumento.fieldCode" (ngModelChange)="seleccionarRequisitoDocumento()">
+                  <option value="">Seleccione</option>
+                  @for (item of requisitosDocumento(); track item.requirementCode) {<option [value]="item.requirementCode">{{ item.title }}</option>}
+                </select>
               </div>
             </div>
             <div class="row">
               <div class="col-md-6 form-group">
                 <label>Sujeto de Referencia (DNI / Placa / RUC):</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formDocumento.sujetoReferencia" placeholder="Ej. 45892103 o CPX-492">
+                <input type="text" class="form-control input-sm" [(ngModel)]="formDocumento.sujetoReferencia" readonly placeholder="Ej. 45892103 o CPX-492">
               </div>
               <div class="col-md-6 form-group">
-                <label>Fecha de Vencimiento:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formDocumento.fechaVencimiento" placeholder="31/12/2026">
+                <label>Fecha de emisión:</label><input type="date" class="form-control input-sm" [(ngModel)]="formDocumento.fechaEmision"><label>Fecha de vencimiento:</label><input type="date" class="form-control input-sm" [(ngModel)]="formDocumento.fechaVencimiento">
               </div>
             </div>
             <div class="row">
@@ -817,7 +805,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
           <div class="panel-footer" style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-sm btn-default" (click)="modalDocumentoAbierto.set(false)">Cancelar</button>
             <button class="btn btn-sm btn-primary" (click)="guardarDocumento()">
-              <i class="fa fa-cloud-upload"></i> Subir y Auditar
+              <i class="fa fa-cloud-upload"></i> Subir documento para revisión
             </button>
           </div>
         </div>
@@ -838,13 +826,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
             <div class="row">
               <div class="col-md-5 form-group">
                 <label>Tipo de Permiso:</label>
-                <select class="form-control input-sm" [(ngModel)]="formOperacion.tipo">
-                  <option value="PETAR ALTURA">PETAR ALTURA (>1.80m)</option>
-                  <option value="PETAR CALIENTE">PETAR TRABAJO EN CALIENTE</option>
-                  <option value="PETAR ESP. CONFINADO">PETAR ESPACIO CONFINADO</option>
-                  <option value="PLAN IZAJE CRÍTICO">PLAN DE IZAJE CRÍTICO</option>
-                  <option value="ATS CAMPO">ANÁLISIS TRABAJO SEGURO (ATS)</option>
-                </select>
+                <input type="text" class="form-control input-sm" [(ngModel)]="formOperacion.tipo" placeholder="Código de tipo de permiso del catálogo autorizado">
               </div>
               <div class="col-md-7 form-group">
                 <label>Supervisor Responsable:</label>
@@ -852,7 +834,9 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
               </div>
             </div>
             <div class="form-group">
-              <label>Descripción de la Actividad Crítica:</label>
+              <label>ATS existente:</label><input type="number" class="form-control input-sm" [(ngModel)]="formOperacion.atsId">
+<label>Proyecto:</label><select class="form-control input-sm" [(ngModel)]="formOperacion.projectId"><option [ngValue]="null">Seleccione</option>@for(item of proyectos();track item['id']){<option [ngValue]="item['id']">{{item['nombre']}}</option>}</select>
+<label>Descripción de la actividad:</label>
               <input type="text" class="form-control input-sm" [(ngModel)]="formOperacion.actividad" placeholder="Soldadura de ducto principal en Torre Precalentador Nivel 4">
             </div>
             <div class="form-group">
@@ -863,7 +847,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
           <div class="panel-footer" style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-sm btn-default" (click)="modalOperacionAbierto.set(false)">Cancelar</button>
             <button class="btn btn-sm btn-warning" (click)="guardarOperacion()">
-              <i class="fa fa-check-circle"></i> Autorizar
+              <i class="fa fa-check-circle"></i> Registrar solicitud
             </button>
           </div>
         </div>
@@ -884,10 +868,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
             <div class="row">
               <div class="col-md-5 form-group">
                 <label>Tipo Movimiento:</label>
-                <select class="form-control input-sm" [(ngModel)]="formGarita.movimiento">
-                  <option value="INGRESO">INGRESO A PLANTA</option>
-                  <option value="SALIDA">SALIDA DE PLANTA</option>
-                </select>
+                <select class="form-control input-sm" [(ngModel)]="formGarita.movimiento"><option value="">Seleccione</option>@for (item of catalogoAcceso().directions; track item.code) {<option [value]="item.code">{{ item.label }}</option>}</select>
               </div>
               <div class="col-md-7 form-group">
                 <label>DNI del Trabajador o Placa Vehicular:</label>
@@ -896,15 +877,11 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
             </div>
             <div class="form-group">
               <label>Nombre Completo / Descripción de Unidad:</label>
-              <input type="text" class="form-control input-sm" [(ngModel)]="formGarita.nombre" placeholder="CARLOS ALBERTO RAMIREZ SOTO (Supervisor SST)">
+              <select class="form-control input-sm" [(ngModel)]="formGarita.subjectType"><option value="">Seleccione tipo de sujeto</option>@for(item of catalogoAcceso().subjectTypes;track item.code){<option [value]="item.code">{{item.label}}</option>}</select><select class="form-control input-sm" [(ngModel)]="formGarita.projectId"><option [ngValue]="null">Seleccione proyecto</option>@for(item of catalogoAcceso().projects;track item.id){<option [ngValue]="item.id">{{item.label}}</option>}</select>
             </div>
             <div class="form-group">
               <label>Garita de Control:</label>
-              <select class="form-control input-sm" [(ngModel)]="formGarita.garita">
-                <option value="Garita Principal Condorcocha">Garita Principal Condorcocha</option>
-                <option value="Garita Balanza Huachipa">Garita Balanza Huachipa</option>
-                <option value="Garita Terminal Callao">Garita Terminal Callao</option>
-              </select>
+              <select class="form-control input-sm" [(ngModel)]="formGarita.zoneId"><option [ngValue]="null">Seleccione zona</option>@for(item of catalogoAcceso().zones;track item.id){<option [ngValue]="item.id">{{item.label}}</option>}</select>
             </div>
           </div>
           <div class="panel-footer" style="display:flex; justify-content:flex-end; gap:8px;">
@@ -920,8 +897,12 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 })
 export class Modulo03ContratistasIntegralComponent implements OnInit {
   private readonly api = inject(GosstApiService);
+  private readonly http = inject(HttpClient);
+  private readonly workflow = inject(WorkflowApiService);
+  private readonly evidence = inject(EvidenceApiService);
+  private readonly intents = new IntentKeys();
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
+  private readonly router = inject(Router);
 
   readonly submoduloActivo = signal<'3A' | '3B' | '3C' | '3D'>('3A');
 
@@ -943,35 +924,9 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
   readonly mensajeExito = signal<string>('');
 
   // Datos Submódulo 3A
-  readonly contratistas = signal<Record<string, any>[]>([
-    {
-      id: 3234,
-      ruc: '20608094068',
-      razonSocial: 'GRUPO ELIAS-29 S.A.C',
-      rubroActividad: 'Ingeniería, Mantenimiento Industrial y Refractarios',
-      representanteLegal: 'Ing. Marco Antonio Elias',
-      correo: 'operaciones@elias29.com.pe',
-      telefono: '998-142-700',
-      porcentajeHomologacion: 98.5,
-      estadoHomologacion: 'HOMOLOGADO A+'
-    },
-    {
-      id: 3235,
-      ruc: '20514896321',
-      razonSocial: 'CONSORCIO METALMECÁNICO DEL CENTRO S.A.C.',
-      rubroActividad: 'Izaje Crítico, Montaje Estructural y Soldadura',
-      representanteLegal: 'Ing. Luis Alberto Salazar',
-      correo: 'hse@consorciocentro.pe',
-      telefono: '987-654-321',
-      porcentajeHomologacion: 94.0,
-      estadoHomologacion: 'HOMOLOGADO A'
-    }
-  ]);
+  readonly contratistas = signal<Record<string, any>[]>([]);
 
-  readonly blacklist = signal<Record<string, any>[]>([
-    { documento: '20498123019', nombre: 'TRANSPORTES INSEGUROS S.R.L.', motivo: 'Reincidencia en falta grave bloqueos LOTO' },
-    { documento: '41029384', nombre: 'PEDRO GOMEZ VARGAS', motivo: 'Incumplimiento política Alcohol y Drogas Tolerancia Cero' }
-  ]);
+  readonly blacklist = signal<Record<string, any>[]>([]);
 
   // Datos Submódulo 3B
   readonly proyectos = signal<Record<string, any>[]>([]);
@@ -983,109 +938,52 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
 
   // Datos Submódulo 3D
   readonly documentos = signal<Record<string, any>[]>([]);
-  readonly operacionesCampo = signal<Record<string, any>[]>([
-    { id: 1, codigo: 'PETAR-2026-089', tipo: 'PETAR CALIENTE', actividad: 'Cambio de blindajes y soldadura en Horno Waelz', ubicacion: 'Planta Condorcocha - Nave Principal', supervisor: 'Ing. Marco Elias', estado: 'AUTORIZADO' },
-    { id: 2, codigo: 'IZAJE-2026-014', tipo: 'PLAN IZAJE CRÍTICO', actividad: 'Maniobra de izaje de reductor de 35 Toneladas', ubicacion: 'Molino de Crudo N° 2', supervisor: 'Ing. Carlos Mendoza', estado: 'AUTORIZADO' },
-    { id: 3, codigo: 'ATS-2026-312', tipo: 'ATS CAMPO', actividad: 'Inspección de aislamiento en Sala Eléctrica CCM', ubicacion: 'Subestación 60kV Condorcocha', supervisor: 'Ing. Roberto Ramos', estado: 'EJECUTADO' }
-  ]);
+  readonly operacionesCampo = signal<Record<string, any>[]>([]);
 
-  readonly movimientosGarita = signal<Record<string, any>[]>([
-    { id: 1, hora: '06:45:12', movimiento: 'INGRESO', identificador: '43128950', nombre: 'CARLOS ALBERTO RAMIREZ SOTO (Supervisor SST)', garita: 'Garita Principal Condorcocha', semaforo: 'VERDE - AUTORIZADO' },
-    { id: 2, hora: '06:48:30', movimiento: 'INGRESO', identificador: '45892104', nombre: 'JORGE LUIS MENDOZA QUISPE (Soldador 6G)', garita: 'Garita Principal Condorcocha', semaforo: 'VERDE - AUTORIZADO' },
-    { id: 3, hora: '07:02:15', movimiento: 'INGRESO', identificador: 'B8T-914', nombre: 'TOYOTA HILUX 4X4 - GRUPO ELIAS-29 S.A.C', garita: 'Garita Principal Condorcocha', semaforo: 'VERDE - AUTORIZADO' }
-  ]);
+  readonly movimientosGarita = signal<Record<string, any>[]>([]);
 
   // Modales Signals
   readonly modalContratistaAbierto = signal<boolean>(false);
-  formContratista = {
-    ruc: '',
-    razonSocial: '',
-    rubroActividad: 'Mantenimiento Electromecánico y Obras Civiles',
-    representanteLegal: '',
-    correo: '',
-    telefono: '',
-    porcentajeHomologacion: 96.5
-  };
+  formContratista = {ruc:'',razonSocial:'',rubroActividad:'',representanteLegal:'',correo:'',telefono:''};
+  readonly modalProyectoAbierto = signal(false);
+  formProyecto = {codigo:'',nombre:'',responsableCliente:'',responsableContratista:'',nivelRiesgo:'',fechaInicio:'',fechaFin:''};
+  readonly modalTrabajadorAbierto = signal(false);
+  formTrabajador = {dni:'',nombres:'',apellidoPaterno:'',apellidoMaterno:'',puestoTrabajo:''};
+  readonly modalVehiculoAbierto = signal(false);
+  formVehiculo = {categoria:'',placaCodigo:'',marca:'',modelo:'',anioFabricacion:null as number|null};
+  readonly modalDocumentoAbierto = signal(false);
+  readonly mensajeError = signal('');
+  readonly archivoSeleccionadoNombre = signal('');
+  readonly archivoSeleccionadoBytes = signal(0);
+  readonly expedientesDocumentales = signal<WorkflowSnapshot[]>([]);
+  private archivoSeleccionado:File|null=null;
+  private evidenciaDocumentoId:string|null=null;
+  formDocumento = {expedienteId:null as number|null,fieldCode:'',nivel:'',nombreRequisito:'',sujetoReferencia:'',fechaEmision:'',fechaVencimiento:''};
+  readonly modalOperacionAbierto = signal(false);
+  formOperacion = {tipo:'',actividad:'',ubicacion:'',supervisor:'',atsId:null as number|null,projectId:null as number|null};
+  readonly modalGaritaAbierto = signal(false);
+  readonly catalogoAcceso = signal<{projects:{id:number;label:string}[];zones:{id:number;label:string}[];directions:{code:string;label:string}[];subjectTypes:{code:string;label:string}[]}>({projects:[],zones:[],directions:[],subjectTypes:[]});
+  formGarita = {movimiento:'',identificador:'',subjectType:'',projectId:null as number|null,zoneId:null as number|null};
+  private decisionPendiente:{fingerprint:string;decisionId:string;version:string}|null=null;
+  requisitosDocumento(){return this.expedientesDocumentales().find(x=>x.expedienteId===this.formDocumento.expedienteId)?.requirements??[];}
 
-  readonly modalProyectoAbierto = signal<boolean>(false);
-  formProyecto = {
-    codigo: 'PRY-HOL-2026-04',
-    nombre: '',
-    responsableCliente: 'Ing. Roberto Ramos',
-    responsableContratista: 'Ing. Marco Elias',
-    nivelRiesgo: 'ALTO',
-    fechaInicio: '25/03/2026',
-    fechaFin: '31/12/2026'
-  };
-
-  readonly modalTrabajadorAbierto = signal<boolean>(false);
-  formTrabajador = {
-    dni: '',
-    nombreCompleto: '',
-    puestoTrabajo: 'Técnico Mecánico Montajista',
-    aptitudMedica: 'APTO',
-    notaInduccion: 19
-  };
-
-  readonly modalVehiculoAbierto = signal<boolean>(false);
-  formVehiculo = {
-    categoria: 'CAMIONETA PICKUP 4X4',
-    placaCodigo: '',
-    marca: 'TOYOTA',
-    modelo: 'HILUX 4X4 SRV',
-    anioFabricacion: 2025
-  };
-
-  readonly modalDocumentoAbierto = signal<boolean>(false);
-  readonly mensajeError = signal<string>('');
-  readonly archivoSeleccionadoNombre = signal<string>('');
-  readonly archivoSeleccionadoBytes = signal<number>(0);
-
-  formDocumento = {
-    nivel: 'TRABAJADOR',
-    nombreRequisito: '',
-    sujetoReferencia: '',
-    nombreArchivo: '',
-    tamanoArchivoBytes: 0,
-    fechaEmision: '24/10/2026',
-    fechaVencimiento: '31/12/2026',
-    puntajeValidacionIA: 98.5
-  };
-
-  onArchivoSeleccionado(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      this.archivoSeleccionadoNombre.set(file.name);
-      this.archivoSeleccionadoBytes.set(file.size);
-      this.formDocumento.nombreArchivo = file.name;
-      this.formDocumento.tamanoArchivoBytes = file.size;
-    }
+  onArchivoSeleccionado(event:Event):void {
+    const input=event.target as HTMLInputElement;
+    this.archivoSeleccionado=input.files?.item(0)??null;this.evidenciaDocumentoId=null;
+    this.archivoSeleccionadoNombre.set(this.archivoSeleccionado?.name??'');
+    this.archivoSeleccionadoBytes.set(this.archivoSeleccionado?.size??0);
   }
-
-  readonly modalOperacionAbierto = signal<boolean>(false);
-  formOperacion = {
-    tipo: 'PETAR ALTURA',
-    actividad: '',
-    ubicacion: 'Planta Condorcocha - Horno Waelz',
-    supervisor: 'Ing. Marco Elias'
-  };
-
-  readonly modalGaritaAbierto = signal<boolean>(false);
-  formGarita = {
-    movimiento: 'INGRESO',
-    identificador: '',
-    nombre: '',
-    garita: 'Garita Principal Condorcocha'
-  };
-
-  // Visor 1:1
-  readonly visor1a1Abierto = signal<boolean>(false);
-  readonly visorArchivo = signal<string>('contratista.html');
-  readonly visorTitulo = signal<string>('Portal Integral de Contratistas');
-  readonly visorUrlSegura = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.visorArchivo()}`)
-  );
+  seleccionarExpedienteDocumento():void {
+    const snapshot=this.expedientesDocumentales().find(x=>x.expedienteId===this.formDocumento.expedienteId);
+    this.formDocumento.fieldCode='';this.formDocumento.nombreRequisito='';
+    this.formDocumento.nivel=snapshot?.subject.subjectType??'';
+    this.formDocumento.sujetoReferencia=snapshot?.subject.label??'';
+    this.evidenciaDocumentoId=null;
+  }
+  seleccionarRequisitoDocumento():void {
+    this.formDocumento.nombreRequisito=this.requisitosDocumento().find(x=>x.requirementCode===this.formDocumento.fieldCode)?.title??'';
+    this.evidenciaDocumentoId=null;
+  }
 
   ngOnInit(): void {
     this.cargarTodoModulo03();
@@ -1103,351 +1001,160 @@ export class Modulo03ContratistasIntegralComponent implements OnInit {
   }
 
   cargarTodoModulo03(): void {
-    this.api.callAjaxPost('/contratista/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && (list[0]['razonSocial'] || list[0]['nombre'])) {
-          this.contratistas.set(list);
-        }
-      }
-    });
-
-    this.api.callAjaxPost('/contratista/proyecto/lista', { idContratista: 3234 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0) {
-          this.proyectos.set(list);
-        }
-      }
-    });
-
-    this.api.callAjaxPost('/contratista/trabajador/lista', { idContratista: 3234 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0) {
-          this.trabajadores.set(list);
-        }
-      }
-    });
-
-    this.api.callAjaxPost('/contratista/vehiculo/lista', { idContratista: 3234 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0) {
-          this.vehiculos.set(list);
-        }
-      }
-    });
-
-    this.api.callAjaxPost('/contratista/documento/lista', { idContratista: 3234 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0) {
-          this.documentos.set(list);
-        }
-      }
-    });
-
-    this.api.callAjaxPost('/contratista/operacion/lista', { idContratista: 3234 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['actividad']) {
-          this.operacionesCampo.set(list);
-        }
-      }
-    });
-
-    this.api.callAjaxPost('/contratista/garita/lista', { idContratista: 3234 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'] || [];
-        if (Array.isArray(list) && list.length > 0 && list[0]['identificador']) {
-          this.movimientosGarita.set(list);
-        }
-      }
+    if(!this.session.snapshot()){this.notificarError('Inicie sesión para consultar el ámbito autorizado.');return;}
+    const loads:[string,(rows:Record<string,any>[])=>void][]=[
+      ['/contratista/lista',rows=>this.contratistas.set(rows)],
+      ['/contratista/proyecto/lista',rows=>this.proyectos.set(rows)],
+      ['/contratista/trabajador/lista',rows=>this.trabajadores.set(rows)],
+      ['/contratista/vehiculo/lista',rows=>this.vehiculos.set(rows)],
+      ['/contratista/documento/lista',rows=>this.documentos.set(rows)],
+      ['/contratista/operacion/lista',rows=>this.operacionesCampo.set(rows)],
+      ['/contratista/garita/lista',rows=>this.movimientosGarita.set(rows)]
+    ];
+    for(const[route,apply]of loads)this.api.callAjaxPost(route,{}).subscribe({
+      next:res=>{try{
+        if(!Array.isArray(res['list'])||res['list'].some((x:unknown)=>x===null||typeof x!=='object'||Array.isArray(x)))throw new Error('El servidor no confirmó la lista solicitada.');
+        apply(res['list']); // La lista vacía también es un resultado real.
+      }catch(error){this.notificarError(apiErrorMessage(error));}},
+      error:error=>this.notificarError(apiErrorMessage(error))
     });
   }
+  private async guardarRegistro(route:string,data:Record<string,unknown>,expectedId?:number):Promise<Record<string,any>> {
+    if(!this.session.snapshot())throw new Error('Inicie sesión para continuar.');
+    const requestId=this.intents.key(route,data);
+    const result=await firstValueFrom(this.api.callAjaxPost(route,{...data,idempotencyKey:requestId}));
+    return readM03ConfirmedRecord(result,requestId,expectedId);
+  }
+  private reemplazarRegistro(rows:Record<string,any>[],record:Record<string,any>):Record<string,any>[] {
+    return [record,...rows.filter(x=>x['id']!==record['id'])];
+  }
 
-  abrirModalNuevoContratista(): void {
-    this.formContratista = {
-      ruc: '',
-      razonSocial: '',
-      rubroActividad: 'Mantenimiento Electromecánico y Obras Civiles',
-      representanteLegal: '',
-      correo: '',
-      telefono: '',
-      porcentajeHomologacion: 96.5
-    };
+  abrirModalNuevoContratista():void {
+    this.formContratista={ruc:'',razonSocial:'',rubroActividad:'',representanteLegal:'',correo:'',telefono:''};
     this.modalContratistaAbierto.set(true);
   }
-
-  guardarContratista(): void {
-    if (!this.formContratista.ruc.trim() || !this.formContratista.razonSocial.trim()) return;
-    this.api.callAjaxPost('/contratista/insert', this.formContratista).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || (3235 + this.contratistas().length);
-        const item = {
-          id: idGen,
-          ...this.formContratista,
-          estadoHomologacion: 'HOMOLOGADO'
-        };
-        this.contratistas.update(arr => [item, ...arr]);
-        this.modalContratistaAbierto.set(false);
-        this.notificarExito(`Contratista ${item.razonSocial} homologado en OneSST`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al guardar contratista: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
+  async guardarContratista():Promise<void> {
+    try {
+      if(!this.formContratista.ruc.trim()||!this.formContratista.razonSocial.trim())throw new Error('Complete RUC y razón social.');
+      const record=await this.guardarRegistro('/contratista/insert',{...this.formContratista});
+      this.contratistas.update(rows=>this.reemplazarRegistro(rows,record));this.modalContratistaAbierto.set(false);
+      this.notificarExito('Alta administrativa confirmada. La homologación se evalúa en su expediente.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
-
-  abrirModalNuevoProyecto(): void {
-    const nextIdx = this.proyectos().length + 1;
-    this.formProyecto = {
-      codigo: `PRY-HOL-2026-0${nextIdx}`,
-      nombre: '',
-      responsableCliente: 'Ing. Roberto Ramos',
-      responsableContratista: 'Ing. Marco Elias',
-      nivelRiesgo: 'ALTO',
-      fechaInicio: '25/03/2026',
-      fechaFin: '31/12/2026'
-    };
+  abrirModalNuevoProyecto():void {
+    this.formProyecto={codigo:'',nombre:'',responsableCliente:'',responsableContratista:'',nivelRiesgo:'',fechaInicio:'',fechaFin:''};
     this.modalProyectoAbierto.set(true);
   }
-
-  guardarProyecto(): void {
-    if (!this.formProyecto.nombre.trim()) return;
-    const payload = { ...this.formProyecto, idContratista: 3234, porcentajeCumplimiento: 0 };
-    this.api.callAjaxPost('/contratista/proyecto/insert', payload).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || (this.proyectos().length + 1);
-        const item = { id: idGen, ...payload, estado: 1 };
-        this.proyectos.update(arr => [item, ...arr]);
-        this.modalProyectoAbierto.set(false);
-        this.notificarExito(`Proyecto ${item.codigo} registrado exitosamente.`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al registrar proyecto: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
+  async guardarProyecto():Promise<void> {
+    try {
+      if(!this.formProyecto.nombre.trim()||!this.formProyecto.codigo.trim()||!this.formProyecto.fechaInicio||!this.formProyecto.fechaFin)throw new Error('Complete los datos y fechas reales del proyecto.');
+      const record=await this.guardarRegistro('/contratista/proyecto/insert',{...this.formProyecto});
+      this.proyectos.update(rows=>this.reemplazarRegistro(rows,record));this.modalProyectoAbierto.set(false);this.notificarExito('Proyecto confirmado por el servidor.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
-
-  abrirModalNuevoTrabajador(): void {
-    this.formTrabajador = {
-      dni: '',
-      nombreCompleto: '',
-      puestoTrabajo: 'Técnico Mecánico Montajista',
-      aptitudMedica: 'PENDIENTE',
-      notaInduccion: 0
-    };
-    this.modalTrabajadorAbierto.set(true);
+  abrirModalNuevoTrabajador():void {
+    this.formTrabajador={dni:'',nombres:'',apellidoPaterno:'',apellidoMaterno:'',puestoTrabajo:''};this.modalTrabajadorAbierto.set(true);
   }
-
-  guardarTrabajador(): void {
-    if (!this.formTrabajador.dni.trim() || !this.formTrabajador.nombreCompleto.trim()) return;
-    // F05: No habilitar automáticamente sin validación de requisitos
-    const payload = {
-      ...this.formTrabajador,
-      idContratista: 3234,
-      sctrSaludVigente: 0,
-      habilitadoIngreso: 0,
-      aptitudMedica: this.formTrabajador.aptitudMedica || 'PENDIENTE'
-    };
-    this.api.callAjaxPost('/contratista/trabajador/insert', payload).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || (this.trabajadores().length + 1);
-        const item = { id: idGen, ...payload };
-        this.trabajadores.update(arr => [item, ...arr]);
-        this.modalTrabajadorAbierto.set(false);
-        this.notificarExito(`Trabajador ${item.nombreCompleto} registrado (Pendiente de acreditación documental y garita)`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al registrar trabajador: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
+  async guardarTrabajador():Promise<void> {
+    try {
+      if(!this.formTrabajador.dni.trim()||!this.formTrabajador.nombres.trim()||!this.formTrabajador.apellidoPaterno.trim())throw new Error('Complete identidad y nombre del trabajador.');
+      const record=await this.guardarRegistro('/contratista/trabajador/insert',{...this.formTrabajador});
+      this.trabajadores.update(rows=>this.reemplazarRegistro(rows,record));this.modalTrabajadorAbierto.set(false);
+      this.notificarExito('Trabajador registrado. La acreditación y el acceso requieren evaluación de requisitos.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
-
-  abrirModalNuevoVehiculo(): void {
-    this.formVehiculo = {
-      categoria: 'CAMIONETA PICKUP 4X4',
-      placaCodigo: '',
-      marca: 'TOYOTA',
-      modelo: 'HILUX 4X4 SRV',
-      anioFabricacion: 2025
-    };
-    this.modalVehiculoAbierto.set(true);
+  abrirModalNuevoVehiculo():void {
+    this.formVehiculo={categoria:'',placaCodigo:'',marca:'',modelo:'',anioFabricacion:null};this.modalVehiculoAbierto.set(true);
   }
-
-  guardarVehiculo(): void {
-    if (!this.formVehiculo.placaCodigo.trim()) return;
-    // F05: No autorizar vehículo sin SOAT ni Revisión Técnica comprobados
-    const payload = {
-      ...this.formVehiculo,
-      idContratista: 3234,
-      soatVigente: 0,
-      revisionTecnicaVigente: 0,
-      habilitadoIngreso: 0
-    };
-    this.api.callAjaxPost('/contratista/vehiculo/insert', payload).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || (this.vehiculos().length + 1);
-        const item = { id: idGen, ...payload };
-        this.vehiculos.update(arr => [item, ...arr]);
-        this.modalVehiculoAbierto.set(false);
-        this.notificarExito(`Unidad ${item.placaCodigo} registrada (Pendiente de SOAT e inspección)`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al registrar unidad: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
+  async guardarVehiculo():Promise<void> {
+    try {
+      if(!this.formVehiculo.placaCodigo.trim())throw new Error('Complete la placa o código real de la unidad.');
+      const record=await this.guardarRegistro('/contratista/vehiculo/insert',{...this.formVehiculo});
+      this.vehiculos.update(rows=>this.reemplazarRegistro(rows,record));this.modalVehiculoAbierto.set(false);this.notificarExito('Unidad registrada sin autorizar automáticamente su acceso.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
-
-  abrirModalNuevoDocumento(): void {
-    this.formDocumento = {
-      nivel: 'TRABAJADOR',
-      nombreRequisito: '',
-      sujetoReferencia: '',
-      nombreArchivo: '',
-      tamanoArchivoBytes: 0,
-      fechaEmision: '24/10/2026',
-      fechaVencimiento: '31/12/2026',
-      puntajeValidacionIA: 98.5
-    };
-    this.archivoSeleccionadoNombre.set('');
-    this.archivoSeleccionadoBytes.set(0);
+  async abrirModalNuevoDocumento():Promise<void> {
+    this.formDocumento={expedienteId:null,fieldCode:'',nivel:'',nombreRequisito:'',sujetoReferencia:'',fechaEmision:'',fechaVencimiento:''};
+    this.archivoSeleccionado=null;this.evidenciaDocumentoId=null;this.archivoSeleccionadoNombre.set('');this.archivoSeleccionadoBytes.set(0);
     this.modalDocumentoAbierto.set(true);
+    try{const result=await firstValueFrom(this.workflow.list());this.expedientesDocumentales.set(result.expedientes);}
+    catch(error){this.notificarError(apiErrorMessage(error));}
   }
-
-  guardarDocumento(): void {
-    if (!this.formDocumento.nombreRequisito.trim()) return;
-    // F04 & F09: Guardar documento en estado PENDIENTE_AUDITORIA con datos reales
-    const payload = {
-      ...this.formDocumento,
-      idContratista: 3234,
-      fechaEmision: this.formDocumento.fechaEmision || '24/10/2026',
-      fechaVencimiento: this.formDocumento.fechaVencimiento || '31/12/2026',
-      estadoRevision: 'PENDIENTE_AUDITORIA',
-      observacionRevision: this.formDocumento.nombreArchivo
-        ? `Archivo cargado: ${this.formDocumento.nombreArchivo} (${(this.formDocumento.tamanoArchivoBytes / 1024).toFixed(1)} KB)`
-        : 'Documento registrado, pendiente de validación documental'
-    };
-    this.api.callAjaxPost('/contratista/documento/insert', payload).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || (this.documentos().length + 1);
-        const item = { id: idGen, ...payload, estado: 'PENDIENTE_AUDITORIA', estadoRevision: 'PENDIENTE_AUDITORIA' };
-        this.documentos.update(arr => [item, ...arr]);
-        this.modalDocumentoAbierto.set(false);
-        this.archivoSeleccionadoNombre.set('');
-        this.archivoSeleccionadoBytes.set(0);
-        this.notificarExito(`Requisito "${item.nombreRequisito}" cargado exitosamente al repositorio.`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al cargar documento: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
+  async guardarDocumento():Promise<void> {
+    try {
+      if(!isSafeId(this.formDocumento.expedienteId)||!this.formDocumento.fieldCode||!this.archivoSeleccionado||
+        !this.formDocumento.fechaEmision||!this.formDocumento.fechaVencimiento)throw new Error('Seleccione expediente, requisito, archivo y fechas reales.');
+      const result=await firstValueFrom(this.workflow.detail(this.formDocumento.expedienteId));
+      const snapshot=result.snapshot;if(!snapshot)throw new Error('No se recuperó el expediente autorizado.');
+      const requirement=snapshot.requirements.find(x=>x.requirementCode===this.formDocumento.fieldCode);
+      if(!requirement)throw new Error('El requisito ya no corresponde al expediente.');
+      if(!this.evidenciaDocumentoId){
+        const stored=await firstValueFrom(this.evidence.upload(this.archivoSeleccionado,snapshot,requirement.requirementCode));
+        this.evidenciaDocumentoId=stored.evidenceId;
       }
-    });
-  }
-
-  dictaminarDocumento(doc: Record<string, any>, nuevoEstado: 'APROBADO' | 'OBSERVADO'): void {
-    const obs =
-      nuevoEstado === 'APROBADO'
-        ? 'Conformidad verificada por Auditoría HSE + IA'
-        : 'Observado: Requiere adjuntar firma de médico ocupacional / sello legible';
-
-    this.api
-      .callAjaxPost('/contratista/documento/aprobar', {
-        idDocumento: doc['id'],
-        estadoRevision: nuevoEstado,
-        observacionRevision: obs
-      })
-      .subscribe({
-        next: () => {
-          this.documentos.update(arr =>
-            arr.map(d =>
-              d['id'] === doc['id']
-                ? { ...d, estadoRevision: nuevoEstado, observacionRevision: obs }
-                : d
-            )
-          );
-          this.notificarExito(`Documento #${doc['id']} marcado como ${nuevoEstado}`);
-        },
-        error: (err) => {
-          this.notificarError(`Error al dictaminar: ${err?.message || 'No se pudo actualizar el estado en el servidor.'}`);
-        }
+      const record=await this.guardarRegistro('/contratista/documento/insert',{
+        evidenceId:this.evidenciaDocumentoId,expedienteId:snapshot.expedienteId,fieldCode:requirement.requirementCode,
+        expectedVersion:snapshot.version,workflowVersion:snapshot.version,subjectType:snapshot.subject.subjectType,
+        subjectId:snapshot.subject.subjectId,idEntidadReferencia:snapshot.subject.subjectId,
+        nivel:snapshot.subject.subjectType,nombreRequisito:requirement.title,tipoDocumento:requirement.requirementCode,
+        sujetoReferencia:snapshot.subject.label,fechaEmision:this.formDocumento.fechaEmision,fechaVencimiento:this.formDocumento.fechaVencimiento
       });
+      this.documentos.update(rows=>this.reemplazarRegistro(rows,record));this.modalDocumentoAbierto.set(false);
+      this.archivoSeleccionado=null;this.evidenciaDocumentoId=null;this.archivoSeleccionadoNombre.set('');this.archivoSeleccionadoBytes.set(0);
+      this.notificarExito('Archivo y registro documental confirmados. La revisión conserva su estado independiente.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
+  }
+  dictaminarDocumento(_doc:Record<string,any>,_nuevoEstado:'APROBADO'|'OBSERVADO'):void {this.abrirWorkflow();}
+  abrirWorkflow():void {void this.router.navigate(['/workflow']);}
+  abrirModalNuevaOperacion():void {
+    this.formOperacion={tipo:'',actividad:'',ubicacion:'',supervisor:'',atsId:null,projectId:null};this.modalOperacionAbierto.set(true);
+  }
+  async guardarOperacion():Promise<void> {
+    try {
+      if(!this.formOperacion.actividad.trim()||!this.formOperacion.tipo||!isSafeId(this.formOperacion.atsId)||!isSafeId(this.formOperacion.projectId))throw new Error('Complete actividad, tipo, ATS existente y proyecto.');
+      const record=await this.guardarRegistro('/contratista/operacion/insert',{...this.formOperacion});
+      this.operacionesCampo.update(rows=>this.reemplazarRegistro(rows,record));this.modalOperacionAbierto.set(false);
+      this.notificarExito('Solicitud registrada. La autorización depende del expediente y los requisitos aplicables.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
 
-  abrirModalNuevaOperacion(): void {
-    this.formOperacion = {
-      tipo: 'PETAR ALTURA',
-      actividad: '',
-      ubicacion: 'Planta Condorcocha - Horno Waelz',
-      supervisor: 'Ing. Marco Elias'
-    };
-    this.modalOperacionAbierto.set(true);
-  }
-
-  guardarOperacion(): void {
-    if (!this.formOperacion.actividad.trim()) return;
-    const nextNum = this.operacionesCampo().length + 90;
-    const payload = {
-      codigo: `PETAR-2026-0${nextNum}`,
-      ...this.formOperacion,
-      estado: 'SOLICITADO'
-    };
-    this.api.callAjaxPost('/contratista/operacion/insert', payload).subscribe({
-      next: (res) => {
-        const item = { id: res?.['idGenerado'] || nextNum, ...payload, estadoAprobacion: 'SOLICITADO' };
-        this.operacionesCampo.update(arr => [item, ...arr]);
-        this.modalOperacionAbierto.set(false);
-        this.notificarExito(`Permiso ${item.codigo} (${item.tipo}) solicitado. Pendiente de verificación en campo.`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al solicitar permiso: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
-      }
-    });
-  }
-
-  abrirModalNuevoPaseGarita(): void {
-    this.formGarita = {
-      movimiento: 'INGRESO',
-      identificador: '',
-      nombre: '',
-      garita: 'Garita Principal Condorcocha'
-    };
+  async abrirModalNuevoPaseGarita():Promise<void> {
+    this.formGarita={movimiento:'',identificador:'',subjectType:'',projectId:null,zoneId:null};this.decisionPendiente=null;
     this.modalGaritaAbierto.set(true);
+    try {
+      const raw=asObject(await firstValueFrom(this.http.get<unknown>('/sst/access/catalogs')));
+      if(raw['succeeded']!==true)throw new Error('No se confirmó el catálogo de acceso.');
+      const c=asObject(raw['catalogs']??raw);
+      for(const key of ['projects','zones'])if(!Array.isArray(c[key])||(c[key] as unknown[]).some(v=>{const x=asObject(v);return !isSafeId(x['id'])||typeof x['label']!=='string';}))throw new Error('El catálogo de acceso no es válido.');
+      for(const key of ['directions','subjectTypes'])if(!Array.isArray(c[key])||(c[key] as unknown[]).some(v=>{const x=asObject(v);return typeof x['code']!=='string'||typeof x['label']!=='string';}))throw new Error('El catálogo de acceso no es válido.');
+      this.catalogoAcceso.set(c as unknown as ReturnType<typeof this.catalogoAcceso>);
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
-
-  guardarPaseGarita(): void {
-    if (!this.formGarita.identificador.trim()) return;
-    const enBlacklist = this.blacklist().some(
-      b => String(b['documento']).toLowerCase() === this.formGarita.identificador.trim().toLowerCase()
-    );
-    const ahora = new Date();
-    const horaStr = ahora.toTimeString().slice(0, 8);
-    const payload = {
-      hora: horaStr,
-      ...this.formGarita,
-      autorizado: !enBlacklist,
-      semaforo: enBlacklist ? 'ROJO - BLOQUEADO BLACKLIST' : 'VERDE - AUTORIZADO'
-    };
-
-    this.api.callAjaxPost('/contratista/garita/insert', payload).subscribe({
-      next: (res) => {
-        const item = { id: res?.['idGenerado'] || (this.movimientosGarita().length + 1), ...payload };
-        this.movimientosGarita.update(arr => [item, ...arr]);
-        this.modalGaritaAbierto.set(false);
-        this.notificarExito(`Pase de Garita (${item.movimiento}: ${item.identificador}) registrado.`);
-      },
-      error: (err) => {
-        this.notificarError(`Error al registrar pase de garita: ${err?.message || 'Fallo de comunicación con el servidor.'}`);
+  async guardarPaseGarita():Promise<void> {
+    try {
+      if(!this.formGarita.identificador.trim()||!this.formGarita.subjectType||!isSafeId(this.formGarita.projectId)||
+        !isSafeId(this.formGarita.zoneId)||!this.formGarita.movimiento)throw new Error('Seleccione sujeto, proyecto, zona y movimiento.');
+      const evaluation={subjectType:this.formGarita.subjectType,identifier:this.formGarita.identificador,projectId:this.formGarita.projectId,zoneId:this.formGarita.zoneId,direction:this.formGarita.movimiento};
+      const fingerprint=JSON.stringify(evaluation);
+      if(!this.decisionPendiente||this.decisionPendiente.fingerprint!==fingerprint){
+        const result=asObject(await firstValueFrom(this.http.post<unknown>('/sst/access/evaluate',evaluation)));
+        const decision=asObject(result['decision']);
+        if(result['succeeded']!==true||result['code']!=='ACCESS_EVALUATED'||!isGuid(decision['decisionId'])||typeof decision['version']!=='string'||
+          typeof decision['habilitado']!=='boolean'||!Array.isArray(decision['motivos']))throw new Error('No se confirmó una evaluación de acceso válida.');
+        this.decisionPendiente={fingerprint,decisionId:decision['decisionId'],version:decision['version']};
+        if(!decision['habilitado'])this.notificarError((decision['motivos'] as string[]).join(' '));
       }
-    });
+      const data={decisionId:this.decisionPendiente.decisionId,expectedVersion:this.decisionPendiente.version};
+      const key=this.intents.key('access-register',data);
+      const result=asObject(await firstValueFrom(this.http.post<unknown>('/sst/access/register',{...data,idempotencyKey:key})));
+      if(result['succeeded']!==true||result['code']!=='ACCESS_RECORDED'||result['requestId']!==key)throw new Error('No se confirmó el registro de acceso.');
+      const record=readM03ConfirmedRecord(result,key);
+      this.movimientosGarita.update(rows=>this.reemplazarRegistro(rows,record));this.decisionPendiente=null;this.modalGaritaAbierto.set(false);
+      this.notificarExito(typeof result['message']==='string'?result['message']:'Evaluación de acceso registrada.');
+    }catch(error){this.notificarError(apiErrorMessage(error));}
   }
 
-  abrirVisor1a1(archivo: string, titulo: string): void {
-    this.visorArchivo.set(archivo);
-    this.visorTitulo.set(titulo);
-    this.visor1a1Abierto.set(true);
-  }
+
 
   private notificarExito(msg: string): void {
     this.mensajeExito.set(msg);

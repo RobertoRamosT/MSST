@@ -1,4 +1,7 @@
-import { Routes } from '@angular/router';
+import { Routes, CanActivateFn, Router } from '@angular/router';
+import { inject } from '@angular/core';
+import { GosstSessionService } from './core/services/gosst-session.service';
+const authenticated:CanActivateFn=()=>inject(GosstSessionService).autenticado()||inject(Router).createUrlTree(['/login']);
 import { LoginComponent } from './features/login/login.component';
 import { ContratistaPortalComponent } from './features/contratista/contratista-portal.component';
 import { Modulo01SeguridadPerfilesComponent } from './features/sprint1/modulo01-seguridad-perfiles.component';
@@ -18,19 +21,19 @@ import { WorkflowInteractivoComponent } from './features/workflow/workflow-inter
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'contratista', component: ContratistaPortalComponent },
-  { path: 'workflow', component: WorkflowInteractivoComponent },
-  { path: 'modulo01', component: Modulo01SeguridadPerfilesComponent },
-  { path: 'modulo02', component: Modulo02OrganizacionMdfComponent },
-  { path: 'modulo03', component: Modulo03ContratistasIntegralComponent },
-  { path: 'modulo04', component: Modulo04PortalTrabajadorComponent },
-  { path: 'modulo05', component: Modulo05TrabajadoresComitesComponent },
-  { path: 'modulo06', component: Modulo06PrevencionIpercInspeccionesComponent },
-  { path: 'modulo07', component: Modulo07AccidentesMejoraComponent },
-  { path: 'modulo08', component: Modulo08CapacitacionEppProcedimientosComponent },
-  { path: 'modulo09', component: Modulo09SaludOcupacionalComponent },
-  { path: 'modulo10', component: Modulo10AuditoriasRequisitosComponent },
-  { path: 'modulo11', component: Modulo11MedioAmbienteComponent },
-  { path: 'modulo12', component: Modulo12BiEstadisticasIaVisitantesComponent },
+  { path: 'contratista', component: ContratistaPortalComponent, canActivate:[authenticated] },
+  { path: 'workflow', component: WorkflowInteractivoComponent, canActivate:[authenticated] },
+  { path: 'modulo01', component: Modulo01SeguridadPerfilesComponent, canActivate:[authenticated] },
+  { path: 'modulo02', component: Modulo02OrganizacionMdfComponent, canActivate:[authenticated] },
+  { path: 'modulo03', component: Modulo03ContratistasIntegralComponent, canActivate:[authenticated] },
+  { path: 'modulo04', component: Modulo04PortalTrabajadorComponent, canActivate:[authenticated] },
+  { path: 'modulo05', component: Modulo05TrabajadoresComitesComponent, canActivate:[authenticated] },
+  { path: 'modulo06', component: Modulo06PrevencionIpercInspeccionesComponent, canActivate:[authenticated] },
+  { path: 'modulo07', component: Modulo07AccidentesMejoraComponent, canActivate:[authenticated] },
+  { path: 'modulo08', component: Modulo08CapacitacionEppProcedimientosComponent, canActivate:[authenticated] },
+  { path: 'modulo09', component: Modulo09SaludOcupacionalComponent, canActivate:[authenticated] },
+  { path: 'modulo10', component: Modulo10AuditoriasRequisitosComponent, canActivate:[authenticated] },
+  { path: 'modulo11', component: Modulo11MedioAmbienteComponent, canActivate:[authenticated] },
+  { path: 'modulo12', component: Modulo12BiEstadisticasIaVisitantesComponent, canActivate:[authenticated] },
   { path: '**', redirectTo: 'login' }
 ];

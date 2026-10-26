@@ -1,11 +1,6 @@
-@Msst.Backend_HostAddress = http://localhost:5287
+@Msst.Backend_HostAddress = {{$processEnv MSST_API_URL}}
 
-GET {{Msst.Backend_HostAddress}}/todos/
-Accept: application/json
-
-###
-
-GET {{Msst.Backend_HostAddress}}/todos/1
+GET {{Msst.Backend_HostAddress}}/health
 Accept: application/json
 
 ###

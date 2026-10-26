@@ -1,61 +1,65 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GosstApiService } from '../../core/services/gosst-api.service';
 import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface EstadisticaMensualItem {
   id: number;
-  periodo: string;
-  nombre: string;
-  hht: number;
-  accidentesIncapacitantes: number;
-  diasPerdidos: number;
-  indiceFrecuencia: number;
-  indiceSeveridad: number;
-  indiceAccidentabilidad: number;
-  estado: 'CERRADO_MINTRA' | 'PRELIMINAR';
+  periodo: string | null;
+  nombre: string | null;
+  hht: number | null;
+  accidentesIncapacitantes: number | null;
+  diasPerdidos: number | null;
+  indiceFrecuencia: number | null;
+  indiceSeveridad: number | null;
+  indiceAccidentabilidad: number | null;
+  estado: 'CERRADO_MINTRA' | 'PRELIMINAR' | null;
 }
 
 export interface ObjetivoSstItem {
   id: number;
-  codigo: string;
-  nombreIndicador: string;
-  responsable: string;
-  metaPorcentaje: number;
-  avancePorcentaje: number;
-  periodo: string;
-  estado: 'META_CUMPLIDA' | 'EN_EJECUCION';
+  codigo: string | null;
+  nombreIndicador: string | null;
+  responsable: string | null;
+  metaPorcentaje: number | null;
+  avancePorcentaje: number | null;
+  periodo: string | null;
+  estado: 'META_CUMPLIDA' | 'EN_EJECUCION' | null;
 }
 
 export interface ModeloPredictivoIaItem {
   id: number;
-  codigoModelo: string;
-  motorIa: 'OCR_NLP_DOCUMENTAL' | 'PREDICCION_ACCIDENTABILIDAD' | 'DETECCION_FATIGA';
-  descripcionAnalisis: string;
-  confianzaPrecision: number;
-  alertaGenerada: string;
-  estado: 'ACTIVO_PRODUCCION' | 'ENTRENANDO';
+  codigoModelo: string | null;
+  motorIa: 'OCR_NLP_DOCUMENTAL' | 'PREDICCION_ACCIDENTABILIDAD' | 'DETECCION_FATIGA' | null;
+  descripcionAnalisis: string | null;
+  confianzaPrecision: number | null;
+  alertaGenerada: string | null;
+  estado: 'ACTIVO_PRODUCCION' | 'ENTRENANDO' | null;
 }
 
 export interface ConsultaVisitanteQrItem {
   id: number;
-  dniOPlaca: string;
-  nombreVisitante: string;
-  empresaProcedencia: string;
-  motivoVisita: string;
-  areaAutorizada: string;
-  anfitrionHolcim: string;
-  fechaHoraIngreso: string;
-  paseQrHabilitado: boolean;
+  dniOPlaca: string | null;
+  nombreVisitante: string | null;
+  empresaProcedencia: string | null;
+  motivoVisita: string | null;
+  areaAutorizada: string | null;
+  anfitrionHolcim: string | null;
+  fechaHoraIngreso: string | null;
+  paseQrHabilitado: boolean | null;
 }
 
 @Component({
   selector: 'msst-modulo12-bi',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera Corporativa Módulo 12 -->
@@ -89,7 +93,7 @@ export interface ConsultaVisitanteQrItem {
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #004B87; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">HORAS HOMBRE TRABAJADAS (HHT)</div>
                 <div style="font-size: 20px; font-weight: bold; color: #004B87;">{{ totalHhtAcumuladas() | number }} HHT</div>
-                <div style="font-size: 11px; color: #28a745;">Índice de Accidentabilidad IA = 0.00</div>
+                <div style="font-size: 11px; color: #28a745;">Indicadores por período confirmado</div>
               </div>
             </div>
             <div class="col-sm-3">
@@ -102,14 +106,14 @@ export interface ConsultaVisitanteQrItem {
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #6f42c1; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">PRECISIÓN MOTOR IA PREDICTIVA</div>
-                <div style="font-size: 20px; font-weight: bold; color: #6f42c1;">98.8% Confianza</div>
-                <div style="font-size: 11px; color: #888;">OCR/NLP Documental y Predicción</div>
+                <div style="font-size: 20px; font-weight: bold; color: #6f42c1;">Sin medición confirmada</div>
+                <div style="font-size: 11px; color: #888;">Consulte resultados registrados</div>
               </div>
             </div>
             <div class="col-sm-3">
               <div style="background: #fff; padding: 12px; border-radius: 5px; border-left: 4px solid #17a2b8; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
                 <div style="font-size: 11px; color: #666;">CONSULTAS QR Y VISITANTES</div>
-                <div style="font-size: 20px; font-weight: bold; color: #17a2b8;">{{ visitantes().length }} Pases Activos</div>
+                <div style="font-size: 20px; font-weight: bold; color: #17a2b8;">{{ visitantes().length }} visitas registradas</div>
                 <div style="font-size: 11px; color: #888;">Validación Instantánea DNI / Placa</div>
               </div>
             </div>
@@ -145,7 +149,7 @@ export interface ConsultaVisitanteQrItem {
         <div class="panel panel-info" style="margin-bottom: 16px;">
           <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
             <h4 class="panel-title">
-              <i class="fa fa-calculator"></i> Calculadora Oficial en Vivo de Índices de Seguridad (Fórmula Legal MINTRA R.M. 050-2013-TR / Factor 1,000,000)
+              <i class="fa fa-calculator"></i> Calculadora de referencia de índices de seguridad (factor 1,000,000)
             </h4>
             <span class="badge">IA = (IF &times; IS) / 1,000</span>
           </div>
@@ -228,9 +232,9 @@ export interface ConsultaVisitanteQrItem {
                       <td style="text-align:right;"><strong>{{ est.hht | number }}</strong></td>
                       <td style="text-align:center;">{{ est.accidentesIncapacitantes }}</td>
                       <td style="text-align:center;">{{ est.diasPerdidos }}</td>
-                      <td style="text-align:right;"><code>{{ est.indiceFrecuencia.toFixed(2) }}</code></td>
-                      <td style="text-align:right;"><code>{{ est.indiceSeveridad.toFixed(2) }}</code></td>
-                      <td style="text-align:right;"><strong>{{ est.indiceAccidentabilidad.toFixed(2) }}</strong></td>
+                      <td style="text-align:right;"><code>{{ est.indiceFrecuencia?.toFixed(2) ?? 'Sin dato' }}</code></td>
+                      <td style="text-align:right;"><code>{{ est.indiceSeveridad?.toFixed(2) ?? 'Sin dato' }}</code></td>
+                      <td style="text-align:right;"><strong>{{ est.indiceAccidentabilidad?.toFixed(2) ?? 'Sin dato' }}</strong></td>
                       <td>
                         <span class="label" [ngClass]="est.estado === 'CERRADO_MINTRA' ? 'label-success' : 'label-warning'">
                           {{ est.estado }}
@@ -308,14 +312,14 @@ export interface ConsultaVisitanteQrItem {
                         </div>
                       </td>
                       <td>
-                        <span class="label" [ngClass]="obj.avancePorcentaje >= obj.metaPorcentaje ? 'label-success' : 'label-info'">
+                        <span class="label" [ngClass]="obj.avancePorcentaje !== null && obj.metaPorcentaje !== null && obj.avancePorcentaje >= obj.metaPorcentaje ? 'label-success' : 'label-info'">
                           {{ obj.estado }}
                         </span>
                       </td>
                       <td>
                         <div class="btn-group">
-                          <button class="btn btn-xs btn-success" (click)="aprobarObjetivo(obj)" title="Cumplir 100%">
-                            <i class="fa fa-check"></i> 100%
+                          <button class="btn btn-xs btn-success" (click)="aprobarObjetivo(obj)" title="Consultar el proceso">
+                            <i class="fa fa-check"></i> Ver proceso
                           </button>
                           <button class="btn btn-xs btn-danger" (click)="eliminarObjetivo(obj)" title="Eliminar">
                             <i class="fa fa-trash"></i>
@@ -648,11 +652,13 @@ export interface ConsultaVisitanteQrItem {
   `
 })
 export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
 
-  readonly pestana = signal<'ESTADISTICAS' | 'OBJETIVOS' | 'ANALITICA_IA' | 'VISITANTES' | 'VISOR'>('ESTADISTICAS');
+  readonly pestana = signal<'ESTADISTICAS' | 'OBJETIVOS' | 'ANALITICA_IA' | 'VISITANTES'>('ESTADISTICAS');
 
   /** Pestaña solicitada desde el submenú del sidebar (menú lateral 1:1 con GOSST). */
 
@@ -669,7 +675,6 @@ export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
     }
 
   });
-  readonly paginaVisorActiva = signal<'estadistica.html' | 'indicador_general.html' | 'objetivos.html' | 'ia.html' | 'consultas.html'>('estadistica.html');
   readonly notificacion = signal<string>('');
 
   readonly mostrarModalEstadistica = signal<boolean>(false);
@@ -677,162 +682,52 @@ export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
   readonly mostrarModalIa = signal<boolean>(false);
   readonly mostrarModalVisitante = signal<boolean>(false);
 
-  calcHht = 185400;
-  calcAccidentes = 0;
-  calcDiasPerdidos = 0;
+  calcHht:number|null = null;
+  calcAccidentes:number|null = null;
+  calcDiasPerdidos:number|null = null;
 
   filtroEstadistica = '';
   filtroObjetivo = '';
   filtroVisitante = '';
 
-  readonly estadisticas = signal<EstadisticaMensualItem[]>([
-    {
-      id: 1,
-      periodo: '2026-10',
-      nombre: 'Indicadores Mensuales de Seguridad Planta y Contratistas — Octubre 2026',
-      hht: 185400,
-      accidentesIncapacitantes: 0,
-      diasPerdidos: 0,
-      indiceFrecuencia: 0.0,
-      indiceSeveridad: 0.0,
-      indiceAccidentabilidad: 0.0,
-      estado: 'CERRADO_MINTRA'
-    },
-    {
-      id: 2,
-      periodo: '2026-09',
-      nombre: 'Indicadores Mensuales de Seguridad Planta y Contratistas — Septiembre 2026',
-      hht: 179850,
-      accidentesIncapacitantes: 0,
-      diasPerdidos: 0,
-      indiceFrecuencia: 0.0,
-      indiceSeveridad: 0.0,
-      indiceAccidentabilidad: 0.0,
-      estado: 'CERRADO_MINTRA'
-    },
-    {
-      id: 3,
-      periodo: '2026-08',
-      nombre: 'Indicadores Mensuales de Seguridad Planta y Contratistas — Agosto 2026',
-      hht: 182100,
-      accidentesIncapacitantes: 0,
-      diasPerdidos: 0,
-      indiceFrecuencia: 0.0,
-      indiceSeveridad: 0.0,
-      indiceAccidentabilidad: 0.0,
-      estado: 'CERRADO_MINTRA'
-    }
-  ]);
+  readonly estadisticas = signal<EstadisticaMensualItem[]>([]);
 
-  readonly objetivos = signal<ObjetivoSstItem[]>([
-    {
-      id: 1,
-      codigo: 'OBJ-PASST-01',
-      nombreIndicador: 'Ejecución al 100% del Programa Anual de Inspecciones Planeadas de Seguridad',
-      responsable: 'Jefatura Corporativa HSE',
-      metaPorcentaje: 100,
-      avancePorcentaje: 96.5,
-      periodo: '2026',
-      estado: 'EN_EJECUCION'
-    },
-    {
-      id: 2,
-      codigo: 'OBJ-PASST-02',
-      nombreIndicador: 'Cumplimiento del Programa Anual de Capacitaciones SST (Mín. 4 Cap./Año Ley 29783)',
-      responsable: 'Coordinación Aula Virtual LMS',
-      metaPorcentaje: 100,
-      avancePorcentaje: 100,
-      periodo: '2026',
-      estado: 'META_CUMPLIDA'
-    },
-    {
-      id: 3,
-      codigo: 'OBJ-PASST-03',
-      nombreIndicador: 'Tasa Cero de Accidentes Mortales e Incapacitantes en Operaciones y Contratistas',
-      responsable: 'Gerencia de Operaciones y CSST',
-      metaPorcentaje: 100,
-      avancePorcentaje: 100,
-      periodo: '2026',
-      estado: 'META_CUMPLIDA'
-    }
-  ]);
+  readonly objetivos = signal<ObjetivoSstItem[]>([]);
 
-  readonly modelosIa = signal<ModeloPredictivoIaItem[]>([
-    {
-      id: 1,
-      codigoModelo: 'IA-OCR-SCTR-01',
-      motorIa: 'OCR_NLP_DOCUMENTAL',
-      descripcionAnalisis: 'Auditoría automática de pólizas SCTR, certificados EMO DIGESA y firmas en PETAR',
-      confianzaPrecision: 99.1,
-      alertaGenerada: '100% de documentos de contratistas verificados sin inconsistencias de vigencia',
-      estado: 'ACTIVO_PRODUCCION'
-    },
-    {
-      id: 2,
-      codigoModelo: 'IA-PRED-IPERC-02',
-      motorIa: 'PREDICCION_ACCIDENTABILIDAD',
-      descripcionAnalisis: 'Correlación predictiva de hallazgos OPT / Actos Inseguros en parada de planta',
-      confianzaPrecision: 98.4,
-      alertaGenerada: 'Reforzar supervisión de bloqueo LOTOTO en turno noche de Molienda de Crudo',
-      estado: 'ACTIVO_PRODUCCION'
-    }
-  ]);
+  readonly modelosIa = signal<ModeloPredictivoIaItem[]>([]);
 
-  readonly visitantes = signal<ConsultaVisitanteQrItem[]>([
-    {
-      id: 1,
-      dniOPlaca: '41209845',
-      nombreVisitante: 'Ing. Alberto Benavides Alcázar',
-      empresaProcedencia: 'SGS del Perú S.A.C. (Auditor Externo ISO 45001)',
-      motivoVisita: 'Auditoría de Seguimiento Sistema Integrado HSE',
-      areaAutorizada: 'Sala de Control Central y Oficinas Administrativas',
-      anfitrionHolcim: 'Ing. Roberto Elias',
-      fechaHoraIngreso: '24/10/2026 08:15',
-      paseQrHabilitado: true
-    },
-    {
-      id: 2,
-      dniOPlaca: 'B9K-782',
-      nombreVisitante: 'Unidad Móvil de Monitoreo Ambiental (Laboratorio Acreditado INACAL)',
-      empresaProcedencia: 'Envirolab Perú S.A.C.',
-      motivoVisita: 'Monitoreo Trimestral de Calidad de Aire y Ruido Ocupacional',
-      areaAutorizada: 'Cantera y Perímetro de Planta Industrial',
-      anfitrionHolcim: 'Ing. Carlos Mendoza',
-      fechaHoraIngreso: '24/10/2026 08:40',
-      paseQrHabilitado: true
-    }
-  ]);
+  readonly visitantes = signal<ConsultaVisitanteQrItem[]>([]);
 
   nuevaEstadistica = {
-    periodo: '2026-11',
-    nombre: 'Indicadores Mensuales de Seguridad Planta y Contratistas — Noviembre 2026',
-    hht: 188000,
+    periodo: '',
+    nombre: '',
+    hht: 0,
     accidentesIncapacitantes: 0,
     diasPerdidos: 0
   };
 
   nuevoObjetivo = {
-    codigo: 'OBJ-PASST-04',
+    codigo: '',
     nombreIndicador: '',
-    responsable: 'Jefatura de Seguridad y Salud Ocupacional',
-    metaPorcentaje: 100,
-    avancePorcentaje: 95
+    responsable: '',
+    metaPorcentaje: 0,
+    avancePorcentaje: 0
   };
 
   nuevoModeloIa = {
-    codigoModelo: 'IA-FAT-03',
-    motorIa: 'DETECCION_FATIGA' as ModeloPredictivoIaItem['motorIa'],
+    codigoModelo: '',
+    motorIa: '' as ModeloPredictivoIaItem['motorIa'],
     descripcionAnalisis: '',
-    alertaGenerada: 'Verificación de pausas activas y rotación de conductores en ruta'
+    alertaGenerada: ''
   };
 
   nuevoVisitante = {
-    dniOPlaca: '44981203',
+    dniOPlaca: '',
     nombreVisitante: '',
-    empresaProcedencia: 'OSINERGMIN / Supervisión Técnica',
-    motivoVisita: 'Visita Técnica de Verificación Operativa',
-    areaAutorizada: 'Subestación Principal y Molienda',
-    anfitrionHolcim: 'Ing. Roberto Elias'
+    empresaProcedencia: '',
+    motivoVisita: '',
+    areaAutorizada: '',
+    anfitrionHolcim: ''
   };
 
   readonly totalHhtAcumuladas = computed(() =>
@@ -841,102 +736,41 @@ export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
 
   readonly promedioAvanceObjetivos = computed(() => {
     const list = this.objetivos();
-    if (!list.length) return 100;
+    if (!list.length) return 0;
     const sum = list.reduce((acc, o) => acc + (Number(o.avancePorcentaje) || 0), 0);
     return Math.round((sum / list.length) * 10) / 10;
   });
 
-  readonly urlVisorSeguro = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.paginaVisorActiva()}`)
-  );
 
   ngOnInit(): void {
     this.cargarDatosDesdeSql();
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/estadistica/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0) {
-          const desdeSql: EstadisticaMensualItem[] = list
-            .filter((r: Record<string, any>) => String(r['tipo'] || 'ESTADISTICA').includes('EST'))
-            .map((r: Record<string, any>, idx: number) => ({
-              id: Number(r['id']) || (10 + idx),
-              periodo: String(r['periodo'] || '2026-10'),
-              nombre: String(r['nombre'] || 'Cierre Mensual de Seguridad SST'),
-              hht: Number(r['hht']) || 0,
-              accidentesIncapacitantes: r['accidentes'] !== undefined && r['accidentes'] !== null ? Number(r['accidentes']) : 0,
-              diasPerdidos: r['diasPerdidos'] !== undefined && r['diasPerdidos'] !== null ? Number(r['diasPerdidos']) : 0,
-              indiceFrecuencia: Number(r['indiceFrecuencia']) || 0,
-              indiceSeveridad: Number(r['indiceSeveridad']) || 0,
-              indiceAccidentabilidad: Number(r['indiceAccidentabilidad']) || 0,
-              estado: String(r['estado'] || '').toUpperCase().includes('CERRADO') ? 'CERRADO_MINTRA' : 'PRELIMINAR'
-            }));
-          if (desdeSql.length > 0) {
-            this.estadisticas.update(actuales => [
-              ...desdeSql,
-              ...actuales.filter(a => !desdeSql.some(s => s.periodo === a.periodo))
-            ]);
-          }
-        }
-      }
-    });
+    this.api.callAjaxPost('/estadistica/lista', { ...{} }).subscribe({next:(response)=>{try{this.estadisticas.set(confirmedList<EstadisticaMensualItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"periodo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"hht","kind":"number","optional":false,"nullable":true},{"name":"accidentesIncapacitantes","kind":"number","optional":false,"nullable":true},{"name":"diasPerdidos","kind":"number","optional":false,"nullable":true},{"name":"indiceFrecuencia","kind":"number","optional":false,"nullable":true},{"name":"indiceSeveridad","kind":"number","optional":false,"nullable":true},{"name":"indiceAccidentabilidad","kind":"number","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/objetivo/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const oList = res?.['list'];
-        if (Array.isArray(oList) && oList.length > 0) {
-          const oData: ObjetivoSstItem[] = oList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            codigo: String(r['codigo'] || `OBJ-2026-0${i + 1}`),
-            nombreIndicador: String(r['nombre'] || r['nombreIndicador'] || 'Objetivo Anual SST'),
-            responsable: String(r['responsable'] || 'Comité Paritario SST'),
-            metaPorcentaje: Number(r['meta']) || 100,
-            avancePorcentaje: Number(r['avance']) || 85.0,
-            periodo: String(r['periodo'] || 'AÑO 2026'),
-            estado: 'EN_EJECUCION' as const
-          }));
-          this.objetivos.set(oData);
-        }
-      }
-    });
-    this.api.callAjaxPost('/visitante/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const vList = res?.['list'];
-        if (Array.isArray(vList) && vList.length > 0) {
-          const vData: ConsultaVisitanteQrItem[] = vList.map((r: Record<string, any>, i: number) => ({
-            id: Number(r['id']) || (10 + i),
-            dniOPlaca: String(r['dni'] || r['dniOPlaca'] || '45892103'),
-            nombreVisitante: String(r['visitante'] || r['nombreVisitante'] || 'Visitante Autorizado'),
-            empresaProcedencia: String(r['empresa'] || 'EMPRESA VISITANTE'),
-            motivoVisita: String(r['motivo'] || 'Inspección Técnica de Planta'),
-            areaAutorizada: 'Nave Industrial / Sala de Control',
-            anfitrionHolcim: String(r['contacto'] || 'Ing. Anfitrión SST'),
-            fechaHoraIngreso: String(r['ingreso'] || '24/10/2026 09:30'),
-            paseQrHabilitado: true
-          }));
-          this.visitantes.set(vData);
-        }
-      }
-    });
-    this.api.callAjaxPost('/ia/lista', { idEmpresa: 773 }).subscribe({ next: () => {} });
+    this.api.callAjaxPost('/objetivo/lista', { ...{} }).subscribe({next:(response)=>{try{this.objetivos.set(confirmedList<ObjetivoSstItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"nombreIndicador","kind":"string","optional":false,"nullable":true},{"name":"responsable","kind":"string","optional":false,"nullable":true},{"name":"metaPorcentaje","kind":"number","optional":false,"nullable":true},{"name":"avancePorcentaje","kind":"number","optional":false,"nullable":true},{"name":"periodo","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
+    this.api.callAjaxPost('/visitante/lista', { ...{} }).subscribe({next:(response)=>{try{this.visitantes.set(confirmedList<ConsultaVisitanteQrItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"dniOPlaca","kind":"string","optional":false,"nullable":true},{"name":"nombreVisitante","kind":"string","optional":false,"nullable":true},{"name":"empresaProcedencia","kind":"string","optional":false,"nullable":true},{"name":"motivoVisita","kind":"string","optional":false,"nullable":true},{"name":"areaAutorizada","kind":"string","optional":false,"nullable":true},{"name":"anfitrionHolcim","kind":"string","optional":false,"nullable":true},{"name":"fechaHoraIngreso","kind":"string","optional":false,"nullable":true},{"name":"paseQrHabilitado","kind":"boolean","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
+    this.api.callAjaxPost('/ia/lista', {}).subscribe({next:r=>{try{this.modelosIa.set(confirmedList<ModeloPredictivoIaItem>(r));}catch(e){this.mensajeOperacion.set(apiErrorMessage(e));}},error:e=>this.mensajeOperacion.set(apiErrorMessage(e))});
   }
 
   calcularIfVivo(): string {
-    const hht = Math.max(1, Number(this.calcHht) || 1);
+    if(this.calcHht===null||this.calcHht<=0||this.calcAccidentes===null||this.calcDiasPerdidos===null||this.calcAccidentes<0||this.calcDiasPerdidos<0)return 'Sin datos válidos';
+    const hht=this.calcHht;
     const acc = Math.max(0, Number(this.calcAccidentes) || 0);
     return ((acc * 1000000) / hht).toFixed(2);
   }
 
   calcularIsVivo(): string {
-    const hht = Math.max(1, Number(this.calcHht) || 1);
+    if(this.calcHht===null||this.calcHht<=0||this.calcAccidentes===null||this.calcDiasPerdidos===null||this.calcAccidentes<0||this.calcDiasPerdidos<0)return 'Sin datos válidos';
+    const hht=this.calcHht;
     const dp = Math.max(0, Number(this.calcDiasPerdidos) || 0);
     return ((dp * 1000000) / hht).toFixed(2);
   }
 
   calcularIaVivo(): string {
-    const hht = Math.max(1, Number(this.calcHht) || 1);
+    if(this.calcHht===null||this.calcHht<=0||this.calcAccidentes===null||this.calcDiasPerdidos===null||this.calcAccidentes<0||this.calcDiasPerdidos<0)return 'Sin datos válidos';
+    const hht=this.calcHht;
     const indF = (Math.max(0, Number(this.calcAccidentes) || 0) * 1000000) / hht;
     const indS = (Math.max(0, Number(this.calcDiasPerdidos) || 0) * 1000000) / hht;
     return ((indF * indS) / 1000).toFixed(2);
@@ -946,7 +780,7 @@ export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
     const q = this.filtroEstadistica.trim().toLowerCase();
     if (!q) return this.estadisticas();
     return this.estadisticas().filter(e =>
-      e.periodo.toLowerCase().includes(q) || e.nombre.toLowerCase().includes(q)
+      (e.periodo??'').toLowerCase().includes(q) || (e.nombre??'').toLowerCase().includes(q)
     );
   }
 
@@ -954,7 +788,7 @@ export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
     const q = this.filtroObjetivo.trim().toLowerCase();
     if (!q) return this.objetivos();
     return this.objetivos().filter(o =>
-      o.codigo.toLowerCase().includes(q) || o.nombreIndicador.toLowerCase().includes(q) || o.responsable.toLowerCase().includes(q)
+      (o.codigo??'').toLowerCase().includes(q) || (o.nombreIndicador??'').toLowerCase().includes(q) || (o.responsable??'').toLowerCase().includes(q)
     );
   }
 
@@ -962,217 +796,60 @@ export class Modulo12BiEstadisticasIaVisitantesComponent implements OnInit {
     const q = this.filtroVisitante.trim().toLowerCase();
     if (!q) return this.visitantes();
     return this.visitantes().filter(v =>
-      v.dniOPlaca.toLowerCase().includes(q) || v.nombreVisitante.toLowerCase().includes(q) || v.empresaProcedencia.toLowerCase().includes(q)
+      (v.dniOPlaca??'').toLowerCase().includes(q) || (v.nombreVisitante??'').toLowerCase().includes(q) || (v.empresaProcedencia??'').toLowerCase().includes(q)
     );
   }
 
   guardarNuevaEstadistica(): void {
     if (!this.nuevaEstadistica.nombre.trim()) return;
-    this.api.callAjaxPost('/estadistica/insert', { ...this.nuevaEstadistica, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarEstadisticaLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarEstadisticaLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/estadistica/insert', { ...this.nuevaEstadistica, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalEstadistica.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarEstadisticaLocal(id: number): void {
-    const hht = Math.max(1, Number(this.nuevaEstadistica.hht) || 180000);
-    const acc = Math.max(0, Number(this.nuevaEstadistica.accidentesIncapacitantes) || 0);
-    const dp = Math.max(0, Number(this.nuevaEstadistica.diasPerdidos) || 0);
-    const indF = (acc * 1000000) / hht;
-    const indS = (dp * 1000000) / hht;
-    const indA = (indF * indS) / 1000;
 
-    const item: EstadisticaMensualItem = {
-      id,
-      periodo: this.nuevaEstadistica.periodo,
-      nombre: this.nuevaEstadistica.nombre,
-      hht,
-      accidentesIncapacitantes: acc,
-      diasPerdidos: dp,
-      indiceFrecuencia: indF,
-      indiceSeveridad: indS,
-      indiceAccidentabilidad: indA,
-      estado: 'CERRADO_MINTRA'
-    };
-    this.estadisticas.update(list => [item, ...list]);
-    this.mostrarModalEstadistica.set(false);
-    this.mostrarAviso(`Cierre estadístico del periodo ${item.periodo} registrado correctamente en OneSST.`);
-  }
 
-  aprobarEstadistica(item: EstadisticaMensualItem): void {
-    this.api.callAjaxPost('/estadistica/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.estadisticas.update(list => list.map(e => e.id === item.id ? { ...e, estado: 'CERRADO_MINTRA' } : e));
-        this.mostrarAviso(`Estadística mensual ${item.periodo} validada para reporte MINTRA.`);
-      },
-      error: () => {
-        this.estadisticas.update(list => list.map(e => e.id === item.id ? { ...e, estado: 'CERRADO_MINTRA' } : e));
-        this.mostrarAviso(`Estadística mensual ${item.periodo} validada para reporte MINTRA.`);
-      }
-    });
-  }
+  aprobarEstadistica(item: EstadisticaMensualItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarEstadistica(item: EstadisticaMensualItem): void {
-    this.api.callAjaxPost('/estadistica/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.estadisticas.update(list => list.filter(e => e.id !== item.id));
-        this.mostrarAviso(`Estadística #${item.id} eliminada.`);
-      },
-      error: () => {
-        this.estadisticas.update(list => list.filter(e => e.id !== item.id));
-        this.mostrarAviso(`Estadística #${item.id} eliminada.`);
-      }
-    });
+    this.api.callAjaxPost('/estadistica/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   guardarNuevoObjetivo(): void {
     if (!this.nuevoObjetivo.nombreIndicador.trim()) return;
-    this.api.callAjaxPost('/objetivo/insert', { ...this.nuevoObjetivo, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarObjetivoLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarObjetivoLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/objetivo/insert', { ...this.nuevoObjetivo, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalObjetivo.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarObjetivoLocal(id: number): void {
-    const item: ObjetivoSstItem = {
-      id,
-      codigo: this.nuevoObjetivo.codigo,
-      nombreIndicador: this.nuevoObjetivo.nombreIndicador,
-      responsable: this.nuevoObjetivo.responsable,
-      metaPorcentaje: Number(this.nuevoObjetivo.metaPorcentaje) || 100,
-      avancePorcentaje: Number(this.nuevoObjetivo.avancePorcentaje) || 95,
-      periodo: '2026',
-      estado: 'META_CUMPLIDA'
-    };
-    this.objetivos.update(list => [item, ...list]);
-    this.mostrarModalObjetivo.set(false);
-    this.mostrarAviso(`Objetivo PASST "${item.codigo}" registrado.`);
-  }
 
-  aprobarObjetivo(item: ObjetivoSstItem): void {
-    this.api.callAjaxPost('/objetivo/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.objetivos.update(list => list.map(o => o.id === item.id ? { ...o, avancePorcentaje: 100, estado: 'META_CUMPLIDA' } : o));
-        this.mostrarAviso(`Objetivo "${item.codigo}" actualizado al 100% de cumplimiento.`);
-      },
-      error: () => {
-        this.objetivos.update(list => list.map(o => o.id === item.id ? { ...o, avancePorcentaje: 100, estado: 'META_CUMPLIDA' } : o));
-        this.mostrarAviso(`Objetivo "${item.codigo}" actualizado al 100% de cumplimiento.`);
-      }
-    });
-  }
+
+  aprobarObjetivo(item: ObjetivoSstItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarObjetivo(item: ObjetivoSstItem): void {
-    this.api.callAjaxPost('/objetivo/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.objetivos.update(list => list.filter(o => o.id !== item.id));
-        this.mostrarAviso(`Objetivo "${item.codigo}" eliminado.`);
-      },
-      error: () => {
-        this.objetivos.update(list => list.filter(o => o.id !== item.id));
-        this.mostrarAviso(`Objetivo "${item.codigo}" eliminado.`);
-      }
-    });
+    this.api.callAjaxPost('/objetivo/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   guardarNuevoModeloIa(): void {
     if (!this.nuevoModeloIa.descripcionAnalisis.trim()) return;
-    this.api.callAjaxPost('/ia/insert', { ...this.nuevoModeloIa, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarModeloIaLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarModeloIaLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/ia/insert', { ...this.nuevoModeloIa, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalIa.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarModeloIaLocal(id: number): void {
-    const item: ModeloPredictivoIaItem = {
-      id,
-      codigoModelo: this.nuevoModeloIa.codigoModelo,
-      motorIa: this.nuevoModeloIa.motorIa,
-      descripcionAnalisis: this.nuevoModeloIa.descripcionAnalisis,
-      confianzaPrecision: 98.9,
-      alertaGenerada: this.nuevoModeloIa.alertaGenerada,
-      estado: 'ACTIVO_PRODUCCION'
-    };
-    this.modelosIa.update(list => [item, ...list]);
-    this.mostrarModalIa.set(false);
-    this.mostrarAviso(`Modelo de Inteligencia Artificial "${item.codigoModelo}" desplegado.`);
-  }
 
-  aprobarModeloIa(item: ModeloPredictivoIaItem): void {
-    this.api.callAjaxPost('/ia/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.modelosIa.update(list => list.map(m => m.id === item.id ? { ...m, confianzaPrecision: 99.4 } : m));
-        this.mostrarAviso(`Modelo IA "${item.codigoModelo}" recalibrado con éxito.`);
-      },
-      error: () => {
-        this.modelosIa.update(list => list.map(m => m.id === item.id ? { ...m, confianzaPrecision: 99.4 } : m));
-        this.mostrarAviso(`Modelo IA "${item.codigoModelo}" recalibrado con éxito.`);
-      }
-    });
-  }
+
+  aprobarModeloIa(item: ModeloPredictivoIaItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarModeloIa(item: ModeloPredictivoIaItem): void {
-    this.api.callAjaxPost('/ia/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.modelosIa.update(list => list.filter(m => m.id !== item.id));
-        this.mostrarAviso(`Modelo IA "${item.codigoModelo}" eliminado.`);
-      },
-      error: () => {
-        this.modelosIa.update(list => list.filter(m => m.id !== item.id));
-        this.mostrarAviso(`Modelo IA "${item.codigoModelo}" eliminado.`);
-      }
-    });
+    this.api.callAjaxPost('/ia/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   guardarNuevoVisitante(): void {
     if (!this.nuevoVisitante.nombreVisitante.trim()) return;
-    this.api.callAjaxPost('/visitante/insert', { ...this.nuevoVisitante, idEmpresa: 773 }).subscribe({
-      next: (res) => this.insertarVisitanteLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.insertarVisitanteLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/visitante/insert', { ...this.nuevoVisitante, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalVisitante.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private insertarVisitanteLocal(id: number): void {
-    const item: ConsultaVisitanteQrItem = {
-      id,
-      dniOPlaca: this.nuevoVisitante.dniOPlaca,
-      nombreVisitante: this.nuevoVisitante.nombreVisitante,
-      empresaProcedencia: this.nuevoVisitante.empresaProcedencia,
-      motivoVisita: this.nuevoVisitante.motivoVisita,
-      areaAutorizada: this.nuevoVisitante.areaAutorizada,
-      anfitrionHolcim: this.nuevoVisitante.anfitrionHolcim,
-      fechaHoraIngreso: '24/10/2026 09:30',
-      paseQrHabilitado: true
-    };
-    this.visitantes.update(list => [item, ...list]);
-    this.mostrarModalVisitante.set(false);
-    this.mostrarAviso(`Pase QR habilitado para visitante "${item.nombreVisitante}".`);
-  }
 
-  aprobarVisitante(item: ConsultaVisitanteQrItem): void {
-    this.api.callAjaxPost('/visitante/aprobar', { id: item.id }).subscribe({
-      next: () => {
-        this.visitantes.update(list => list.map(v => v.id === item.id ? { ...v, paseQrHabilitado: true } : v));
-        this.mostrarAviso(`Pase QR de "${item.nombreVisitante}" autorizado en Garita.`);
-      },
-      error: () => {
-        this.visitantes.update(list => list.map(v => v.id === item.id ? { ...v, paseQrHabilitado: true } : v));
-        this.mostrarAviso(`Pase QR de "${item.nombreVisitante}" autorizado en Garita.`);
-      }
-    });
-  }
+
+  aprobarVisitante(item: ConsultaVisitanteQrItem): void {this.workflowSelectionOpen.set(true);}
 
   eliminarVisitante(item: ConsultaVisitanteQrItem): void {
-    this.api.callAjaxPost('/visitante/delete', { id: item.id }).subscribe({
-      next: () => {
-        this.visitantes.update(list => list.filter(v => v.id !== item.id));
-        this.mostrarAviso(`Registro de visitante #${item.id} eliminado.`);
-      },
-      error: () => {
-        this.visitantes.update(list => list.filter(v => v.id !== item.id));
-        this.mostrarAviso(`Registro de visitante #${item.id} eliminado.`);
-      }
-    });
+    this.api.callAjaxPost('/visitante/delete', { id: item.id, expectedVersion: (item as unknown as {version?:string}).version }).subscribe({next:()=>{this.ngOnInit();;this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   exportarCsvEstadisticas(): void {

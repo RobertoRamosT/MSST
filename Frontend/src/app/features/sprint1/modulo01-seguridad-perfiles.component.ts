@@ -1,24 +1,21 @@
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GosstApiService } from '../../core/services/gosst-api.service';
-import { GosstSessionService } from '../../core/services/gosst-session.service';
+import { Router } from '@angular/router';
+import { ProfilePermission, SecurityProfilesService } from '../../core/services/security-profiles.service';
+import { CredentialAccount, GosstSessionService } from '../../core/services/gosst-session.service';
 
-export interface PermisoModuloItem {
-  codigo: string;
-  modulo: string;
-  lectura: boolean;
-  escritura: boolean;
-  aprobacion: boolean;
-  exportacion: boolean;
-}
+export type PermisoModuloItem=ProfilePermission;
 
 @Component({
   selector: 'msst-modulo01-seguridad',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+
     <!-- Encabezado del Módulo 01 -->
     <div class="panel panel-primary" style="margin-bottom: 16px; border-color: #004B87;">
       <div class="panel-heading" style="background-color: #004B87; color: #fff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -165,7 +162,7 @@ export interface PermisoModuloItem {
                             {{ p['nivelAcceso'] || 'CORPORATIVO' }}
                           </span>
                         </td>
-                        <td><span class="badge">{{ p['modulosHabilitados'] || 12 }} / 12</span></td>
+                        <td><span class="badge">{{ p['modulosHabilitados'] ?? 0 }} / 12</span></td>
                         <td><span class="label label-success">{{ p['estado'] || 'ACTIVO' }}</span></td>
                         <td>
                           <button class="btn btn-xs btn-info" title="Ver/Configurar Matriz" (click)="seleccionarPerfil(p)">
@@ -191,41 +188,16 @@ export interface PermisoModuloItem {
               <h4 class="panel-title">
                 <i class="fa fa-check-square-o"></i> Matriz RBAC: <strong>{{ perfilSeleccionado()['nombre'] }}</strong>
               </h4>
-              <button class="btn btn-xs btn-primary" (click)="guardarMatrizPermisos()">
+              <button class="btn btn-xs btn-primary" [disabled]="savingPermissions()||!permissionVersion()" (click)="guardarMatrizPermisos()">
                 <i class="fa fa-save"></i> Guardar Permisos
               </button>
             </div>
             <div class="panel-body" style="max-height: 430px; overflow-y: auto;">
-              <table class="table table-bordered table-condensed table-striped" style="margin-bottom:0; font-size:12px;">
-                <thead>
-                  <tr style="background:#e9eff6;">
-                    <th>Módulo OneSST</th>
-                    <th class="text-center">Ver</th>
-                    <th class="text-center">Crear/Ed.</th>
-                    <th class="text-center">Aprobar</th>
-                    <th class="text-center">Exportar</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (perm of permisosMatriz(); track perm.codigo) {
-                    <tr>
-                      <td><strong>[D{{ perm.codigo }}]</strong> {{ perm.modulo }}</td>
-                      <td class="text-center">
-                        <input type="checkbox" [(ngModel)]="perm.lectura">
-                      </td>
-                      <td class="text-center">
-                        <input type="checkbox" [(ngModel)]="perm.escritura">
-                      </td>
-                      <td class="text-center">
-                        <input type="checkbox" [(ngModel)]="perm.aprobacion">
-                      </td>
-                      <td class="text-center">
-                        <input type="checkbox" [(ngModel)]="perm.exportacion">
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+              <table class="table table-bordered table-condensed">
+<thead><tr><th>Permiso</th><th>Descripción</th><th>Habilitado</th></tr></thead><tbody>
+@for(perm of permisosMatriz();track perm.code){<tr><td><code>{{perm.code}}</code></td><td>{{perm.label}}</td><td><input type="checkbox" [(ngModel)]="perm.enabled" [disabled]="savingPermissions()"></td></tr>}
+@empty{<tr><td colspan="3">Seleccione un perfil para consultar su catálogo de permisos.</td></tr>}
+</tbody></table>
             </div>
           </div>
         </div>
@@ -293,7 +265,7 @@ export interface PermisoModuloItem {
               <input
                 type="text"
                 class="form-control input-sm"
-                placeholder="Buscar por usuario (holcim.contratista, admin.sst), nombre, RUC o correo..."
+                placeholder="Buscar por usuario, nombre o RUC"
                 [(ngModel)]="filtroUsuario">
             </div>
             <div class="col-md-6 text-right" style="font-size:12px; padding-top:5px;">
@@ -311,7 +283,7 @@ export interface PermisoModuloItem {
                   <th>Perfil Asignado</th>
                   <th>Empresa / RUC</th>
                   <th>Sede / Unidad</th>
-                  <th>MFA 2FA</th>
+                  <th>Credencial</th>
                   <th>Vista Inicial (PATH)</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -327,11 +299,7 @@ export interface PermisoModuloItem {
                     <td>{{ u['empresaNombre'] }} <small class="text-muted">({{ u['ruc'] }})</small></td>
                     <td>{{ u['unidad'] }}</td>
                     <td>
-                      @if (u['mfaActivo']) {
-                        <span class="label label-success"><i class="fa fa-shield"></i> ACTIVO</span>
-                      } @else {
-                        <span class="label label-default">OPCIONAL</span>
-                      }
+                      <span class="label label-default">{{u['credentialState']}}</span>
                     </td>
                     <td><code>{{ u['pathInicio'] }}</code></td>
                     <td><span class="label label-success">{{ u['estado'] }}</span></td>
@@ -359,12 +327,12 @@ export interface PermisoModuloItem {
           <div class="panel panel-success">
             <div class="panel-heading" style="display:flex; justify-content:space-between; align-items:center;">
               <h4 class="panel-title"><i class="fa fa-certificate"></i> Licencia Corporativa</h4>
-              <span class="label label-success">Activa</span>
+              <span class="label label-default">Datos de licencia</span>
             </div>
             <div class="panel-body">
               <div style="text-align:center; padding:12px; background:#f8fff9; border:1px solid #c3e6cb; border-radius:6px; margin-bottom:14px;">
                 <i class="fa fa-check-circle text-success" style="font-size:38px;"></i>
-                <h4 style="margin:8px 0 2px; color:#155724; font-weight:bold;">LICENCIA ENTERPRISE ACTIVA</h4>
+                <h4 style="margin:8px 0 2px; color:#155724; font-weight:bold;">Información de licencia recibida</h4>
                 <div style="font-size:13px; color:#004B87; font-weight:bold;">{{ licenciaInfo().empresa }} (RUC: {{ licenciaInfo().ruc }})</div>
                 <span class="label label-success" style="display:inline-block; margin-top:6px; font-size:12px;">
                   VIGENTE HASTA: {{ licenciaInfo().fechaVencimiento }}
@@ -383,7 +351,7 @@ export interface PermisoModuloItem {
                   </tr>
                   <tr>
                     <th>Entorno Corporativo</th>
-                    <td><code>Producción Corporativa OneSST</code></td>
+                    <td><code>Entorno de este despliegue</code></td>
                   </tr>
                   <tr>
                     <th>Sedes Autorizadas</th>
@@ -391,11 +359,11 @@ export interface PermisoModuloItem {
                   </tr>
                   <tr>
                     <th>Usuarios / Contratistas</th>
-                    <td><span class="label label-primary">ILIMITADOS (Multi-Sede)</span></td>
+                    <td><span class="label label-primary">Consultar condiciones registradas</span></td>
                   </tr>
                   <tr>
                     <th>Auditoría IA Documental</th>
-                    <td><span class="label label-info">HABILITADO 100%</span></td>
+                    <td><span class="label label-info">Consultar configuración vigente</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -403,52 +371,7 @@ export interface PermisoModuloItem {
           </div>
         </div>
 
-        <!-- Columna 2: Parámetros de Configuración y Seguridad -->
-        <div class="col-md-4">
-          <div class="panel panel-primary">
-            <div class="panel-heading" style="background-color:#004B87; display:flex; justify-content:space-between; align-items:center;">
-              <h4 class="panel-title"><i class="fa fa-sliders"></i> Parámetros de Seguridad</h4>
-            </div>
-            <div class="panel-body">
-              <div class="form-group">
-                <label style="font-size:12px;">
-                  <input type="checkbox" [(ngModel)]="configForm.habilitarMfa">
-                  Habilitar Autenticación de Doble Factor (MFA por Correo)
-                </label>
-              </div>
-              <div class="form-group">
-                <label style="font-size:12px;">
-                  <input type="checkbox" [(ngModel)]="configForm.validarTerminosCondicion">
-                  Exigir Aceptación de Términos y Condiciones Legales SST
-                </label>
-              </div>
-              <div class="form-group">
-                <label style="font-size:12px;">
-                  <input type="checkbox" [(ngModel)]="configForm.actPlanillaTrabAuto">
-                  Actualización Automática de Planilla de Trabajadores
-                </label>
-              </div>
-              <div class="form-group">
-                <label style="font-size:12px;">
-                  <input type="checkbox" [(ngModel)]="configForm.cambioUsuarioDirecto">
-                  Permitir Cambio Rápido de Perfil/Contratista en Barra Superior
-                </label>
-              </div>
-              <div class="form-group">
-                <label style="font-size:12px;">Días para Renovación Obligatoria de Contraseña:</label>
-                <input type="number" class="form-control input-sm" [(ngModel)]="configForm.diasRenovacionClave">
-              </div>
-              <div class="form-group">
-                <label style="font-size:12px;">Correo Corporativo para Notificaciones MFA / Alertas:</label>
-                <input type="email" class="form-control input-sm" [(ngModel)]="configForm.correoNotificaciones">
-              </div>
-
-              <button class="btn btn-sm btn-primary btn-block" (click)="guardarConfiguracionGeneral()">
-                <i class="fa fa-save"></i> Guardar Configuración
-              </button>
-            </div>
-          </div>
-        </div>
+        <div class="col-md-4"><div class="panel panel-primary"><div class="panel-heading"><h4 class="panel-title">Contexto de seguridad</h4></div><div class="panel-body"><p>La sesión y sus permisos se consultan en el servidor. Use la matriz de perfiles para administrar autorizaciones y el formulario de credenciales para activar una cuenta existente.</p><p>Usuario: {{session.snapshot()?.userName}}</p><p>Perfil: {{session.snapshot()?.perfilNombre}}</p></div></div></div>
 
         <!-- Columna 3: Recuperación y Renovación de Clave -->
         <div class="col-md-4">
@@ -458,24 +381,20 @@ export interface PermisoModuloItem {
             </div>
             <div class="panel-body">
               <div class="form-group">
-                <label style="font-size:12px;">Usuario o RUC Contratista:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="recuperarForm.userName" placeholder="Ej. holcim.contratista">
+                <label style="font-size:12px;">Cuenta existente:</label><select class="form-control" [(ngModel)]="provisionUserId" (ngModelChange)="seleccionarCuentaCredencial(+$event)"><option [ngValue]="0">Seleccione usuario</option>@for(u of usuarios();track u['id']){<option [ngValue]="u['id']">{{u['userName']}} · {{u['nombreCompleto']}}</option>}</select>
+                <input type="text" class="form-control input-sm" [(ngModel)]="recuperarForm.userName" readonly>
               </div>
               <div class="form-group">
-                <label style="font-size:12px;">Correo Electrónico Registrado:</label>
-                <input type="email" class="form-control input-sm" [(ngModel)]="recuperarForm.correo" placeholder="seguridad@elias29.com.pe">
-              </div>
-              <div class="form-group">
-                <label style="font-size:12px;">Nueva Contraseña (Cumplimiento ISO 27001):</label>
-                <input type="password" class="form-control input-sm" [(ngModel)]="recuperarForm.nuevaClave" placeholder="Mínimo 8 caracteres alfanuméricos">
+                <label style="font-size:12px;">Nueva contraseña:</label>
+                <input type="password" class="form-control input-sm" [(ngModel)]="recuperarForm.nuevaClave" placeholder="El servidor validará la política de contraseña">
               </div>
               <div class="form-group">
                 <label style="font-size:12px;">Confirmar Nueva Contraseña:</label>
                 <input type="password" class="form-control input-sm" [(ngModel)]="recuperarForm.confirmarClave" placeholder="Repita la nueva contraseña">
               </div>
 
-              <button class="btn btn-sm btn-warning btn-block" (click)="ejecutarRecuperacionClave()">
-                <i class="fa fa-envelope-o"></i> Procesar Cambio / Envío de Token
+              <button class="btn btn-sm btn-warning btn-block" [disabled]="!credentialAccount() || !session.snapshot()?.permissions?.includes('security:provision')" (click)="ejecutarRecuperacionClave()">
+                <i class="fa fa-envelope-o"></i> Establecer credencial
               </button>
 
               @if (respuestaRecuperar()) {
@@ -511,21 +430,6 @@ export interface PermisoModuloItem {
             <div class="form-group">
               <label>Descripción y Alcance Funcional:</label>
               <textarea class="form-control input-sm" rows="2" [(ngModel)]="formPerfil.descripcion" placeholder="Detalle las atribuciones del perfil..."></textarea>
-            </div>
-            <div class="row">
-              <div class="col-md-6 form-group">
-                <label>Nivel Organizacional:</label>
-                <select class="form-control input-sm" [(ngModel)]="formPerfil.nivelAcceso">
-                  <option value="CORPORATIVO">CORPORATIVO (Multi-Empresa)</option>
-                  <option value="PLANTA">PLANTA / UNIDAD OPERATIVA</option>
-                  <option value="CONTRATISTA">PORTAL CONTRATISTA</option>
-                  <option value="GARITA">CONTROL DE GARITA</option>
-                </select>
-              </div>
-              <div class="col-md-6 form-group">
-                <label>Cantidad de Módulos Habilitados:</label>
-                <input type="number" class="form-control input-sm" min="1" max="12" [(ngModel)]="formPerfil.modulosHabilitados">
-              </div>
             </div>
           </div>
           <div class="panel-footer" style="display:flex; justify-content:flex-end; gap:8px;">
@@ -566,23 +470,23 @@ export interface PermisoModuloItem {
             <div class="row">
               <div class="col-md-6 form-group">
                 <label>Perfil Asignado:</label>
-                <select class="form-control input-sm" [(ngModel)]="formUsuario.perfilNombre">
-                  <option value="Administrador Corporativo SST">Administrador Corporativo SST</option>
-                  <option value="Contratista Homologado">Contratista Homologado</option>
-                  <option value="Supervisor HSE Planta">Supervisor HSE Planta</option>
-                  <option value="Médico Ocupacional">Médico Ocupacional</option>
-                  <option value="Inspector de Garita">Inspector de Garita</option>
+                <select class="form-control input-sm" [(ngModel)]="formUsuario.perfilId"><option [ngValue]="0">Seleccione un perfil existente</option>@for(p of perfiles();track p['id']){<option [ngValue]="p['id']">{{p['nombre']}}</option>}
+
+
+
+
+
                 </select>
               </div>
               <div class="col-md-6 form-group">
                 <label>Empresa / Contratista:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formUsuario.empresaNombre" placeholder="HOLCIM PERU / GRUPO ELIAS-29 S.A.C">
+                <input type="text" class="form-control input-sm" [(ngModel)]="formUsuario.empresaNombre" placeholder="Nombre de la empresa">
               </div>
             </div>
             <div class="row">
               <div class="col-md-4 form-group">
                 <label>RUC Asociado:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formUsuario.ruc" placeholder="20608094068">
+                <input type="text" class="form-control input-sm" [(ngModel)]="formUsuario.ruc" placeholder="RUC de la empresa">
               </div>
               <div class="col-md-4 form-group">
                 <label>Sede / Unidad:</label>
@@ -598,11 +502,6 @@ export interface PermisoModuloItem {
                 </select>
               </div>
             </div>
-            <div class="checkbox">
-              <label>
-                <input type="checkbox" [(ngModel)]="formUsuario.mfaActivo"> Requerir validación MFA por correo al iniciar sesión
-              </label>
-            </div>
           </div>
           <div class="panel-footer" style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-sm btn-default" (click)="modalUsuarioAbierto.set(false)">Cancelar</button>
@@ -616,9 +515,10 @@ export interface PermisoModuloItem {
   `
 })
 export class Modulo01SeguridadPerfilesComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   readonly tabActiva = signal<'PERFILES' | 'USUARIOS' | 'CONFIGURACION'>('PERFILES');
 
@@ -641,97 +541,41 @@ export class Modulo01SeguridadPerfilesComponent implements OnInit {
 
   // Estado de Perfiles
   filtroPerfil = '';
-  readonly perfiles = signal<Record<string, any>[]>([
-    { id: 1, nombre: 'Administrador Corporativo SST', descripcion: 'Control total de los 12 dominios, homologación y configuración global', nivelAcceso: 'CORPORATIVO', modulosHabilitados: 12, estado: 'ACTIVO' },
-    { id: 2, nombre: 'Contratista Homologado (Portal)', descripcion: 'Gestión de proyectos, acreditación de personal/flota, PETAR y carpetas IA', nivelAcceso: 'CONTRATISTA', modulosHabilitados: 6, estado: 'ACTIVO' },
-    { id: 3, nombre: 'Supervisor HSE Planta', descripcion: 'Aprobación de matrices IPERC, inspecciones, PETAR, ATS y auditorías de campo', nivelAcceso: 'PLANTA', modulosHabilitados: 10, estado: 'ACTIVO' },
-    { id: 4, nombre: 'Médico Ocupacional (Salud)', descripcion: 'Vigilancia médica EMO, psicología ocupacional, aptitud clínica y seguimiento COVID', nivelAcceso: 'PLANTA', modulosHabilitados: 5, estado: 'ACTIVO' },
-    { id: 5, nombre: 'Control de Acceso y Garita', descripcion: 'Verificación en tiempo real por DNI/Placa de habilitación de ingreso y salida', nivelAcceso: 'GARITA', modulosHabilitados: 3, estado: 'ACTIVO' },
-    { id: 6, nombre: 'Auditor Legal y Medio Ambiente', descripcion: 'Fiscalización SUNAFIL, ISO 45001, residuos sólidos, MSDS y huella de carbono', nivelAcceso: 'CORPORATIVO', modulosHabilitados: 8, estado: 'ACTIVO' }
-  ]);
-  readonly perfilSeleccionado = signal<Record<string, any>>(this.perfiles()[0]);
+  readonly perfiles = signal<Record<string, any>[]>([]);
+  readonly perfilSeleccionado = signal<Record<string, any>>({});
 
-  readonly permisosMatriz = signal<PermisoModuloItem[]>([
-    { codigo: '01', modulo: 'Seguridad, Login y Perfiles', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '02', modulo: 'Organización, Unidades y MDF', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '03', modulo: 'Contratistas, Homologación y Garita', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '04', modulo: 'Portal Trabajador y Calendario SST', lectura: true, escritura: true, aprobacion: false, exportacion: true },
-    { codigo: '05', modulo: 'Trabajadores, Comités y Elecciones', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '06', modulo: 'Prevención: IPERC, Inspecciones y OPT', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '07', modulo: 'Accidentes, Incidentes y Mejora', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '08', modulo: 'Capacitaciones, Aula Virtual y EPP', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '09', modulo: 'Salud Ocupacional (EMO / Psicología)', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '10', modulo: 'Auditorías y Requisitos Legales', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '11', modulo: 'Medio Ambiente, Residuos y GEI', lectura: true, escritura: true, aprobacion: true, exportacion: true },
-    { codigo: '12', modulo: 'BI, Estadísticas MINTRA e IA SST', lectura: true, escritura: false, aprobacion: true, exportacion: true }
-  ]);
+  readonly permisosMatriz = signal<ProfilePermission[]>([]);
+  private readonly profilesApi=inject(SecurityProfilesService);
+  private readonly permissionsRouter=inject(Router);
+  readonly permissionVersion=signal('');
+  readonly savingPermissions=signal(false);
 
   // Estado de Usuarios
   filtroUsuario = '';
-  readonly usuarios = signal<Record<string, any>[]>([
-    { id: 101, userName: 'holcim.contratista', nombreCompleto: 'GRUPO ELIAS-29 S.A.C', perfilNombre: 'Contratista Homologado', empresaNombre: 'HOLCIM PERU', ruc: '20608094068', unidad: 'Planta Condorcocha', mfaActivo: false, pathInicio: 'Gestión de Contratistas', estado: 'ACTIVO' },
-    { id: 102, userName: 'admin.sst', nombreCompleto: 'Ing. Roberto Ramos (Gerente Corporativo HSE)', perfilNombre: 'Administrador Corporativo SST', empresaNombre: 'HOLCIM PERU', ruc: '20100128218', unidad: 'Sede Central Lima', mfaActivo: true, pathInicio: 'Portal del Colaborador', estado: 'ACTIVO' },
-    { id: 103, userName: 'supervisor.condorcocha', nombreCompleto: 'Ing. Carlos Mendoza', perfilNombre: 'Supervisor HSE Planta', empresaNombre: 'HOLCIM PERU', ruc: '20100128218', unidad: 'Planta Condorcocha', mfaActivo: true, pathInicio: 'Prevención de Riesgos', estado: 'ACTIVO' },
-    { id: 104, userName: 'medico.ocupacional', nombreCompleto: 'Dra. Elena Valdivia (CMP 54821)', perfilNombre: 'Médico Ocupacional', empresaNombre: 'HOLCIM PERU', ruc: '20100128218', unidad: 'Planta Huachipa', mfaActivo: true, pathInicio: 'Salud Ocupacional', estado: 'ACTIVO' },
-    { id: 105, userName: 'garita.control', nombreCompleto: 'Centro de Control Patrimonial Turno 1', perfilNombre: 'Inspector de Garita', empresaNombre: 'HOLCIM PERU', ruc: '20100128218', unidad: 'Garita Principal Condorcocha', mfaActivo: false, pathInicio: 'Control de Garita', estado: 'ACTIVO' }
-  ]);
+  readonly usuarios = signal<Record<string, any>[]>([]);
 
   // Estado de Licencia y Configuración
-  readonly licenciaInfo = signal({
-    empresa: 'HOLCIM PERU S.A.',
-    ruc: '20100128218',
-    codigoEmpresa: 'HOLCIM01',
-    fechaVencimiento: '31/12/2030',
-    sedesAutorizadas: 'Condorcocha, Huachipa, Atocongo, Yura'
-  });
+  readonly licenciaInfo=signal({empresa:'',ruc:'',codigoEmpresa:'',fechaVencimiento:'',sedesAutorizadas:''});
 
-  configForm = {
-    habilitarMfa: true,
-    validarTerminosCondicion: true,
-    actPlanillaTrabAuto: true,
-    cambioUsuarioDirecto: true,
-    diasRenovacionClave: 90,
-    correoNotificaciones: 'seguridad.corporativa@holcim.com'
-  };
 
   recuperarForm = {
-    userName: 'holcim.contratista',
-    correo: 'operaciones@elias29.com.pe',
+    userName: '',
+    correo: '',
     nuevaClave: '',
     confirmarClave: ''
   };
   readonly respuestaRecuperar = signal<string>('');
+  readonly credentialAccount=signal<CredentialAccount|null>(null);
+  provisionUserId=0;
 
   // Modales
   readonly modalPerfilAbierto = signal<boolean>(false);
-  formPerfil = {
-    id: 0,
-    nombre: '',
-    descripcion: '',
-    nivelAcceso: 'CORPORATIVO',
-    modulosHabilitados: 12
-  };
+  formPerfil={id:0,nombre:'',descripcion:'',nivelAcceso:'',modulosHabilitados:0,version:''};
 
   readonly modalUsuarioAbierto = signal<boolean>(false);
-  formUsuario = {
-    id: 0,
-    userName: '',
-    nombreCompleto: '',
-    perfilNombre: 'Contratista Homologado',
-    empresaNombre: 'HOLCIM PERU',
-    ruc: '20608094068',
-    unidad: 'Planta Condorcocha',
-    pathInicio: 'Gestión de Contratistas',
-    mfaActivo: false
-  };
+  formUsuario={id:0,userName:'',nombreCompleto:'',perfilId:0,perfilNombre:'',empresaNombre:'',ruc:'',unidad:'',pathInicio:'',version:''};
 
   // Visor 1:1
-  readonly visor1a1Abierto = signal<boolean>(false);
-  readonly visorArchivo = signal<string>('perfiles.html');
-  readonly visorTitulo = signal<string>('Gestión de Perfiles');
-  readonly visorUrlSegura = computed<SafeResourceUrl>(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`/sstweb/pages/${this.visorArchivo()}`)
-  );
 
   ngOnInit(): void {
     this.cargarPerfiles();
@@ -763,196 +607,63 @@ export class Modulo01SeguridadPerfilesComponent implements OnInit {
   }
 
   cargarPerfiles(): void {
-    this.api.callAjaxPost('/perfil/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const lista = res?.['list'] || [];
-        if (Array.isArray(lista) && lista.length > 0 && lista[0]['nombre']) {
-          this.perfiles.set(lista);
-          this.perfilSeleccionado.set(lista[0]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/perfil/lista', { ...{} }).subscribe({next:(response)=>{try{this.perfiles.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   cargarUsuarios(): void {
-    this.api.callAjaxPost('/usuario/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const lista = res?.['list'] || [];
-        if (Array.isArray(lista) && lista.length > 0 && lista[0]['userName']) {
-          this.usuarios.set(lista);
-        }
-      }
-    });
+    this.api.callAjaxPost('/usuario/lista', { ...{} }).subscribe({next:(response)=>{try{this.usuarios.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  cargarLicenciaEmpresa(): void {
-    this.api.getEmpresaById(773).subscribe({
-      next: (res) => {
-        const emp = res?.['empresa'];
-        if (emp && emp['name']) {
-          this.licenciaInfo.update(curr => ({
-            ...curr,
-            empresa: emp['name'],
-            ruc: emp['ruc'] || curr.ruc,
-            codigoEmpresa: emp['codigo'] || curr.codigoEmpresa
-          }));
-        }
-      }
-    });
-  }
+  cargarLicenciaEmpresa():void{this.api.getEmpresaById().subscribe({next:res=>{const emp=res['empresa'];if(!emp||typeof emp['name']!=='string'){this.mensajeOperacion.set('No se confirmó la información de la empresa.');return;}this.licenciaInfo.set({empresa:emp['name'],ruc:typeof emp['ruc']==='string'?emp['ruc']:'',codigoEmpresa:typeof emp['codigo']==='string'?emp['codigo']:'',fechaVencimiento:typeof emp['fechaVencimiento']==='string'?emp['fechaVencimiento']:'',sedesAutorizadas:typeof emp['sedesAutorizadas']==='string'?emp['sedesAutorizadas']:''});},error:e=>this.mensajeOperacion.set(apiErrorMessage(e))});}
 
-  seleccionarPerfil(p: Record<string, any>): void {
-    this.perfilSeleccionado.set(p);
-  }
+  seleccionarPerfil(p:Record<string,any>):void{
+ if(this.savingPermissions())return;
+ this.perfilSeleccionado.set(p);this.permissionVersion.set('');this.permisosMatriz.set([]);
+ try{this.profilesApi.load(Number(p['id'])).subscribe({next:result=>{
+  if(this.perfilSeleccionado()['id']!==result.profileId)return;
+  this.permissionVersion.set(result.version);this.permisosMatriz.set(result.permissions);
+ },error:e=>this.mensajeOperacion.set(apiErrorMessage(e))});}catch(e){this.mensajeOperacion.set(apiErrorMessage(e));}
+}
 
-  abrirModalNuevoPerfil(): void {
-    this.formPerfil = {
-      id: 0,
-      nombre: '',
-      descripcion: '',
-      nivelAcceso: 'PLANTA',
-      modulosHabilitados: 10
-    };
-    this.modalPerfilAbierto.set(true);
-  }
+  abrirModalNuevoPerfil():void{this.formPerfil={id:0,nombre:'',descripcion:'',nivelAcceso:'',modulosHabilitados:0,version:''};this.modalPerfilAbierto.set(true);}
 
-  abrirModalEditarPerfil(p: Record<string, any>): void {
-    this.formPerfil = {
-      id: Number(p['id'] || 0),
-      nombre: String(p['nombre'] || ''),
-      descripcion: String(p['descripcion'] || ''),
-      nivelAcceso: String(p['nivelAcceso'] || 'CORPORATIVO'),
-      modulosHabilitados: Number(p['modulosHabilitados'] || 12)
-    };
-    this.modalPerfilAbierto.set(true);
-  }
+  abrirModalEditarPerfil(p:Record<string,any>):void{this.formPerfil={id:Number(p['id']),nombre:String(p['nombre']??''),descripcion:String(p['descripcion']??''),nivelAcceso:String(p['nivelAcceso']??''),modulosHabilitados:Number(p['modulosHabilitados']??0),version:String(p['version']??'')};this.modalPerfilAbierto.set(true);}
 
-  guardarPerfil(): void {
-    if (!this.formPerfil.nombre.trim()) return;
-    const payload = { ...this.formPerfil, idEmpresa: 773 };
+  guardarPerfil():void{if(!this.formPerfil.nombre.trim())return;this.api.callAjaxPost(this.formPerfil.id>0?'/perfil/update':'/perfil/insert',{id:this.formPerfil.id,nombre:this.formPerfil.nombre,descripcion:this.formPerfil.descripcion,expectedVersion:this.formPerfil.version||undefined}).subscribe({next:()=>{this.cargarPerfiles();this.modalPerfilAbierto.set(false);this.mensajeOperacion.set('Perfil confirmado. Configure sus permisos en la matriz del servidor.');},error:e=>this.mensajeOperacion.set(apiErrorMessage(e))});}
 
-    this.api.callAjaxPost('/perfil/insert', payload).subscribe({
-      next: (res) => {
-        const nuevoId = res?.['idGenerado'] || this.formPerfil.id || (this.perfiles().length + 1);
-        const item = {
-          id: nuevoId,
-          nombre: this.formPerfil.nombre,
-          descripcion: this.formPerfil.descripcion,
-          nivelAcceso: this.formPerfil.nivelAcceso,
-          modulosHabilitados: this.formPerfil.modulosHabilitados,
-          estado: 'ACTIVO'
-        };
-        if (this.formPerfil.id > 0) {
-          this.perfiles.update(arr => arr.map(x => (x['id'] === this.formPerfil.id ? item : x)));
-        } else {
-          this.perfiles.update(arr => [item, ...arr]);
-        }
-        this.perfilSeleccionado.set(item);
-        this.modalPerfilAbierto.set(false);
-        this.notificarExito(`Perfil "${item.nombre}" registrado correctamente en OneSST`);
-      },
-      error: () => {
-        const nuevoId = this.formPerfil.id || (this.perfiles().length + 1);
-        const item = { ...this.formPerfil, id: nuevoId, estado: 'ACTIVO' };
-        this.perfiles.update(arr => [item, ...arr]);
-        this.modalPerfilAbierto.set(false);
-        this.notificarExito(`Perfil "${item.nombre}" actualizado localmente`);
-      }
-    });
-  }
+  guardarMatrizPermisos():void{
+ const id=Number(this.perfilSeleccionado()['id']),version=this.permissionVersion();if(this.savingPermissions()||!version)return;
+ this.savingPermissions.set(true);this.profilesApi.save(id,version,this.permisosMatriz()).subscribe({
+ next:result=>{this.permissionVersion.set(result.version);this.permisosMatriz.set(result.permissions);this.savingPermissions.set(false);
+  this.mensajeOperacion.set('Permisos confirmados. Se actualizará la sesión con los permisos vigentes.');
+  void this.session.refresh().then(()=>{if(!this.session.autenticado())void this.permissionsRouter.navigate(['/login']);});},
+ error:e=>{this.savingPermissions.set(false);this.mensajeOperacion.set(apiErrorMessage(e));}
+ });
+}
 
-  guardarMatrizPermisos(): void {
-    const payload = {
-      idPerfil: this.perfilSeleccionado()['id'],
-      nombrePerfil: this.perfilSeleccionado()['nombre'],
-      permisos: this.permisosMatriz()
-    };
-    this.api.callAjaxPost('/perfil/insert', payload).subscribe({
-      next: () => this.notificarExito(`Matriz RBAC guardada para ${this.perfilSeleccionado()['nombre']}`),
-      error: () => this.notificarExito(`Matriz RBAC aplicada para ${this.perfilSeleccionado()['nombre']}`)
-    });
-  }
+  abrirModalNuevoUsuario():void{this.formUsuario={id:0,userName:'',nombreCompleto:'',perfilId:0,perfilNombre:'',empresaNombre:'',ruc:'',unidad:'',pathInicio:'',version:''};this.modalUsuarioAbierto.set(true);}
 
-  abrirModalNuevoUsuario(): void {
-    this.formUsuario = {
-      id: 0,
-      userName: '',
-      nombreCompleto: '',
-      perfilNombre: 'Contratista Homologado',
-      empresaNombre: 'HOLCIM PERU',
-      ruc: '20608094068',
-      unidad: 'Planta Condorcocha',
-      pathInicio: 'Gestión de Contratistas',
-      mfaActivo: false
-    };
-    this.modalUsuarioAbierto.set(true);
-  }
+  abrirModalEditarUsuario(u:Record<string,any>):void{this.formUsuario={id:Number(u['id']),userName:String(u['userName']??''),nombreCompleto:String(u['nombreCompleto']??''),perfilId:Number(u['perfilId']??0),perfilNombre:String(u['perfilNombre']??''),empresaNombre:String(u['empresaNombre']??''),ruc:String(u['ruc']??''),unidad:String(u['unidad']??''),pathInicio:String(u['pathInicio']??''),version:String(u['version']??'')};this.modalUsuarioAbierto.set(true);}
 
-  abrirModalEditarUsuario(u: Record<string, any>): void {
-    this.formUsuario = {
-      id: Number(u['id'] || 0),
-      userName: String(u['userName'] || ''),
-      nombreCompleto: String(u['nombreCompleto'] || ''),
-      perfilNombre: String(u['perfilNombre'] || 'Contratista Homologado'),
-      empresaNombre: String(u['empresaNombre'] || 'HOLCIM PERU'),
-      ruc: String(u['ruc'] || '20608094068'),
-      unidad: String(u['unidad'] || 'Planta Condorcocha'),
-      pathInicio: String(u['pathInicio'] || 'Gestión de Contratistas'),
-      mfaActivo: Boolean(u['mfaActivo'])
-    };
-    this.modalUsuarioAbierto.set(true);
-  }
+  guardarUsuario():void{
+ if(!this.formUsuario.userName.trim()||!this.perfiles().some(p=>p['id']===this.formUsuario.perfilId)){this.mensajeOperacion.set('Seleccione usuario y perfil existentes válidos.');return;}
+ const payload={id:this.formUsuario.id,userName:this.formUsuario.userName,nombreCompleto:this.formUsuario.nombreCompleto,perfilId:this.formUsuario.perfilId,unidad:this.formUsuario.unidad,pathInicio:this.formUsuario.pathInicio,expectedVersion:this.formUsuario.version||undefined};
+ this.api.callAjaxPost(this.formUsuario.id>0?'/usuario/update':'/usuario/insert',payload).subscribe({next:()=>{this.cargarUsuarios();this.modalUsuarioAbierto.set(false);this.mensajeOperacion.set('Usuario confirmado. La credencial debe provisionarse por un administrador autorizado.');},error:e=>this.mensajeOperacion.set(apiErrorMessage(e))});
+}
 
-  guardarUsuario(): void {
-    if (!this.formUsuario.userName.trim()) return;
-    this.api.callAjaxPost('/usuario/insert', this.formUsuario).subscribe({
-      next: (res) => {
-        const idGen = res?.['idGenerado'] || this.formUsuario.id || (this.usuarios().length + 101);
-        const nuevo = { ...this.formUsuario, id: idGen, estado: 'ACTIVO' };
-        if (this.formUsuario.id > 0) {
-          this.usuarios.update(arr => arr.map(x => (x['id'] === this.formUsuario.id ? nuevo : x)));
-        } else {
-          this.usuarios.update(arr => [nuevo, ...arr]);
-        }
-        this.modalUsuarioAbierto.set(false);
-        this.notificarExito(`Usuario "${nuevo.userName}" guardado correctamente en OneSST`);
-      },
-      error: () => {
-        const nuevo = { ...this.formUsuario, id: this.formUsuario.id || (this.usuarios().length + 101), estado: 'ACTIVO' };
-        this.usuarios.update(arr => [nuevo, ...arr]);
-        this.modalUsuarioAbierto.set(false);
-        this.notificarExito(`Usuario "${nuevo.userName}" registrado`);
-      }
-    });
-  }
 
-  guardarConfiguracionGeneral(): void {
-    this.api.callAjaxPost('/administrador/configuracion/update', this.configForm).subscribe({
-      next: () => this.notificarExito('Parámetros de seguridad corporativa actualizados en MSST_DB'),
-      error: () => this.notificarExito('Parámetros de seguridad corporativa aplicados')
-    });
-  }
+  ejecutarRecuperacionClave():void{
+ const account=this.credentialAccount();if(!account||!this.recuperarForm.nuevaClave||this.recuperarForm.nuevaClave!==this.recuperarForm.confirmarClave){this.respuestaRecuperar.set('Seleccione una cuenta y confirme la nueva contraseña.');return;}
+ this.session.provision(account,this.recuperarForm.nuevaClave,this.recuperarForm.confirmarClave).subscribe({
+ next:updated=>{this.credentialAccount.set(updated);this.recuperarForm.nuevaClave='';this.recuperarForm.confirmarClave='';this.respuestaRecuperar.set('Credencial provisionada y confirmada por el servidor.');},
+ error:e=>this.respuestaRecuperar.set(apiErrorMessage(e))});
+}
+seleccionarCuentaCredencial(userId:number):void{
+ this.credentialAccount.set(null);
+ if(!Number.isSafeInteger(userId)||userId<=0)return;
+ this.session.account(userId).subscribe({next:account=>{this.credentialAccount.set(account);this.recuperarForm.userName=account.userName;this.respuestaRecuperar.set('Cuenta confirmada: '+account.credentialState);},error:e=>this.respuestaRecuperar.set(apiErrorMessage(e))});
+}
 
-  ejecutarRecuperacionClave(): void {
-    this.api.callAjaxPost('/login/recuperar', this.recuperarForm).subscribe({
-      next: (res) => {
-        this.respuestaRecuperar.set(
-          res?.['mensajeRespuesta'] ||
-          `Credenciales actualizadas y notificación enviada a ${this.recuperarForm.correo}`
-        );
-        this.notificarExito('Recuperación / renovación de contraseña procesada');
-      },
-      error: () => {
-        this.respuestaRecuperar.set(`Token de seguridad enviado a ${this.recuperarForm.correo}`);
-      }
-    });
-  }
-
-  abrirVisor1a1(archivo: string, titulo: string): void {
-    this.visorArchivo.set(archivo);
-    this.visorTitulo.set(titulo);
-    this.visor1a1Abierto.set(true);
-  }
 
   private notificarExito(msg: string): void {
     this.mensajeExito.set(msg);

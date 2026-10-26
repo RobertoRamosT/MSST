@@ -1,3 +1,5 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,36 +8,39 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface AccidenteIncidenteItem {
   id: number;
-  codigo: string;
-  tipo: 'ACCIDENTE_TRABAJO' | 'INCIDENTE_PELIGROSO' | 'ACCIDENTE_VEHICULAR' | 'INCIDENTE_AMBIENTAL';
-  gravedad: 'LEVE' | 'INCAPACITANTE_TEMPORAL' | 'MORTAL' | 'SIN_LESION';
-  fechaHora: string;
-  lugar: string;
-  trabajador: string;
-  diasDescanso: number;
-  descripcion: string;
-  causasInmediatas: string;
-  causasBasicas: string;
-  estado: 'INVESTIGADO_CERRADO' | 'EN_INVESTIGACION' | 'PRELIMINAR_24H';
+  codigo: string | null;
+  tipo: 'ACCIDENTE_TRABAJO' | 'INCIDENTE_PELIGROSO' | 'ACCIDENTE_VEHICULAR' | 'INCIDENTE_AMBIENTAL' | null;
+  gravedad: 'LEVE' | 'INCAPACITANTE_TEMPORAL' | 'MORTAL' | 'SIN_LESION' | null;
+  fechaHora: string | null;
+  lugar: string | null;
+  trabajador: string | null;
+  diasDescanso: number | null;
+  descripcion: string | null;
+  causasInmediatas: string | null;
+  causasBasicas: string | null;
+  estado: 'INVESTIGADO_CERRADO' | 'EN_INVESTIGACION' | 'PRELIMINAR_24H' | null;
 }
 
 export interface PlanAccionMejoraItem {
   id: number;
-  moduloOrigen: 'IPERC' | 'INSPECCIONES' | 'ACCIDENTES' | 'AUDITORIA' | 'COMITE_SST' | 'OPT';
-  hallazgo: string;
-  medidaCorrectiva: string;
-  tipoAccion: 'CORRECTIVA' | 'PREVENTIVA';
-  responsable: string;
-  fechaCompromiso: string;
-  avance: number;
-  estado: 'CERRADO_VERIFICADO' | 'EN_EJECUCION' | 'PENDIENTE';
+  moduloOrigen: 'IPERC' | 'INSPECCIONES' | 'ACCIDENTES' | 'AUDITORIA' | 'COMITE_SST' | 'OPT' | null;
+  hallazgo: string | null;
+  medidaCorrectiva: string | null;
+  tipoAccion: 'CORRECTIVA' | 'PREVENTIVA' | null;
+  responsable: string | null;
+  fechaCompromiso: string | null;
+  avance: number | null;
+  estado: 'CERRADO_VERIFICADO' | 'EN_EJECUCION' | 'PENDIENTE' | null;
 }
 
 @Component({
   selector: 'msst-modulo07-accidentes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera del Módulo 07 -->
@@ -140,7 +145,7 @@ export interface PlanAccionMejoraItem {
                       <td><span class="label label-default">{{ ev.tipo }}</span></td>
                       <td>
                         <span class="label" [ngClass]="{
-                          'label-danger': ev.gravedad.includes('INCAPACITANTE') || ev.gravedad === 'MORTAL',
+                          'label-danger': (ev.gravedad??'').includes('INCAPACITANTE') || ev.gravedad === 'MORTAL',
                           'label-warning': ev.gravedad === 'LEVE',
                           'label-info': ev.gravedad === 'SIN_LESION'
                         }">{{ ev.gravedad }}</span>
@@ -225,8 +230,8 @@ export interface PlanAccionMejoraItem {
                           <div class="progress-bar"
                                [ngClass]="{
                                  'progress-bar-success': ac.avance === 100,
-                                 'progress-bar-info': ac.avance >= 50 && ac.avance < 100,
-                                 'progress-bar-warning': ac.avance < 50
+                                 'progress-bar-info': (ac.avance !== null && ac.avance >= 50) && (ac.avance !== null && ac.avance < 100),
+                                 'progress-bar-warning': (ac.avance !== null && ac.avance < 50)
                                }"
                                [style.width.%]="ac.avance"
                                style="line-height: 18px; font-size: 11px; font-weight: bold;">
@@ -237,18 +242,18 @@ export interface PlanAccionMejoraItem {
                       <td>
                         <span class="label" [ngClass]="{
                           'label-success': ac.avance === 100,
-                          'label-info': ac.avance > 0 && ac.avance < 100,
+                          'label-info': (ac.avance !== null && ac.avance > 0) && (ac.avance !== null && ac.avance < 100),
                           'label-warning': ac.avance === 0
                         }">{{ ac.estado }}</span>
                       </td>
                       <td>
-                        @if (ac.avance < 100) {
+                        @if ((ac.avance !== null && ac.avance < 100)) {
                           <div class="btn-group">
-                            <button class="btn btn-xs btn-info" (click)="avanzarAccion(ac, 25)" title="Incrementar +25%">
+                            <button class="btn btn-xs btn-info" (click)="avanzarAccion(ac, 25)" title="Consultar el proceso de mejora">
                               +25%
                             </button>
-                            <button class="btn btn-xs btn-success" (click)="avanzarAccion(ac, 100)" title="Cerrar al 100%">
-                              <i class="fa fa-check"></i> Cerrar 100%
+                            <button class="btn btn-xs btn-success" (click)="avanzarAccion(ac, 100)" title="Consultar el cierre del proceso">
+                              <i class="fa fa-check"></i> Ver proceso
                             </button>
                           </div>
                         } @else {
@@ -402,6 +407,9 @@ export interface PlanAccionMejoraItem {
   `
 })
 export class Modulo07AccidentesMejoraComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
 
@@ -429,79 +437,16 @@ export class Modulo07AccidentesMejoraComponent implements OnInit {
   filtroModuloOrigen = 'TODOS';
   filtroTextoAccion = '';
 
-  readonly accidentes = signal<AccidenteIncidenteItem[]>([
-    {
-      id: 1,
-      codigo: 'INC-2026-001',
-      tipo: 'INCIDENTE_PELIGROSO',
-      gravedad: 'SIN_LESION',
-      fechaHora: '2026-09-18 14:20',
-      lugar: 'Planta Condorcocha - Patio de Maniobras Silo 03',
-      trabajador: 'Operador Montacargas - Grupo Elias-29 S.A.C.',
-      diasDescanso: 0,
-      descripcion: 'Caída de parihuela vacía durante maniobra de giro sin impacto a personal.',
-      causasInmediatas: 'Velocidad inadecuada en curva con piso húmedo.',
-      causasBasicas: 'Falta de señalización reductora de velocidad en intersección de almacén.',
-      estado: 'INVESTIGADO_CERRADO'
-    },
-    {
-      id: 2,
-      codigo: 'ACC-2026-002',
-      tipo: 'ACCIDENTE_TRABAJO',
-      gravedad: 'LEVE',
-      fechaHora: '2026-10-10 09:45',
-      lugar: 'Taller Mecánico Central - Banco de Esmerilado',
-      trabajador: 'QUISPE MAMANI, HECTOR (Mecánico de Mantenimiento)',
-      diasDescanso: 2,
-      descripcion: 'Contusión superficial en dedo índice izquierdo al ajustar pieza metálica en tornillo de banco.',
-      causasInmediatas: 'Posicionamiento de manos en línea de fuego durante sujeción.',
-      causasBasicas: 'Desgaste en mordaza de sujeción mecánica del banco N° 02.',
-      estado: 'INVESTIGADO_CERRADO'
-    }
-  ]);
+  readonly accidentes = signal<AccidenteIncidenteItem[]>([]);
 
-  readonly accionesMejora = signal<PlanAccionMejoraItem[]>([
-    {
-      id: 401,
-      moduloOrigen: 'INSPECCIONES',
-      hallazgo: 'Cilindro de oxígeno sin cadena de sujeción secundaria en taller de calderería.',
-      medidaCorrectiva: 'Instalar porta-cilindros metálico con doble cadena de seguridad y señalética NFPA 704.',
-      tipoAccion: 'CORRECTIVA',
-      responsable: 'Sup. Jorge Chávez',
-      fechaCompromiso: '30/10/2026',
-      avance: 75,
-      estado: 'EN_EJECUCION'
-    },
-    {
-      id: 402,
-      moduloOrigen: 'ACCIDENTES',
-      hallazgo: 'Desgaste en mordaza de sujeción mecánica del banco de taller N° 02 (ACC-2026-002).',
-      medidaCorrectiva: 'Reemplazo integral de tornillo de banco industrial y difusión de alerta de seguridad.',
-      tipoAccion: 'CORRECTIVA',
-      responsable: 'Tec. Luis Paredes',
-      fechaCompromiso: '20/10/2026',
-      avance: 100,
-      estado: 'CERRADO_VERIFICADO'
-    },
-    {
-      id: 403,
-      moduloOrigen: 'IPERC',
-      hallazgo: 'Control de ingeniería requerido para ingreso a chute de transferencia Línea 2.',
-      medidaCorrectiva: 'Instalar sensor de bloqueo electromecánico en compuerta de inspección del chute.',
-      tipoAccion: 'PREVENTIVA',
-      responsable: 'Ing. Carlos Mendoza',
-      fechaCompromiso: '10/11/2026',
-      avance: 50,
-      estado: 'EN_EJECUCION'
-    }
-  ]);
+  readonly accionesMejora = signal<PlanAccionMejoraItem[]>([]);
 
   nuevoAccidente = {
-    codigo: 'INC-2026-003',
-    tipo: 'INCIDENTE_PELIGROSO' as AccidenteIncidenteItem['tipo'],
-    gravedad: 'SIN_LESION' as AccidenteIncidenteItem['gravedad'],
-    fechaHora: '2026-10-24 11:30',
-    lugar: 'Planta Condorcocha - Zona de Despacho',
+    codigo: '',
+    tipo: '' as AccidenteIncidenteItem['tipo'],
+    gravedad: '' as AccidenteIncidenteItem['gravedad'],
+    fechaHora: '',
+    lugar: '',
     trabajador: '',
     diasDescanso: 0,
     descripcion: '',
@@ -510,12 +455,12 @@ export class Modulo07AccidentesMejoraComponent implements OnInit {
   };
 
   nuevaAccion = {
-    moduloOrigen: 'INSPECCIONES' as PlanAccionMejoraItem['moduloOrigen'],
-    tipoAccion: 'CORRECTIVA' as 'CORRECTIVA' | 'PREVENTIVA',
+    moduloOrigen: '' as PlanAccionMejoraItem['moduloOrigen'],
+    tipoAccion: '' as 'CORRECTIVA' | 'PREVENTIVA',
     hallazgo: '',
     medidaCorrectiva: '',
-    responsable: 'Ing. Carlos Mendoza',
-    fechaCompromiso: '15/11/2026'
+    responsable: '',
+    fechaCompromiso: ''
   };
 
   readonly totalDiasDescanso = computed(() =>
@@ -534,57 +479,9 @@ export class Modulo07AccidentesMejoraComponent implements OnInit {
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/accidente/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['codigo']) {
-          const desdeSql: AccidenteIncidenteItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (50 + idx),
-            codigo: String(r['codigo'] || `ACC-2026-0${idx + 1}`),
-            tipo: (String(r['tipo'] || 'INCIDENTE_PELIGROSO') as AccidenteIncidenteItem['tipo']),
-            gravedad: (String(r['gravedad'] || 'LEVE') as AccidenteIncidenteItem['gravedad']),
-            fechaHora: String(r['fechaHora'] || '2026-10-20 10:00'),
-            lugar: String(r['lugar'] || 'Planta Condorcocha'),
-            trabajador: String(r['trabajador'] || 'Colaborador Operativo'),
-            diasDescanso: Number(r['diasDescanso']) || 0,
-            descripcion: String(r['descripcion'] || ''),
-            causasInmediatas: 'Condición mecánica en revisión',
-            causasBasicas: 'Factor de trabajo controlado por ingeniería',
-            estado: (String(r['estado'] || 'INVESTIGADO_CERRADO') as AccidenteIncidenteItem['estado'])
-          }));
-          this.accidentes.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.codigo === a.codigo))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/accidente/lista', { ...{} }).subscribe({next:(response)=>{try{this.accidentes.set(confirmedList<AccidenteIncidenteItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"tipo","kind":"string","optional":false,"nullable":true},{"name":"gravedad","kind":"string","optional":false,"nullable":true},{"name":"fechaHora","kind":"string","optional":false,"nullable":true},{"name":"lugar","kind":"string","optional":false,"nullable":true},{"name":"trabajador","kind":"string","optional":false,"nullable":true},{"name":"diasDescanso","kind":"number","optional":false,"nullable":true},{"name":"descripcion","kind":"string","optional":false,"nullable":true},{"name":"causasInmediatas","kind":"string","optional":false,"nullable":true},{"name":"causasBasicas","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/gestionaccionmejora/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['medidaCorrectiva']) {
-          const desdeSql: PlanAccionMejoraItem[] = list.map((r: Record<string, any>, idx: number) => {
-            const av = Number(r['avance']) || 0;
-            return {
-              id: Number(r['id']) || (500 + idx),
-              moduloOrigen: (String(r['moduloOrigen'] || 'INSPECCIONES').toUpperCase() as PlanAccionMejoraItem['moduloOrigen']),
-              hallazgo: String(r['hallazgo'] || ''),
-              medidaCorrectiva: String(r['medidaCorrectiva'] || ''),
-              tipoAccion: 'CORRECTIVA',
-              responsable: String(r['responsable'] || 'Ing. SST'),
-              fechaCompromiso: String(r['fechaCompromiso'] || '15/11/2026'),
-              avance: av,
-              estado: av >= 100 ? 'CERRADO_VERIFICADO' : 'EN_EJECUCION'
-            };
-          });
-          this.accionesMejora.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.id === a.id))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/gestionaccionmejora/lista', { ...{} }).subscribe({next:(response)=>{try{this.accionesMejora.set(confirmedList<PlanAccionMejoraItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"moduloOrigen","kind":"string","optional":false,"nullable":true},{"name":"hallazgo","kind":"string","optional":false,"nullable":true},{"name":"medidaCorrectiva","kind":"string","optional":false,"nullable":true},{"name":"tipoAccion","kind":"string","optional":false,"nullable":true},{"name":"responsable","kind":"string","optional":false,"nullable":true},{"name":"fechaCompromiso","kind":"string","optional":false,"nullable":true},{"name":"avance","kind":"number","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   accionesFiltradas(): PlanAccionMejoraItem[] {
@@ -592,85 +489,28 @@ export class Modulo07AccidentesMejoraComponent implements OnInit {
     return this.accionesMejora().filter(ac => {
       const coincideMod = this.filtroModuloOrigen === 'TODOS' || ac.moduloOrigen === this.filtroModuloOrigen;
       const coincideTexto = !q ||
-        ac.hallazgo.toLowerCase().includes(q) ||
-        ac.medidaCorrectiva.toLowerCase().includes(q) ||
-        ac.responsable.toLowerCase().includes(q);
+        (ac.hallazgo??'').toLowerCase().includes(q) ||
+        (ac.medidaCorrectiva??'').toLowerCase().includes(q) ||
+        (ac.responsable??'').toLowerCase().includes(q);
       return coincideMod && coincideTexto;
     });
   }
 
   guardarNuevoAccidente(): void {
     if (!this.nuevoAccidente.descripcion.trim()) return;
-    this.api.callAjaxPost('/accidente/insert', { ...this.nuevoAccidente, idEmpresa: 773 }).subscribe({
-      next: (res) => this.agregarAccidenteLocal(Number(res?.['idGenerado']) || Date.now()),
-      error: () => this.agregarAccidenteLocal(Date.now())
-    });
+    this.api.callAjaxPost('/accidente/insert', { ...this.nuevoAccidente, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalAccidente.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarAccidenteLocal(id: number): void {
-    const item: AccidenteIncidenteItem = {
-      id,
-      codigo: this.nuevoAccidente.codigo,
-      tipo: this.nuevoAccidente.tipo,
-      gravedad: this.nuevoAccidente.gravedad,
-      fechaHora: this.nuevoAccidente.fechaHora,
-      lugar: this.nuevoAccidente.lugar,
-      trabajador: this.nuevoAccidente.trabajador || 'Personal Operativo en Turno',
-      diasDescanso: Number(this.nuevoAccidente.diasDescanso) || 0,
-      descripcion: this.nuevoAccidente.descripcion,
-      causasInmediatas: this.nuevoAccidente.causasInmediatas || 'En análisis por el Comité SST',
-      causasBasicas: this.nuevoAccidente.causasBasicas || 'En investigación causal (Metodología 5 Porqués)',
-      estado: 'EN_INVESTIGACION'
-    };
-    this.accidentes.update(list => [item, ...list]);
-    this.mostrarModalAccidente.set(false);
-    this.mostrarAviso(`Evento ${item.codigo} registrado correctamente en OneSST.`);
-  }
+
 
   guardarNuevaAccionMejora(): void {
     if (!this.nuevaAccion.hallazgo.trim() || !this.nuevaAccion.medidaCorrectiva.trim()) return;
-    this.api.callAjaxPost('/gestionaccionmejora/insert', { ...this.nuevaAccion, idEmpresa: 773, avance: 0 }).subscribe({
-      next: (res) => this.agregarAccionLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.agregarAccionLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/gestionaccionmejora/insert', { ...this.nuevaAccion, ...{}, avance: 0 }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalAccionMejora.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarAccionLocal(id: number): void {
-    const item: PlanAccionMejoraItem = {
-      id,
-      moduloOrigen: this.nuevaAccion.moduloOrigen,
-      hallazgo: this.nuevaAccion.hallazgo,
-      medidaCorrectiva: this.nuevaAccion.medidaCorrectiva,
-      tipoAccion: this.nuevaAccion.tipoAccion,
-      responsable: this.nuevaAccion.responsable,
-      fechaCompromiso: this.nuevaAccion.fechaCompromiso,
-      avance: 25,
-      estado: 'EN_EJECUCION'
-    };
-    this.accionesMejora.update(list => [item, ...list]);
-    this.mostrarModalAccionMejora.set(false);
-    this.mostrarAviso(`Plan de Acción #${item.id} registrado en el Motor Transversal.`);
-  }
 
-  avanzarAccion(ac: PlanAccionMejoraItem, incrementoOValor: number): void {
-    const nuevoAvance = incrementoOValor === 100 ? 100 : Math.min(100, ac.avance + incrementoOValor);
-    const nuevoEstado = nuevoAvance === 100 ? 'CERRADO_VERIFICADO' : 'EN_EJECUCION';
-    this.api.callAjaxPost('/gestionaccionmejora/updateAvance', {
-      id: ac.id,
-      avance: nuevoAvance,
-      estado: nuevoEstado
-    }).subscribe({
-      next: () => this.actualizarAvanceLocal(ac.id, nuevoAvance, nuevoEstado),
-      error: () => this.actualizarAvanceLocal(ac.id, nuevoAvance, nuevoEstado)
-    });
-  }
 
-  private actualizarAvanceLocal(id: number, avance: number, estado: PlanAccionMejoraItem['estado']): void {
-    this.accionesMejora.update(list =>
-      list.map(a => a.id === id ? { ...a, avance, estado } : a)
-    );
-    this.mostrarAviso(`Plan de Acción #${id} actualizado al ${avance}% (${estado}).`);
-  }
+  avanzarAccion(_ac:PlanAccionMejoraItem,_incrementoOValor:number):void{this.workflowSelectionOpen.set(true);}
 
   private mostrarAviso(msg: string): void {
     this.notificacion.set(msg);

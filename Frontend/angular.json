@@ -10,7 +10,7 @@
       "prefix": "msst",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/msst-frontend",
             "index": "src/index.html",
@@ -19,18 +19,29 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public/sstweb/imagenes",
+                "output": "sstweb/imagenes"
+              },
+              {
+                "glob": "bootstrap-s.css",
+                "input": "public/sstweb/css",
+                "output": "sstweb/css"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/sstweb/lib/font-awesome-4.7.0/css",
+                "output": "sstweb/lib/font-awesome-4.7.0/css"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/sstweb/lib/font-awesome-4.7.0/fonts",
+                "output": "sstweb/lib/font-awesome-4.7.0/fonts"
               }
             ],
             "styles": [
               "src/styles.css"
             ],
-            "scripts": [
-              "public/sstweb/lib/jquery.min.js",
-              "public/sstweb/lib/jquery-ui.min.js",
-              "public/sstweb/lib/jquery.blockUI.min.js",
-              "public/sstweb/lib/bootstrap.min.js"
-            ]
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -60,7 +71,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "msst-frontend:build:production"

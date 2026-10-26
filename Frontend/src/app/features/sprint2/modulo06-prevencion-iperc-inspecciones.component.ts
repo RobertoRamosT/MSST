@@ -1,3 +1,5 @@
+import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
+import { confirmedList, apiErrorMessage } from '../../core/services/gosst-api.service';
 import { Component, OnInit, inject, signal, computed, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,53 +8,56 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 
 export interface FilaIpercItem {
   id: number;
-  codigo: string;
+  codigo: string | null;
   version: string;
-  proceso: string;
-  tarea: string;
-  tipoActividad: string;
-  peligro: string;
-  riesgo: string;
-  probabilidadInicial: number;
-  severidadInicial: number;
-  riesgoInicial: string;
-  medidasControl: string;
-  riesgoResidual: string;
-  estado: string;
+  proceso: string | null;
+  tarea: string | null;
+  tipoActividad: string | null;
+  peligro: string | null;
+  riesgo: string | null;
+  probabilidadInicial: number | null;
+  severidadInicial: number | null;
+  riesgoInicial: string | null;
+  medidasControl: string | null;
+  riesgoResidual: string | null;
+  estado: string | null;
 }
 
 export interface InspeccionItem {
   id: number;
-  modulo: 'INSPECCION_V1' | 'INSPECCION_V2';
-  tipo: 'PLANEADA' | 'INOPINADA' | 'COMITE_SST';
-  area: string;
-  inspector: string;
-  fecha: string;
-  puntaje: number;
-  criticidad: 'ALTA' | 'MEDIA' | 'BAJA';
-  hallazgo: string;
-  estado: 'ABIERTA' | 'EN_LEVANTAMIENTO' | 'CERRADA';
+  modulo: 'INSPECCION_V1' | 'INSPECCION_V2' | null;
+  tipo: 'PLANEADA' | 'INOPINADA' | 'COMITE_SST' | null;
+  area: string | null;
+  inspector: string | null;
+  fecha: string | null;
+  puntaje: number | null;
+  criticidad: 'ALTA' | 'MEDIA' | 'BAJA' | null;
+  hallazgo: string | null;
+  estado: 'ABIERTA' | 'EN_LEVANTAMIENTO' | 'CERRADA' | null;
 }
 
 export interface OptActoSubestandarItem {
   id: number;
-  tipoRegistro: 'OPT' | 'ACTO_SUBESTANDAR' | 'CONDICION_SUBESTANDAR';
-  codigo: string;
-  fecha: string;
-  areaUbicacion: string;
-  puestoTareaObservada: string;
-  observadorReportante: string;
-  descripcionHallazgo: string;
-  retroalimentacionAccion: string;
-  criticidad: 'ALTA' | 'MEDIA' | 'BAJA';
-  estado: 'CORREGIDO_IN_SITU' | 'DERIVADO_PLAN_ACCION';
+  tipoRegistro: 'OPT' | 'ACTO_SUBESTANDAR' | 'CONDICION_SUBESTANDAR' | null;
+  codigo: string | null;
+  fecha: string | null;
+  areaUbicacion: string | null;
+  puestoTareaObservada: string | null;
+  observadorReportante: string | null;
+  descripcionHallazgo: string | null;
+  retroalimentacionAccion: string | null;
+  criticidad: 'ALTA' | 'MEDIA' | 'BAJA' | null;
+  estado: 'CORREGIDO_IN_SITU' | 'DERIVADO_PLAN_ACCION' | null;
 }
 
 @Component({
   selector: 'msst-modulo06-prevencion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
+@if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
+<msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
+
     <div class="container-fluid" style="padding: 15px;">
 
       <!-- Cabecera del Módulo 06 -->
@@ -182,17 +187,17 @@ export interface OptActoSubestandarItem {
                       <td style="text-align:center;"><code>{{ row.probabilidadInicial }}x{{ row.severidadInicial }}</code></td>
                       <td>
                         <span class="label" [ngClass]="{
-                          'label-danger': row.riesgoInicial.includes('ALTO') || row.riesgoInicial.includes('CRITICO'),
-                          'label-warning': row.riesgoInicial.includes('MEDIO'),
-                          'label-success': row.riesgoInicial.includes('BAJO')
+                          'label-danger': (row.riesgoInicial??'').includes('ALTO') || (row.riesgoInicial??'').includes('CRITICO'),
+                          'label-warning': (row.riesgoInicial??'').includes('MEDIO'),
+                          'label-success': (row.riesgoInicial??'').includes('BAJO')
                         }">{{ row.riesgoInicial }}</span>
                       </td>
                       <td style="font-size: 12px;">{{ row.medidasControl }}</td>
                       <td>
                         <span class="label" [ngClass]="{
-                          'label-success': row.riesgoResidual.includes('BAJO'),
-                          'label-warning': row.riesgoResidual.includes('MEDIO'),
-                          'label-danger': row.riesgoResidual.includes('ALTO')
+                          'label-success': (row.riesgoResidual??'').includes('BAJO'),
+                          'label-warning': (row.riesgoResidual??'').includes('MEDIO'),
+                          'label-danger': (row.riesgoResidual??'').includes('ALTO')
                         }">{{ row.riesgoResidual }}</span>
                       </td>
                       <td><span class="label label-primary">{{ row.estado }}</span></td>
@@ -552,6 +557,9 @@ export interface OptActoSubestandarItem {
   `
 })
 export class Modulo06PrevencionIpercInspeccionesComponent implements OnInit {
+  readonly mensajeOperacion=signal('');
+  readonly workflowSelectionOpen=signal(false);
+
   private readonly api = inject(GosstApiService);
   readonly session = inject(GosstSessionService);
 
@@ -580,171 +588,45 @@ export class Modulo06PrevencionIpercInspeccionesComponent implements OnInit {
   filtroIperc = '';
   filtroRiesgoInicial = 'TODOS';
 
-  readonly matrizIperc = signal<FilaIpercItem[]>([
-    {
-      id: 1,
-      codigo: 'IPERC-CLINK-001',
-      version: 'v4.0',
-      proceso: 'Clinkerización y Horno Rotatorio',
-      tarea: 'Inspección y cambio de ladrillos refractarios en zona de quema',
-      tipoActividad: 'No Rutinaria',
-      peligro: 'Superficies a alta temperatura residual y caída de material',
-      riesgo: 'Quemaduras de 2do/3er grado y aplastamiento por desprendimiento',
-      probabilidadInicial: 4,
-      severidadInicial: 4,
-      riesgoInicial: 'ALTO (16)',
-      medidasControl: 'Ing: Enfriamiento forzado <40°C y entibado; Admin: PETAR Espacio Confinado; EPP: Traje aluminizado y casco con barbiquejo.',
-      riesgoResidual: 'BAJO (3)',
-      estado: 'APROBADO'
-    },
-    {
-      id: 2,
-      codigo: 'IPERC-MANT-002',
-      version: 'v4.0',
-      proceso: 'Mantenimiento Eléctrico de Subestaciones',
-      tarea: 'Mantenimiento preventivo de celdas de media tensión 10 kV',
-      tipoActividad: 'Rutinaria',
-      peligro: 'Energía eléctrica de media tensión (Arco Eléctrico)',
-      riesgo: 'Electrocución / Shock eléctrico severo / Quemadura por arco',
-      probabilidadInicial: 3,
-      severidadInicial: 5,
-      riesgoInicial: 'ALTO (15)',
-      medidasControl: 'Ing: Relé de falla de arco y puesta a tierra; Admin: 5 Reglas de Oro + Bloqueo LOTOTO; EPP: Traje Arc-Flash 40 cal/cm².',
-      riesgoResidual: 'BAJO (4)',
-      estado: 'APROBADO'
-    },
-    {
-      id: 3,
-      codigo: 'IPERC-DESP-003',
-      version: 'v3.2',
-      proceso: 'Envase y Despacho de Cemento en Bombonas',
-      tarea: 'Conexión de manga de carga en escotilla superior de cisterna',
-      tipoActividad: 'Rutinaria',
-      peligro: 'Trabajo en altura sobre plataforma de cisterna (> 3.20 m)',
-      riesgo: 'Caída a distinto nivel con fracturas múltiples',
-      probabilidadInicial: 3,
-      severidadInicial: 4,
-      riesgoInicial: 'MEDIO (12)',
-      medidasControl: 'Ing: Línea de vida retráctil certificada en pórtico; Admin: PETAR Altura; EPP: Arnés cuerpo completo doble línea con absorbedor.',
-      riesgoResidual: 'BAJO (2)',
-      estado: 'APROBADO'
-    }
-  ]);
+  readonly matrizIperc = signal<FilaIpercItem[]>([]);
 
-  readonly inspecciones = signal<InspeccionItem[]>([
-    {
-      id: 201,
-      modulo: 'INSPECCION_V2',
-      tipo: 'PLANEADA',
-      area: 'Planta Condorcocha - Nave de Molienda de Cemento',
-      inspector: 'Ing. Carlos Mendoza',
-      fecha: '22/10/2026',
-      puntaje: 94,
-      criticidad: 'MEDIA',
-      hallazgo: 'Falta actualizar etiqueta de inspección mensual en ducha lavaojos de emergencia N° 03.',
-      estado: 'CERRADA'
-    },
-    {
-      id: 202,
-      modulo: 'INSPECCION_V2',
-      tipo: 'INOPINADA',
-      area: 'Taller Central de Soldadura y Calderería',
-      inspector: 'Sup. Jorge Chávez',
-      fecha: '24/10/2026',
-      puntaje: 82,
-      criticidad: 'ALTA',
-      hallazgo: 'Cilindro de oxígeno almacenado sin cadena de sujeción secundaria en zona de tránsito.',
-      estado: 'EN_LEVANTAMIENTO'
-    },
-    {
-      id: 203,
-      modulo: 'INSPECCION_V1',
-      tipo: 'COMITE_SST',
-      area: 'Almacén de Materiales Peligrosos (MATPEL)',
-      inspector: 'Comité Paritario SST',
-      fecha: '20/10/2026',
-      puntaje: 98,
-      criticidad: 'BAJA',
-      hallazgo: 'Bandejas antiderrame operativas y hojas MSDS vigentes en idioma español.',
-      estado: 'CERRADA'
-    }
-  ]);
+  readonly inspecciones = signal<InspeccionItem[]>([]);
 
-  readonly optYActos = signal<OptActoSubestandarItem[]>([
-    {
-      id: 301,
-      tipoRegistro: 'OPT',
-      codigo: 'OPT-2026-088',
-      fecha: '23/10/2026',
-      areaUbicacion: 'Cantera Caliza - Nivel 4150',
-      puestoTareaObservada: 'Operador de Cargador Frontal CAT 988K (PETS-MIN-005)',
-      observadorReportante: 'Ing. Carlos Mendoza',
-      descripcionHallazgo: 'Cumple los 3 puntos de apoyo al ascender, pero omitió verificar el claxon de retroceso antes del arranque.',
-      retroalimentacionAccion: 'Refuerzo positivo sobre procedimiento de pre-uso (Check-list de vuelta del gallo).',
-      criticidad: 'MEDIA',
-      estado: 'CORREGIDO_IN_SITU'
-    },
-    {
-      id: 302,
-      tipoRegistro: 'ACTO_SUBESTANDAR',
-      codigo: 'ACS-2026-142',
-      fecha: '24/10/2026',
-      areaUbicacion: 'Planta Huachipa - Zona de Embolsado',
-      puestoTareaObservada: 'Auxiliar de Estiba y Paletizado',
-      observadorReportante: 'Tec. Luis Paredes',
-      descripcionHallazgo: 'Trabajador manipulando carga manual sin flexionar rodillas ni usar guantes de cuero.',
-      retroalimentacionAccion: 'Pausa activa ergonómica inmediata y entrega de guantes en sitio.',
-      criticidad: 'MEDIA',
-      estado: 'CORREGIDO_IN_SITU'
-    },
-    {
-      id: 303,
-      tipoRegistro: 'CONDICION_SUBESTANDAR',
-      codigo: 'CNS-2026-143',
-      fecha: '24/10/2026',
-      areaUbicacion: 'Pasarela Metálica Silo N° 02',
-      puestoTareaObservada: 'Tránsito Peatonal en Planta',
-      observadorReportante: 'Analista Patricia Salazar',
-      descripcionHallazgo: 'Perno suelto en peldaño Grating N° 14 de la escalera de acceso al Silo 02.',
-      retroalimentacionAccion: 'Acordonamiento inmediato y generación de orden de trabajo a Mantenimiento Mecánico.',
-      criticidad: 'ALTA',
-      estado: 'DERIVADO_PLAN_ACCION'
-    }
-  ]);
+  readonly optYActos = signal<OptActoSubestandarItem[]>([]);
 
   nuevoIperc = {
-    codigo: 'IPERC-OPER-004',
-    version: 'v4.0',
+    codigo: '',
+    version: '',
     proceso: '',
     tarea: '',
-    tipoActividad: 'Rutinaria',
+    tipoActividad: '',
     peligro: '',
     riesgo: '',
-    probabilidadInicial: 4,
-    severidadInicial: 4,
-    riesgoInicial: 'ALTO (16)',
+    probabilidadInicial: 0,
+    severidadInicial: 0,
+    riesgoInicial: '',
     medidasControl: '',
-    riesgoResidual: 'BAJO (3)'
+    riesgoResidual: ''
   };
 
   nuevaInspeccion = {
-    modulo: 'INSPECCION_V2' as 'INSPECCION_V1' | 'INSPECCION_V2',
-    tipo: 'PLANEADA' as 'PLANEADA' | 'INOPINADA' | 'COMITE_SST',
-    area: 'Planta Condorcocha - Subestación Principal',
-    inspector: 'Ing. Carlos Mendoza',
-    fecha: '25/10/2026',
-    puntaje: 90,
-    criticidad: 'ALTA' as 'ALTA' | 'MEDIA' | 'BAJA',
+    modulo: '' as 'INSPECCION_V1' | 'INSPECCION_V2',
+    tipo: '' as 'PLANEADA' | 'INOPINADA' | 'COMITE_SST',
+    area: '',
+    inspector: '',
+    fecha: '',
+    puntaje: 0,
+    criticidad: '' as '' | 'ALTA' | 'MEDIA' | 'BAJA',
     hallazgo: ''
   };
 
   nuevoOptActo = {
-    tipoRegistro: 'OPT' as 'OPT' | 'ACTO_SUBESTANDAR' | 'CONDICION_SUBESTANDAR',
-    areaUbicacion: 'Planta Condorcocha',
+    tipoRegistro: '' as 'OPT' | 'ACTO_SUBESTANDAR' | 'CONDICION_SUBESTANDAR',
+    areaUbicacion: '',
     puestoTareaObservada: '',
     descripcionHallazgo: '',
     retroalimentacionAccion: '',
-    criticidad: 'MEDIA' as 'ALTA' | 'MEDIA' | 'BAJA'
+    criticidad: '' as '' | 'ALTA' | 'MEDIA' | 'BAJA'
   };
 
   readonly promedioPuntajeInspeccion = computed(() => {
@@ -767,145 +649,50 @@ export class Modulo06PrevencionIpercInspeccionesComponent implements OnInit {
   }
 
   cargarDatosDesdeSql(): void {
-    this.api.callAjaxPost('/iperc/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['peligro']) {
-          const desdeSql: FilaIpercItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (100 + idx),
-            codigo: String(r['codigo'] || `IPERC-SQL-0${idx + 1}`),
-            version: String(r['version'] || 'v4.0'),
-            proceso: String(r['proceso'] || 'Operaciones Planta'),
-            tarea: String(r['tarea'] || 'Tarea Operativa'),
-            tipoActividad: 'Rutinaria',
-            peligro: String(r['peligro'] || ''),
-            riesgo: String(r['riesgo'] || ''),
-            probabilidadInicial: 4,
-            severidadInicial: 4,
-            riesgoInicial: String(r['riesgoInicial'] || 'ALTO'),
-            medidasControl: String(r['medidasControl'] || 'Controles de Ingeniería, PETAR y EPP'),
-            riesgoResidual: String(r['riesgoResidual'] || 'BAJO'),
-            estado: String(r['estado'] || 'APROBADO')
-          }));
-          this.matrizIperc.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.codigo === a.codigo))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/iperc/lista', { ...{} }).subscribe({next:(response)=>{try{this.matrizIperc.set(confirmedList<FilaIpercItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"version","kind":"string","optional":false,"nullable":true},{"name":"proceso","kind":"string","optional":false,"nullable":true},{"name":"tarea","kind":"string","optional":false,"nullable":true},{"name":"tipoActividad","kind":"string","optional":false,"nullable":true},{"name":"peligro","kind":"string","optional":false,"nullable":true},{"name":"riesgo","kind":"string","optional":false,"nullable":true},{"name":"probabilidadInicial","kind":"number","optional":false,"nullable":true},{"name":"severidadInicial","kind":"number","optional":false,"nullable":true},{"name":"riesgoInicial","kind":"string","optional":false,"nullable":true},{"name":"medidasControl","kind":"string","optional":false,"nullable":true},{"name":"riesgoResidual","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/inspeccionv2/lista', { idEmpresa: 773 }).subscribe({
-      next: (res) => {
-        const list = res?.['list'];
-        if (Array.isArray(list) && list.length > 0 && list[0]['hallazgo']) {
-          const desdeSql: InspeccionItem[] = list.map((r: Record<string, any>, idx: number) => ({
-            id: Number(r['id']) || (300 + idx),
-            modulo: (String(r['modulo'] || 'INSPECCION_V2').includes('V1') ? 'INSPECCION_V1' : 'INSPECCION_V2'),
-            tipo: (String(r['tipo'] || 'PLANEADA').toUpperCase().includes('INOP') ? 'INOPINADA' : 'PLANEADA'),
-            area: String(r['area'] || 'Planta Condorcocha'),
-            inspector: String(r['inspector'] || 'Ing. SST'),
-            fecha: String(r['fecha'] || '24/10/2026'),
-            puntaje: Number(r['puntaje']) || 92,
-            criticidad: (String(r['criticidad'] || 'MEDIA').toUpperCase() as 'ALTA' | 'MEDIA' | 'BAJA'),
-            hallazgo: String(r['hallazgo'] || ''),
-            estado: (String(r['estado'] || 'ABIERTA').toUpperCase() as 'ABIERTA' | 'EN_LEVANTAMIENTO' | 'CERRADA')
-          }));
-          this.inspecciones.update(actuales => [
-            ...desdeSql,
-            ...actuales.filter(a => !desdeSql.some(s => s.id === a.id))
-          ]);
-        }
-      }
-    });
+    this.api.callAjaxPost('/inspeccionv2/lista', { ...{} }).subscribe({next:(response)=>{try{this.inspecciones.set(confirmedList<InspeccionItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"modulo","kind":"string","optional":false,"nullable":true},{"name":"tipo","kind":"string","optional":false,"nullable":true},{"name":"area","kind":"string","optional":false,"nullable":true},{"name":"inspector","kind":"string","optional":false,"nullable":true},{"name":"fecha","kind":"string","optional":false,"nullable":true},{"name":"puntaje","kind":"number","optional":false,"nullable":true},{"name":"criticidad","kind":"string","optional":false,"nullable":true},{"name":"hallazgo","kind":"string","optional":false,"nullable":true},{"name":"estado","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   ipercFiltrado(): FilaIpercItem[] {
     const q = this.filtroIperc.trim().toLowerCase();
     return this.matrizIperc().filter(item => {
       const coincideNivel = this.filtroRiesgoInicial === 'TODOS' ||
-        item.riesgoInicial.toUpperCase().includes(this.filtroRiesgoInicial);
+        (item.riesgoInicial??'').toUpperCase().includes(this.filtroRiesgoInicial);
       const coincideTexto = !q ||
-        item.codigo.toLowerCase().includes(q) ||
-        item.proceso.toLowerCase().includes(q) ||
-        item.tarea.toLowerCase().includes(q) ||
-        item.peligro.toLowerCase().includes(q) ||
-        item.medidasControl.toLowerCase().includes(q);
+        (item.codigo??'').toLowerCase().includes(q) ||
+        (item.proceso??'').toLowerCase().includes(q) ||
+        (item.tarea??'').toLowerCase().includes(q) ||
+        (item.peligro??'').toLowerCase().includes(q) ||
+        (item.medidasControl??'').toLowerCase().includes(q);
       return coincideNivel && coincideTexto;
     });
   }
 
   guardarNuevoIperc(): void {
     if (!this.nuevoIperc.proceso.trim() || !this.nuevoIperc.peligro.trim()) return;
-    this.api.callAjaxPost('/iperc/insert', { ...this.nuevoIperc, idEmpresa: 773 }).subscribe({
-      next: (res) => this.agregarFilaIpercLocal(Number(res?.['idGenerado']) || Date.now()),
-      error: () => this.agregarFilaIpercLocal(Date.now())
-    });
+    this.api.callAjaxPost('/iperc/insert', { ...this.nuevoIperc, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalIperc.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarFilaIpercLocal(id: number): void {
-    const fila: FilaIpercItem = {
-      id,
-      codigo: this.nuevoIperc.codigo,
-      version: this.nuevoIperc.version,
-      proceso: this.nuevoIperc.proceso,
-      tarea: this.nuevoIperc.tarea,
-      tipoActividad: this.nuevoIperc.tipoActividad,
-      peligro: this.nuevoIperc.peligro,
-      riesgo: this.nuevoIperc.riesgo,
-      probabilidadInicial: Number(this.nuevoIperc.probabilidadInicial) || 4,
-      severidadInicial: Number(this.nuevoIperc.severidadInicial) || 4,
-      riesgoInicial: this.nuevoIperc.riesgoInicial,
-      medidasControl: this.nuevoIperc.medidasControl,
-      riesgoResidual: this.nuevoIperc.riesgoResidual,
-      estado: 'APROBADO'
-    };
-    this.matrizIperc.update(list => [fila, ...list]);
-    this.mostrarModalIperc.set(false);
-    this.notificar(`Fila IPERC "${fila.codigo}" registrada correctamente en OneSST.`);
-  }
+
 
   guardarNuevaInspeccion(): void {
     if (!this.nuevaInspeccion.hallazgo.trim()) return;
-    this.api.callAjaxPost('/inspeccionv2/insert', { ...this.nuevaInspeccion, idEmpresa: 773 }).subscribe({
-      next: (res) => this.agregarInspeccionLocal(Number(res?.['idGenerado']) || (Date.now() % 10000)),
-      error: () => this.agregarInspeccionLocal(Date.now() % 10000)
-    });
+    this.api.callAjaxPost('/inspeccionv2/insert', { ...this.nuevaInspeccion, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalInspeccion.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarInspeccionLocal(id: number): void {
-    const item: InspeccionItem = {
-      id,
-      modulo: this.nuevaInspeccion.modulo,
-      tipo: this.nuevaInspeccion.tipo,
-      area: this.nuevaInspeccion.area,
-      inspector: this.nuevaInspeccion.inspector,
-      fecha: this.nuevaInspeccion.fecha,
-      puntaje: Number(this.nuevaInspeccion.puntaje) || 90,
-      criticidad: this.nuevaInspeccion.criticidad,
-      hallazgo: this.nuevaInspeccion.hallazgo,
-      estado: 'ABIERTA'
-    };
-    this.inspecciones.update(list => [item, ...list]);
-    this.mostrarModalInspeccion.set(false);
-    this.notificar(`Inspección #${item.id} registrada.`);
-  }
 
-  cerrarHallazgoInspeccion(insp: InspeccionItem): void {
-    this.inspecciones.update(list =>
-      list.map(i => i.id === insp.id ? { ...i, estado: 'CERRADA', puntaje: 100 } : i)
-    );
-    this.notificar(`Hallazgo de la Inspección #${insp.id} levantado y verificado al 100%.`);
-  }
+
+  cerrarHallazgoInspeccion(insp: InspeccionItem): void {this.workflowSelectionOpen.set(true);}
 
   abrirModalOptActo(tipo: 'OPT' | 'ACTO_SUBESTANDAR'): void {
     this.nuevoOptActo = {
       tipoRegistro: tipo,
-      areaUbicacion: 'Planta Condorcocha',
+      areaUbicacion: '',
       puestoTareaObservada: '',
       descripcionHallazgo: '',
       retroalimentacionAccion: '',
-      criticidad: 'MEDIA'
+      criticidad: ''
     };
     this.mostrarModalOptActo.set(true);
   }
@@ -913,31 +700,10 @@ export class Modulo06PrevencionIpercInspeccionesComponent implements OnInit {
   guardarNuevoOptActo(): void {
     if (!this.nuevoOptActo.descripcionHallazgo.trim()) return;
     const ruta = this.nuevoOptActo.tipoRegistro === 'OPT' ? '/opt/insert' : '/acinseguro/insert';
-    this.api.callAjaxPost(ruta, { ...this.nuevoOptActo, idEmpresa: 773 }).subscribe({
-      next: () => this.agregarOptActoLocal(ruta),
-      error: () => this.agregarOptActoLocal(ruta)
-    });
+    this.api.callAjaxPost(ruta, { ...this.nuevoOptActo, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalOptActo.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
-  private agregarOptActoLocal(ruta: string): void {
-    const prefijo = this.nuevoOptActo.tipoRegistro === 'OPT' ? 'OPT' : 'ACS';
-    const item: OptActoSubestandarItem = {
-      id: Date.now(),
-      tipoRegistro: this.nuevoOptActo.tipoRegistro,
-      codigo: `${prefijo}-2026-${Math.floor(150 + Math.random() * 800)}`,
-      fecha: '24/10/2026',
-      areaUbicacion: this.nuevoOptActo.areaUbicacion,
-      puestoTareaObservada: this.nuevoOptActo.puestoTareaObservada || 'Operación en Planta',
-      observadorReportante: this.session.usuarioNombre(),
-      descripcionHallazgo: this.nuevoOptActo.descripcionHallazgo,
-      retroalimentacionAccion: this.nuevoOptActo.retroalimentacionAccion || 'Corrección inmediata en campo',
-      criticidad: this.nuevoOptActo.criticidad,
-      estado: 'CORREGIDO_IN_SITU'
-    };
-    this.optYActos.update(list => [item, ...list]);
-    this.mostrarModalOptActo.set(false);
-    this.notificar(`Registro preventivo ${item.codigo} guardado correctamente en OneSST (/sst${ruta}).`);
-  }
+
 
   private notificar(msg: string): void {
     this.mensajeAlerta.set(msg);
