@@ -1,3 +1,4 @@
+import {MdfEditorComponent} from './mdf-editor.component';
 import {QueryPagesComponent} from '../../core/components/query-pages.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { WorkflowChooserComponent } from '../../core/components/workflow-chooser.component';
@@ -11,7 +12,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
 @Component({
   selector: 'msst-modulo02-organizacion',
   standalone: true,
-  imports: [QueryPagesComponent,WorkflowChooserComponent,CommonModule, FormsModule],
+  imports: [MdfEditorComponent,QueryPagesComponent,WorkflowChooserComponent,CommonModule, FormsModule],
   template: `
 @if(mensajeOperacion()){<p role="status">{{mensajeOperacion()}}</p>}
 <msst-workflow-chooser [open]="workflowSelectionOpen()" (closed)="workflowSelectionOpen.set(false)"></msst-workflow-chooser>
@@ -32,8 +33,8 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
           <button class="btn btn-xs btn-success" (click)="abrirModalNuevaArea()">
             <i class="fa fa-plus-circle"></i> + Nueva Unidad / Área
           </button>
-          <button class="btn btn-xs btn-info" (click)="abrirModalNuevoMdf()">
-            <i class="fa fa-code-fork"></i> + Nuevo Nodo MDF
+          <button class="btn btn-xs btn-info" (click)="tabActiva.set('MDF')">
+            <i class="fa fa-code-fork"></i> Gestionar nodos MDF
           </button>
           <button class="btn btn-xs btn-warning" (click)="abrirModalNuevoPuesto()">
             <i class="fa fa-id-card"></i> + Nuevo Puesto
@@ -218,116 +219,7 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
     <!-- ========================================================================= -->
     <!-- PESTAÑA 2: DESPLIEGUE ORGANIZACIONAL MDF                       -->
     <!-- ========================================================================= -->
-    @if (tabActiva() === 'MDF') {
-      <div class="row">
-        <!-- Árbol Jerárquico de Procesos -> Actividades -> Tareas -> Pasos -->
-        <div class="col-md-4">
-          <div class="panel panel-primary">
-            <div class="panel-heading" style="background-color:#004B87; display:flex; justify-content:space-between; align-items:center;">
-              <h4 class="panel-title"><i class="fa fa-tree"></i> Árbol Jerárquico MDF (4 Niveles)</h4>
-              <button class="btn btn-xs btn-success" (click)="abrirModalNuevoMdf()">
-                <i class="fa fa-plus"></i> Agregar Nodo
-              </button>
-            </div>
-            <div class="panel-body" style="max-height: 500px; overflow-y: auto;">
-              <div style="font-size:12px; margin-bottom:10px; color:#555;">
-                Jerarquía normativa Ley 29783 / ISO 45001 vinculada a las Matrices IPERC:
-              </div>
-              <ul class="list-group" style="margin-bottom:0; font-size:12px;">
-                @for (item of mdfLista(); track item['id']) {
-                  <li
-                    class="list-group-item efectoLink"
-                    [ngClass]="{ 'list-group-item-info': mdfSeleccionado()['id'] === item['id'] }"
-                    (click)="mdfSeleccionado.set(item)"
-                    style="cursor:pointer;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <strong style="color:#004B87;"><i class="fa fa-folder-open"></i> {{ item['proceso'] }}</strong>
-                      <span class="label" [ngClass]="item['tipoActividad'] === 'RUTINARIA' ? 'label-success' : 'label-warning'">
-                        {{ item['tipoActividad'] }}
-                      </span>
-                    </div>
-                    <div style="padding-left:14px; margin-top:4px; color:#333;">
-                      <i class="fa fa-angle-right"></i> <strong>Act:</strong> {{ item['actividad'] }}
-                    </div>
-                    <div style="padding-left:28px; color:#555;">
-                      <i class="fa fa-angle-double-right"></i> <strong>Tarea:</strong> {{ item['tarea'] }}
-                    </div>
-                    <div style="padding-left:42px; color:#777; font-size:11px;">
-                      <i class="fa fa-check-circle-o"></i> <strong>Paso:</strong> {{ item['paso'] }}
-                    </div>
-                  </li>
-                }
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tabla Maestra de Despliegue MDF -->
-        <div class="col-md-8">
-          <div class="panel panel-primary">
-            <div class="panel-heading" style="background-color:#004B87; display:flex; justify-content:space-between; align-items:center;">
-              <h4 class="panel-title">
-                <i class="fa fa-table"></i> Matriz de Despliegue Funcional MDF
-              </h4>
-              <div style="display:flex; gap:6px;">
-                <button class="btn btn-xs btn-success" (click)="abrirModalNuevoMdf()">
-                  <i class="fa fa-plus-circle"></i> Nuevo Registro MDF
-                </button>
-              </div>
-            </div>
-            <div class="panel-body">
-              <div class="row" style="margin-bottom:10px;">
-                <div class="col-md-8">
-                  <input
-                    type="text"
-                    class="form-control input-sm"
-                    placeholder="Filtrar por proceso, actividad, tarea, paso o puesto de trabajo..."
-                    [(ngModel)]="filtroMdf">
-                </div>
-                <div class="col-md-4 text-right" style="padding-top:5px; font-size:12px;">
-                  Nodos MDF: <strong>{{ mdfFiltrados().length }}</strong>
-                </div>
-              </div>
-
-              <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover" style="font-size:12px;">
-                  <thead>
-                    <tr style="background:#f0f4f8;">
-                      <th>Código</th>
-                      <th>1. Proceso Operativo</th>
-                      <th>2. Actividad</th>
-                      <th>3. Tarea</th>
-                      <th>4. Paso Crítico</th>
-                      <th>Tipo</th>
-                      <th>Área / Puesto</th>
-                      <th>IPERC</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (m of mdfFiltrados(); track m['id']) {
-                      <tr [ngClass]="{ 'info': mdfSeleccionado()['id'] === m['id'] }" (click)="mdfSeleccionado.set(m)">
-                        <td><code>{{ m['codigo'] }}</code></td>
-                        <td><strong>{{ m['proceso'] }}</strong></td>
-                        <td>{{ m['actividad'] }}</td>
-                        <td>{{ m['tarea'] }}</td>
-                        <td>{{ m['paso'] }}</td>
-                        <td>
-                          <span class="label" [ngClass]="m['tipoActividad'] === 'RUTINARIA' ? 'label-primary' : 'label-warning'">
-                            {{ m['tipoActividad'] }}
-                          </span>
-                        </td>
-                        <td>{{ m['area'] }} / <strong>{{ m['puesto'] }}</strong></td>
-                        <td><span class="label label-success">{{ m['codigoIperc'] }}</span></td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
+    @if (tabActiva() === 'MDF') {<msst-mdf-editor/>}
 
     <!-- ========================================================================= -->
     <!-- PESTAÑA 3: PUESTOS DE TRABAJO Y BANDEJA DE SOLICITUDES                    -->
@@ -477,63 +369,6 @@ import { GosstSessionService } from '../../core/services/gosst-session.service';
     <!-- ========================================================================= -->
     <!-- MODAL: REGISTRAR NUEVO NODO MDF                                           -->
     <!-- ========================================================================= -->
-    @if (modalMdfAbierto()) {
-      <div style="position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; display:flex; align-items:center; justify-content:center; padding:15px;">
-        <div class="panel panel-primary" style="width:100%; max-width:620px; margin:0; box-shadow:0 8px 25px rgba(0,0,0,.35);">
-          <div class="panel-heading" style="background-color:#004B87; display:flex; justify-content:space-between; align-items:center;">
-            <h4 class="panel-title"><i class="fa fa-code-fork"></i> Registrar Despliegue MDF (Proceso -> Actividad -> Tarea -> Paso)</h4>
-            <button title="Cerrar" class="btn btn-xs btn-danger" (click)="modalMdfAbierto.set(false)"><i class="fa fa-times"></i></button>
-          </div>
-          <div class="panel-body">
-            <div class="row">
-              <div class="col-md-6 form-group">
-                <label>1. Proceso Operativo:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formMdf.proceso" placeholder="Ej. Molienda de Crudo y Clinker">
-              </div>
-              <div class="col-md-6 form-group">
-                <label>2. Actividad:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formMdf.actividad" placeholder="Ej. Mantenimiento Mecánico de Molino">
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6 form-group">
-                <label>3. Tarea Específica:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formMdf.tarea" placeholder="Ej. Cambio de blindajes internos">
-              </div>
-              <div class="col-md-6 form-group">
-                <label>4. Paso Crítico:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formMdf.paso" placeholder="Ej. Bloqueo LOTO e ingreso a espacio confinado">
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-4 form-group">
-                <label>Tipo de Actividad:</label>
-                <select class="form-control input-sm" [(ngModel)]="formMdf.tipoActividad">
-                  <option value="RUTINARIA">RUTINARIA</option>
-                  <option value="NO RUTINARIA">NO RUTINARIA</option>
-                  <option value="EMERGENCIA">EMERGENCIA</option>
-                </select>
-              </div>
-              <div class="col-md-4 form-group">
-                <label>Área Asociada:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formMdf.area" placeholder="Mantenimiento Planta">
-              </div>
-              <div class="col-md-4 form-group">
-                <label>Puesto de Trabajo:</label>
-                <input type="text" class="form-control input-sm" [(ngModel)]="formMdf.puesto" placeholder="Técnico Mecánico">
-              </div>
-            </div>
-          </div>
-          <div class="panel-footer" style="display:flex; justify-content:flex-end; gap:8px;">
-            <button class="btn btn-sm btn-default" (click)="modalMdfAbierto.set(false)">Cancelar</button>
-            <button class="btn btn-sm btn-primary" (click)="guardarMdf()">
-              <i class="fa fa-save"></i> Guardar Registro MDF
-            </button>
-          </div>
-        </div>
-      </div>
-    }
-
     <!-- ========================================================================= -->
     <!-- MODAL: REGISTRAR NUEVO PUESTO DE TRABAJO                                  -->
     <!-- ========================================================================= -->
@@ -633,16 +468,6 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
   readonly modalAreaAbierto = signal<boolean>(false);
   formArea = { nombre: '', idUnidad: 0, idDivision: 0 };
 
-  readonly modalMdfAbierto = signal<boolean>(false);
-  formMdf = {
-    proceso: '',
-    actividad: '',
-    tarea: '',
-    paso: '',
-    tipoActividad: '',
-    area: '',
-    puesto: ''
-  };
 
   readonly modalPuestoAbierto = signal<boolean>(false);
   formPuesto = {
@@ -655,23 +480,10 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
 
   // Visor 1:1
 
-  readonly pageRoutes=['/area/lista', '/division/lista', '/mdf/lista', '/puesto/lista', '/unidad/lista'];
+  readonly pageRoutes=['/area/lista', '/division/lista', '/puesto/lista', '/unidad/lista'];
   private readonly pageReload=this.api.pageChanges.pipe(takeUntilDestroyed()).subscribe(route=>{if(this.pageRoutes.includes(route))this.ngOnInit();});
   ngOnInit(): void {
     this.cargarEstructuraOrganizacional();
-  }
-
-  mdfFiltrados(): Record<string, any>[] {
-    const q = this.filtroMdf.trim().toLowerCase();
-    if (!q) return this.mdfLista();
-    return this.mdfLista().filter(
-      m =>
-        String(m['proceso'] || '').toLowerCase().includes(q) ||
-        String(m['actividad'] || '').toLowerCase().includes(q) ||
-        String(m['tarea'] || '').toLowerCase().includes(q) ||
-        String(m['paso'] || '').toLowerCase().includes(q) ||
-        String(m['puesto'] || '').toLowerCase().includes(q)
-    );
   }
 
   cargarEstructuraOrganizacional(): void {
@@ -696,7 +508,6 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
 
     this.api.callAjaxPost('/area/lista', { ...{} }).subscribe({next:(response)=>{try{this.areas.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/mdf/lista', { ...{} }).subscribe({next:(response)=>{try{this.mdfLista.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
     this.api.callAjaxPost('/puesto/lista', { ...{} }).subscribe({next:(response)=>{try{this.puestos.set(confirmedList<Record<string, any>>(response,[]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
@@ -709,24 +520,6 @@ export class Modulo02OrganizacionMdfComponent implements OnInit {
   guardarArea(): void {
     if (!this.formArea.nombre.trim()) return;
     this.api.callAjaxPost('/area/insert', this.formArea).subscribe({next:()=>{this.ngOnInit();this.modalAreaAbierto.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
-  }
-
-  abrirModalNuevoMdf(): void {
-    this.formMdf = {
-      proceso: '',
-      actividad: '',
-      tarea: '',
-      paso: '',
-      tipoActividad: '',
-      area: '',
-      puesto: ''
-    };
-    this.modalMdfAbierto.set(true);
-  }
-
-  guardarMdf(): void {
-    if (!this.formMdf.proceso.trim()) return;
-    this.api.callAjaxPost('/mdf/insert', this.formMdf).subscribe({next:()=>{this.ngOnInit();this.modalMdfAbierto.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   abrirModalNuevoPuesto(): void {

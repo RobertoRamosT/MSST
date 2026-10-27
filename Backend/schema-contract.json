@@ -15,6 +15,10 @@
     {
       "Name": "28_Workflow_Evaluacion_Clinica.sql",
       "Sha256": "2175ca35d9bdc28bfc9602058cf0ffe566018dc986a2e0fad4c06e31a9438406"
+    },
+    {
+      "Name": "29_Coherencia_Operativa_MDF.sql",
+      "Sha256": "10c7efc2d1d927ab1c372599af6bb6d510416db82b860deb9e7b95e754056971"
     }
   ],
   "Objects": [
@@ -29,6 +33,66 @@
     {
       "Name": "[dbo].[SecV2_Identity]",
       "Sha256": "4f42737fa1c1c227a6a7abfc53f8156c93fb91ffc770880e2154e13e3bedceb0"
+    },
+    {
+      "Name": "[dbo].[tr_CommitteeV2_Acta_ContentImmutable]",
+      "Sha256": "3c6b2f848a1c3a1697c3e8e72b991ed7f256d2b154c4e042469e9e6e1c75328b"
+    },
+    {
+      "Name": "[dbo].[tr_CommitteeV2_Attendance_Immutable]",
+      "Sha256": "baaa8b59fa365edeaf4897b815dc021c4acaec47a9e61e38cd4ef10a0875da04"
+    },
+    {
+      "Name": "[dbo].[tr_CommitteeV2_Ballot_Immutable]",
+      "Sha256": "e2d71d7367d5d577213700411cf8759afee07a163f31eebbb1444c46fd75cd3b"
+    },
+    {
+      "Name": "[dbo].[tr_CommitteeV2_Command_Immutable]",
+      "Sha256": "c9eca26a2ffc2159d7472cf219a6b2ac61b38807b469ae917aed56112954192d"
+    },
+    {
+      "Name": "[dbo].[tr_CommitteeV2_Participation_Immutable]",
+      "Sha256": "1f04056aac5a603cc6bc4a3e0464d0aaf1651e052e50c4e28e31bbc88a22301d"
+    },
+    {
+      "Name": "[dbo].[tr_CommitteeV2_Type_Immutable]",
+      "Sha256": "3c5b1ccf3c2be23ba22d62950a3a76d5ffca998f5c4e17ad9344086bf1481def"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Command_Immutable]",
+      "Sha256": "b98b2538c16081c59d446cf5bf57dbe3febb70aa262aeb0022222e0ddfed0724"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Definition_Immutable]",
+      "Sha256": "772329ec98c69ef0ad2b7c31766bdd82d12d27bfe435a0e5035e87cb33a237f5"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Event_Immutable]",
+      "Sha256": "877a372dff98e6976841c4fc7cce554a227799e8849a8c83ca029684543aa78e"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Proof_Immutable]",
+      "Sha256": "e7ae7fffae7138e6bb07eb5e5a72234d60d9eec59e642e401dc740aea3719d8f"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Requirement_Immutable]",
+      "Sha256": "865e89440b4f70f8f784395e1964e1a43ed11b873e2ba7fccad8798937dfb216"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_RolePermission_Immutable]",
+      "Sha256": "75790b4320f6d1460a227cc9903365c14141bed2878c8f2cd7d234d7072e6256"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Stage_Immutable]",
+      "Sha256": "5b51a3792635ecd0d76fd54d262c3fff505985a578c6cd23332c2e20d92cb1be"
+    },
+    {
+      "Name": "[dbo].[tr_WfV2_Transition_Immutable]",
+      "Sha256": "1c740b2c0b4860a15127ee51db25a17f17235138ca7e90487d31b928f8ae606a"
+    },
+    {
+      "Name": "[dbo].[trg_Org_MdfCoherence]",
+      "Sha256": "c6fef4f33c0b29aa872f4728bf1a8b480be7a99c325b36bccc7e1f3d674c8ccc"
     },
     {
       "Name": "[dbo].[ufn_CommitteeV2_ActaJson]",
@@ -68,7 +132,7 @@
     },
     {
       "Name": "[dbo].[usp_Msst_LegacyV2]",
-      "Sha256": "2d0941cf666bfad35bebd65cb61c00f347f26075a4710ddcb4ef5e5de81ee1b6"
+      "Sha256": "03f9091a397ee05b16e4c4c9d1ac3f36b489a3cc131f4484f611064903b56a99"
     },
     {
       "Name": "[dbo].[usp_Msst_ProfilePermissions]",
@@ -119,5 +183,5 @@
       "Sha256": "b4cedeffd85491f1df7d8e9b1e5c5f2ff7117a92c25375cce988896ded5d6cf2"
     }
   ],
-  "TablesSha256": "e15327deb41b4e7c85886024365013ef59cf73a9e6bf4753df03533005880ae7"
+  "TablesSha256": "89c24f6d9b8254f1bc52dd9522b981fb8b8d489db6ae584fb62335c5b1534922"
 }

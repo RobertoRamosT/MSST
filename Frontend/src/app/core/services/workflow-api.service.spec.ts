@@ -307,3 +307,39 @@ test('workflow: listados tardíos no reemplazan el caso actual',()=>{
  b.next({...envelope('WF_LIST_READY'),expedientes:[{...updated,expedienteId:2}]});a.next({...envelope('WF_LIST_READY'),expedientes:[initial]});
  assert.equal(s.component.rows()[0].expedienteId,2);s.component.ngOnDestroy();s.destroy();
 });
+
+
+// Casos sintéticos: las reglas de jerarquía llegan del catálogo del servidor.
+import {MdfEditorComponent} from '../../features/sprint1/mdf-editor.component';
+function mdfScreen(plan:Plan){
+ const captured:{url:string;body:Record<string,unknown>}[]=[];
+ const api={pageChanges:new Subject<string>(),callAjaxPost:(url:string,body:Record<string,unknown>)=>{captured.push({url,body});return plan(url,body);}};
+ const injector=createEnvironmentInjector([{provide:GosstApiService,useValue:api}],null as never);
+ const component=runInInjectionContext(injector,()=>new MdfEditorComponent());
+ component.types.set([{id:1,version:initial.version,code:'RAIZ_QA',label:'Raíz de prueba',parentCode:null},{id:2,version:initial.version,code:'HIJO_QA',label:'Hijo de prueba',parentCode:'RAIZ_QA'}]);
+ return{component,captured,destroy:()=>{component.ngOnDestroy();injector.destroy();}};
+}
+const mdfRow={id:20,version:initial.version,nombre:'Nodo sintético',tipo:'HIJO_QA',idPadre:19,idArea:7,area:'Área QA'};
+test('MDF: catálogo determina el padre obligatorio sin fijar tipos en Angular',()=>{
+ const s=mdfScreen(()=>of({}));s.component.create();s.component.draft={nombre:'Nodo QA',tipo:'HIJO_QA',idPadre:null,idArea:null};s.component.save();
+ assert.equal(s.captured.length,0);assert.match(s.component.message(),/padre/);s.destroy();
+});
+test('MDF: rechazo del servidor conserva campos, relación y versión original',()=>{
+ const s=mdfScreen(()=>throwError(()=>new HttpErrorResponse({status:422,error:{code:'MDF_PARENT_INVALID',message:'Seleccione un padre válido.'}})));
+ s.component.edit(mdfRow);s.component.save();assert.equal(s.component.open(),true);assert.deepEqual(s.component.draft,{nombre:mdfRow.nombre,tipo:mdfRow.tipo,idPadre:19,idArea:7});
+ assert.equal(s.component.editing()?.version,initial.version);assert.equal(s.component.busy(),false);assert.match(s.component.message(),/padre/);s.destroy();
+});
+test('MDF: edición transmite identidad, versión y relaciones al servidor',()=>{
+ const s=mdfScreen(()=>new Subject<unknown>());s.component.edit(mdfRow);s.component.save();s.component.save();s.component.create();
+ assert.equal(s.captured.length,1);assert.equal(s.captured[0].url,'/mdf/update');assert.deepEqual(s.captured[0].body,{nombre:mdfRow.nombre,tipo:mdfRow.tipo,idPadre:19,idArea:7,id:20,expectedVersion:initial.version});
+ assert.equal(s.component.editing()?.id,20);s.destroy();
+});
+test('MDF: padre fuera de página se conserva y no se sustituye por el primer resultado',()=>{
+ const s=mdfScreen(()=>of({}));s.component.edit(mdfRow);s.component.nodes.set([]);assert.equal(s.component.draft.idPadre,19);assert.match(s.component.parentLabel(19),/otra página/);
+ assert.equal(s.component.parentOptions().length,0);s.destroy();
+});
+test('MDF: lectura tardía no reemplaza una página más reciente',()=>{
+ const a=new Subject<unknown>(),b=new Subject<unknown>();let count=0;
+ const s=mdfScreen(url=>url==='/mdf/lista'?(++count===1?a:b):of({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[]}));s.component.load();s.component.load();
+ b.next({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[mdfRow]});a.next({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[]});assert.equal(s.component.nodes()[0]?.id,20);s.destroy();
+});

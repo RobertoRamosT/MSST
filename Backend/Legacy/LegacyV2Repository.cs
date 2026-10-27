@@ -13,21 +13,30 @@ public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpCon
   var actor=RequestScope.Require(contexts.HttpContext);
   using var document=JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
   RequestScope.CheckPayloadScope(document.RootElement,actor);
-  var action=LegacyProjection.ResolverAccionCrud(route);
-  var module=LegacyProjection.ResolverModuloCrud(route,"");
-  if(string.IsNullOrWhiteSpace(module)) throw new ApiDomainException(404,"ENDPOINT_NOT_IMPLEMENTED","La ruta no corresponde a una operación disponible.");
-  var mutation=!string.IsNullOrEmpty(action);
-  if(action is "APROBAR" or "RECHAZAR" or "VOTAR")
+  await using var connection=database.CreateConnection(); await connection.OpenAsync(ct);
+  string module,operation;
+  // Solo un contrato publicado puede seleccionar módulo y operación. El catálogo
+  // de rutas históricas describe superficie; no acredita una implementación.
+  await using(var lookup=new SqlCommand("SELECT r.ModuleCode,r.ActionCode FROM dbo.ApiV2_Route r JOIN dbo.ApiV2_Module m ON m.ModuleCode=r.ModuleCode AND m.Enabled=1 WHERE r.Route=@Route;",connection))
+  {
+   lookup.Parameters.AddWithValue("@Route",route);
+   await using var row=await lookup.ExecuteReaderAsync(ct);
+   if(!await row.ReadAsync(ct))throw new ApiDomainException(404,"ENDPOINT_NOT_IMPLEMENTED","La operación solicitada no tiene un contrato funcional implementado.");
+   module=row.GetString(0);operation=row.GetString(1);
+  }
+  var mutation=operation!="QUERY";
+  string? action=mutation?operation:null;
+  if(operation is not ("QUERY" or "INSERT" or "UPDATE" or "DELETE"))
    throw new ApiDomainException(422,"WORKFLOW_ACTION_REQUIRED","Realice esta decisión desde su expediente y acción autorizada.");
+  var method=contexts.HttpContext!.Request.Method;
+  var validMethod=HttpMethods.IsPost(method)||(operation=="QUERY"&&HttpMethods.IsGet(method))||
+   (operation=="UPDATE"&&HttpMethods.IsPut(method))||(operation=="DELETE"&&HttpMethods.IsDelete(method));
+  if(!validMethod)throw new ApiDomainException(405,"HTTP_METHOD_INVALID","El método no corresponde a la operación solicitada.");
   if(mutation&&module=="contratista"&&document.RootElement.TryGetProperty("tipoContratistaId",out var contractorType)
    &&(contractorType.ValueKind!=JsonValueKind.Number||!contractorType.TryGetInt32(out var typeId)||typeId<=0))
    throw new ApiDomainException(422,"CONTRACTOR_TYPE_INVALID","Ingrese un código de tipo de contratista válido.");
   RequestScope.Permission(contexts.HttpContext,module=="contratista_garita"&&!mutation?"access:read":"legacy:"+module+(mutation ? ":write" : ":read"));
   await using var verifiedEvidence=await VerifyEvidenceAsync(document.RootElement,actor,module,action,evidenceReader,ct);
-  await using var connection=database.CreateConnection(); await connection.OpenAsync(ct);
-  await using(var command=new SqlCommand("SELECT COUNT(*) FROM dbo.Sys_EndpointCatalogo WHERE RutaRelativa=@Route;",connection))
-  {command.Parameters.AddWithValue("@Route",route);if(Convert.ToInt32(await command.ExecuteScalarAsync(ct))==0)
-    throw new ApiDomainException(404,"ENDPOINT_NOT_REGISTERED","La operación no está registrada en el catálogo vigente.");}
   LegacyV2Envelope response;
   if(mutation)
   {
@@ -43,7 +52,7 @@ public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpCon
    return response; // El recibo no necesita volver a consultar todo el módulo.
   }
   else response=new(){CodeResponse="05",StatusCode="01",Message="Consulta confirmada."};
-  var query=LegacyProjection.ObtenerConsultaPorRuta(route,module);
+  var query=LegacyProjection.ObtenerConsulta(module);
   if(string.IsNullOrEmpty(query)) throw new ApiDomainException(404,"ENDPOINT_NOT_IMPLEMENTED","El módulo no tiene una consulta implementada.");
   query=await ScopeAsync(connection,query,actor,ct);
   var selection=paging.Parse(document.RootElement,contexts.HttpContext!,actor,route);
@@ -110,6 +119,16 @@ public sealed class LegacyV2Repository(SqlServerAotRepository database, IHttpCon
   command.Parameters.AddWithValue("@PayloadJson",payload.RootElement.GetRawText());
   var raw=Convert.ToString(await command.ExecuteScalarAsync(ct))??throw new InvalidDataException("Falta el recibo de catálogo.");
   return JsonSerializer.Deserialize(raw,LegacyV2JsonContext.Default.LegacyV2Envelope)??throw new InvalidDataException("Catálogo inválido.");
+ }
+ public async Task<LegacyV2Envelope> GetMdfTypesAsync(CancellationToken ct)
+ {
+  RequestScope.Permission(contexts.HttpContext,"legacy:mdf:read");
+  await using var connection=database.CreateConnection();await connection.OpenAsync(ct);
+  await using var command=new SqlCommand("SELECT IdType,Code,Label,ParentCode,Version FROM dbo.Org_MdfNodeType WHERE Enabled=1 ORDER BY IdType;",connection);
+  await using var reader=await command.ExecuteReaderAsync(ct);
+  var result=new LegacyV2Envelope{CodeResponse="05",StatusCode="01",Message="Tipos de nodo disponibles."};
+  while(await reader.ReadAsync(ct))result.List.Add(new(){["id"]=reader.GetInt32(0),["code"]=reader.GetString(1),["label"]=reader.GetString(2),["parentCode"]=reader.IsDBNull(3)?null:reader.GetString(3),["version"]=Convert.ToBase64String((byte[])reader.GetValue(4))});
+  result.Total=result.List.Count;return result;
  }
  private static async Task<string> ScopeAsync(SqlConnection connection,string query,RequestActor actor,CancellationToken ct)
  {

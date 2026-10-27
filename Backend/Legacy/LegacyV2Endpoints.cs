@@ -30,6 +30,11 @@ public static class LegacyV2Endpoints
    var response=await ctx.RequestServices.GetRequiredService<SqlServerAotRepository>().ObtenerMensajesAsync(actor.EmpresaId,ctx.RequestAborted);
    await Results.Json(response,MsstJsonContext.Default.EmpresaMensajeResponse).ExecuteAsync(ctx);
   }));
+  sst.MapPost("/mdf/tipos",(RequestDelegate)(async ctx=>{
+   await CheckScope(ctx,RequestScope.Require(ctx));
+   var result=await ctx.RequestServices.GetRequiredService<LegacyV2Repository>().GetMdfTypesAsync(ctx.RequestAborted);
+   await Results.Json(result,LegacyV2JsonContext.Default.LegacyV2Envelope).ExecuteAsync(ctx);
+  }));
   sst.MapGet("/medical/catalogs/types",(RequestDelegate)(ctx=>Medical(ctx,"TYPES")));
   sst.MapGet("/medical/catalogs/admin",(RequestDelegate)(ctx=>Medical(ctx,"ADMIN")));
   sst.MapMethods("/medical/catalogs",["GET","POST"],(RequestDelegate)(ctx=>Medical(ctx,"READ")));
@@ -53,8 +58,6 @@ public static class LegacyV2Endpoints
     using(var writer=new Utf8JsonWriter(stream)){writer.WriteStartObject();foreach(var p in ctx.Request.Query)writer.WriteString(p.Key,p.Value.ToString());writer.WriteEndObject();}
     json=System.Text.Encoding.UTF8.GetString(stream.ToArray());
    }
-   if(LegacyProjection.ResolverAccionCrud(route) is not null && HttpMethods.IsGet(ctx.Request.Method))
-    throw new ApiDomainException(405,"HTTP_METHOD_INVALID","La operación requiere un método de escritura.");
    var response=await ctx.RequestServices.GetRequiredService<LegacyV2Repository>().ExecuteAsync(route,json,ctx.RequestAborted);
    await Results.Json(response,LegacyV2JsonContext.Default.LegacyV2Envelope,statusCode:response.CodeResponse=="05"?200:422).ExecuteAsync(ctx);
   }));

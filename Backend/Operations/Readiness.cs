@@ -29,7 +29,7 @@ public sealed class Readiness(SqlServerAotRepository database,IConfiguration con
  public const string ShapeSql="""
 SELECT CONVERT(varchar(64),HASHBYTES('SHA2_256',STRING_AGG(CONVERT(nvarchar(max),CONCAT(t.name,N'|',c.name,N'|',ty.name,N'|',c.max_length,N'|',c.precision,N'|',c.scale,N'|',c.is_nullable,N'|',c.is_identity)),NCHAR(10)) WITHIN GROUP(ORDER BY t.name,c.name)),2)
 FROM sys.tables t INNER JOIN sys.columns c ON c.object_id=t.object_id INNER JOIN sys.types ty ON ty.user_type_id=c.user_type_id
-WHERE t.name IN(SELECT TableName FROM dbo.ApiV2_Module) OR t.name LIKE 'WfV2[_]%' OR t.name LIKE 'EvidenceV2[_]%' OR t.name LIKE 'SecV2[_]%' OR t.name LIKE 'MedV2[_]%' OR t.name LIKE 'ComV2[_]%' OR t.name LIKE 'AccessV2[_]%' OR t.name LIKE 'OpsV2[_]%'
+WHERE t.name IN(SELECT TableName FROM dbo.ApiV2_Module) OR t.name LIKE 'WfV2[_]%' OR t.name LIKE 'EvidenceV2[_]%' OR t.name LIKE 'SecV2[_]%' OR t.name LIKE 'MedV2[_]%' OR t.name LIKE 'ComV2[_]%' OR t.name LIKE 'AccessV2[_]%' OR t.name LIKE 'OpsV2[_]%' OR t.name='Org_MdfNodeType'
 """;
  public async Task<bool> Check(CancellationToken ct)
  {
