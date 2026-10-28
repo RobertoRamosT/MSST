@@ -343,3 +343,12 @@ test('MDF: lectura tardía no reemplaza una página más reciente',()=>{
  const s=mdfScreen(url=>url==='/mdf/lista'?(++count===1?a:b):of({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[]}));s.component.load();s.component.load();
  b.next({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[mdfRow]});a.next({CODE_RESPONSE:'05',STATUS_CODE:'01',list:[]});assert.equal(s.component.nodes()[0]?.id,20);s.destroy();
 });
+
+import {readProcedimientos} from '../../features/sprint2/modulo08-capacitacion-epp-procedimientos.component';
+test('procedimientos: versión documental numérica SQL no se confunde con rowversion',()=>{
+ const record={id:12,version:'AAAAAAAAAAE=',codigo:'QA-PROC',nombre:'Procedimiento sintético',documentVersion:3,area:null,archivoUrl:null,fechaVigencia:'27/10/2026'};
+ const response={CODE_RESPONSE:'05',STATUS_CODE:'01',list:[record]};
+ assert.equal(readProcedimientos(response)[0].documentVersion,3);
+ assert.throws(()=>readProcedimientos({...response,list:[{...record,documentVersion:'3'}]}));
+ assert.throws(()=>readProcedimientos({...response,list:[{...record,version:'3'}]}));
+});

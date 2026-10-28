@@ -38,7 +38,7 @@ export interface ProcedimientoSeguridadItem {
   codigo: string | null;
   nombre: string | null;
   version:string;
-  documentVersion:string|null;
+  documentVersion:number|null;
   area: string | null;
   archivoUrl: string | null;
   fechaVigencia: string | null;
@@ -429,7 +429,7 @@ export interface ProcedimientoSeguridadItem {
                 </div>
                 <div class="col-md-3 form-group">
                   <label>Versión:</label>
-                  <input type="text" class="form-control input-sm" [(ngModel)]="nuevoProcedimiento.documentVersion">
+                  <input type="number" step="1" class="form-control input-sm" [(ngModel)]="nuevoProcedimiento.versionActual">
                 </div>
                 <div class="col-md-4 form-group">
                   <label>Vigencia Hasta:</label>
@@ -529,7 +529,7 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
   nuevoProcedimiento = {
     codigo: '',
     nombre: '',
-    documentVersion: '',
+    versionActual: null as number|null,
     area: '',
     fechaVigencia: ''
   };
@@ -553,7 +553,7 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
 
     this.api.callAjaxPost('/equiposeguridad/lista', { ...{} }).subscribe({next:(response)=>{try{this.equiposEpp.set(confirmedList<EquipoEppItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"tipoProteccion","kind":"string","optional":false,"nullable":true},{"name":"vidaUtilDias","kind":"number","optional":false,"nullable":true},{"name":"stock","kind":"number","optional":false,"nullable":true},{"name":"norma","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
 
-    this.api.callAjaxPost('/procedimientoseguridad/lista', { ...{} }).subscribe({next:(response)=>{try{this.procedimientos.set(confirmedList<ProcedimientoSeguridadItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"documentVersion","kind":"string","optional":false,"nullable":true},{"name":"area","kind":"string","optional":false,"nullable":true},{"name":"archivoUrl","kind":"string","optional":false,"nullable":true},{"name":"fechaVigencia","kind":"string","optional":false,"nullable":true}]));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
+    this.api.callAjaxPost('/procedimientoseguridad/lista', { ...{} }).subscribe({next:(response)=>{try{this.procedimientos.set(readProcedimientos(response));}catch(error){this.mensajeOperacion.set(apiErrorMessage(error));}},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
   abrirProcesoCapacitacion(_curso:CursoCapacitacionItem):void{this.workflowSelectionOpen.set(true);}
@@ -580,7 +580,9 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
   }
 
   guardarNuevoProcedimiento(): void {
-    if (!this.nuevoProcedimiento.nombre.trim()) return;
+    if (!this.nuevoProcedimiento.nombre.trim() || !this.nuevoProcedimiento.codigo.trim() || !this.nuevoProcedimiento.fechaVigencia || !Number.isInteger(this.nuevoProcedimiento.versionActual)) {
+      this.mensajeOperacion.set('Complete código, nombre, fecha de vigencia y una versión documental entera.');return;
+    }
     this.api.callAjaxPost('/procedimientoseguridad/insert', { ...this.nuevoProcedimiento, ...{} }).subscribe({next:()=>{this.ngOnInit();this.mostrarModalProcedimiento.set(false);this.mensajeOperacion.set('Operación confirmada por el servidor.');},error:(error:unknown)=>this.mensajeOperacion.set(apiErrorMessage(error))});
   }
 
@@ -590,4 +592,8 @@ export class Modulo08CapacitacionEppProcedimientosComponent implements OnInit {
     this.notificacion.set(msg);
     setTimeout(() => this.notificacion.set(''), 4500);
   }
+}
+
+export function readProcedimientos(response:unknown):ProcedimientoSeguridadItem[]{
+  return confirmedList<ProcedimientoSeguridadItem>(response,[{"name":"id","kind":"number","optional":false},{"name":"codigo","kind":"string","optional":false,"nullable":true},{"name":"nombre","kind":"string","optional":false,"nullable":true},{"name":"documentVersion","kind":"number","optional":false,"nullable":true},{"name":"area","kind":"string","optional":false,"nullable":true},{"name":"archivoUrl","kind":"string","optional":false,"nullable":true},{"name":"fechaVigencia","kind":"string","optional":false,"nullable":true}]);
 }
